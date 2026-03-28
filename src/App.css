@@ -23,4 +23,18 @@
 .app-date {
   font-size: 14px;
   color: var(--text-muted);
+  flex: 1;
+}
+
+.app-generators-btn {
+  background: none;
+  border: none;
+  color: var(--text-muted);
+  padding: var(--space-xs);
+  border-radius: var(--radius-sm);
+  transition: color var(--transition-fast);
+}
+
+.app-generators-btn:hover {
+  color: var(--accent);
 }
