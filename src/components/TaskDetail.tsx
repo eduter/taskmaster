@@ -1,5 +1,6 @@
 import { createSignal, createEffect, Show, on } from "solid-js";
 import { selectedTaskId, setSelectedTaskId, editTask, removeTask, tasks } from "../stores/taskStore.ts";
+import { PostponeMenu } from "./PostponeMenu.tsx";
 import type { Task } from "../db/types.ts";
 import "./TaskDetail.css";
 
@@ -118,6 +119,8 @@ function TaskDetail() {
               </button>
             </div>
           </div>
+
+          <PostponeMenu taskId={selectedTaskId()!} onDone={() => setSelectedTaskId(null)} />
 
           <div class="task-detail__actions">
             <button class="task-detail__btn-primary" onClick={save}>
