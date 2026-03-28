@@ -9,6 +9,8 @@ import { TaskList } from "./components/TaskList.tsx";
 import { TaskDetail } from "./components/TaskDetail.tsx";
 import { GeneratorList } from "./components/GeneratorList.tsx";
 import { SyncSettings } from "./components/SyncSettings.tsx";
+import { OfflineIndicator } from "./components/OfflineIndicator.tsx";
+import { InstallPrompt } from "./components/InstallPrompt.tsx";
 import "./App.css";
 
 function App() {
@@ -39,6 +41,8 @@ function App() {
       <TaskList />
       <TaskDetail />
       <GeneratorList />
+      <OfflineIndicator />
+      <InstallPrompt />
     </div>
   );
 }

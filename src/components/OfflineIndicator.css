@@ -1,0 +1,13 @@
+.offline-bar {
+  position: fixed;
+  bottom: 0;
+  left: 0;
+  right: 0;
+  background: var(--warning-subtle);
+  color: var(--warning);
+  text-align: center;
+  padding: var(--space-xs) var(--space-md);
+  font-size: 13px;
+  font-weight: 600;
+  z-index: 200;
+}
