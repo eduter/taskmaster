@@ -1,3 +1,7 @@
+import { today } from "./stores/taskStore.ts";
+import { AddTask } from "./components/AddTask.tsx";
+import { TaskList } from "./components/TaskList.tsx";
+import { TaskDetail } from "./components/TaskDetail.tsx";
 import "./App.css";
 
 function App() {
@@ -5,10 +9,11 @@ function App() {
     <div class="app">
       <header class="app-header">
         <h1>TaskMaster</h1>
+        <span class="app-date">{today()}</span>
       </header>
-      <main class="app-main">
-        <p class="placeholder">Task list coming soon.</p>
-      </main>
+      <AddTask />
+      <TaskList />
+      <TaskDetail />
     </div>
   );
 }
