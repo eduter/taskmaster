@@ -5,12 +5,14 @@ import {
   updateGenerator,
   deleteGenerator,
 } from "../db/generators.ts";
+import { schedulePush } from "../sync/syncEngine.ts";
 import type { Generator, TaskTemplate } from "../db/types.ts";
 
 const [genVersion, setGenVersion] = createSignal(0);
 
 function invalidateGenerators() {
   setGenVersion((v) => v + 1);
+  schedulePush();
 }
 
 const [generators, { refetch: refetchGenerators }] = createResource(genVersion, () => getAllGenerators());

@@ -1,6 +1,7 @@
 import { createSignal, createResource } from "solid-js";
 import { getVisibleTasks, createTask, updateTask, deleteTask, toggleTaskCompleted, reorderTasks } from "../db/tasks.ts";
 import { getLogicalDay } from "../utils/logicalDay.ts";
+import { schedulePush } from "../sync/syncEngine.ts";
 import type { Task } from "../db/types.ts";
 
 const [today] = createSignal(getLogicalDay());
@@ -8,6 +9,7 @@ const [taskVersion, setTaskVersion] = createSignal(0);
 
 function invalidateTasks() {
   setTaskVersion((v) => v + 1);
+  schedulePush();
 }
 
 async function fetchTasks(): Promise<Task[]> {
