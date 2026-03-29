@@ -12,8 +12,8 @@ const pwa = VitePWA({
     theme_color: "#1a1a2e",
     background_color: "#1a1a2e",
     display: "standalone",
-    scope: "/",
-    start_url: "/",
+    scope: "/taskmaster/",
+    start_url: "/taskmaster/",
     icons: [
       {
         src: "pwa-192x192.png",
@@ -34,5 +34,6 @@ const pwa = VitePWA({
 });
 
 export default defineConfig({
+  base: "/taskmaster/",
   plugins: [solid(), pwa],
 });
