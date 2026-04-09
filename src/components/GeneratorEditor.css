@@ -124,3 +124,48 @@
 .gen-editor__btn-danger:hover {
   background: var(--danger-subtle);
 }
+
+.gen-editor__recurrence-row {
+  display: flex;
+  gap: var(--space-sm);
+}
+
+.gen-editor__interval-input {
+  width: 80px;
+}
+
+.gen-editor__day-toggles {
+  display: flex;
+  gap: 8px;
+  flex-wrap: wrap;
+}
+
+.gen-editor__day-toggle {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  position: relative;
+  cursor: pointer;
+  width: 32px;
+  height: 32px;
+  border-radius: 50%;
+  background: var(--bg-surface);
+  border: 1px solid var(--border);
+  color: var(--text-secondary);
+  font-size: 13px;
+  font-weight: 600;
+  transition: all 0.2s ease;
+}
+
+.gen-editor__day-toggle input {
+  position: absolute;
+  opacity: 0;
+  width: 0;
+  height: 0;
+}
+
+.gen-editor__day-toggle:has(input:checked) {
+  background: var(--accent);
+  color: white;
+  border-color: var(--accent);
+}

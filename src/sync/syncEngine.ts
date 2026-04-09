@@ -98,13 +98,14 @@ async function pullFromDropbox(): Promise<boolean> {
   }
 }
 
-async function sync(): Promise<void> {
-  if (!isAuthenticated()) return;
+async function sync(): Promise<boolean> {
+  if (!isAuthenticated()) return false;
 
   const pulled = await pullFromDropbox();
   if (!pulled) {
     await pushToDropbox();
   }
+  return pulled;
 }
 
 function schedulePush(): void {

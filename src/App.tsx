@@ -1,6 +1,6 @@
 import { onMount } from "solid-js";
 import { today, invalidateTasks } from "./stores/taskStore.ts";
-import { setShowGeneratorList } from "./stores/generatorStore.ts";
+import { setShowGeneratorList, invalidateGenerators } from "./stores/generatorStore.ts";
 import { runGenerators } from "./scheduling/generate.ts";
 import { handleAuthRedirect } from "./sync/dropboxAuth.ts";
 import { sync } from "./sync/syncEngine.ts";
@@ -16,7 +16,11 @@ import "./App.css";
 function App() {
   onMount(async () => {
     await handleAuthRedirect();
-    await sync();
+    const pulled = await sync();
+    if (pulled) {
+      invalidateTasks();
+      invalidateGenerators();
+    }
 
     const created = await runGenerators();
     if (created > 0) {

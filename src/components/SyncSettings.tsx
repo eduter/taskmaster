@@ -7,6 +7,8 @@ import {
   setClientId,
 } from "../sync/dropboxAuth.ts";
 import { sync } from "../sync/syncEngine.ts";
+import { invalidateTasks } from "../stores/taskStore.ts";
+import { invalidateGenerators } from "../stores/generatorStore.ts";
 import "./SyncSettings.css";
 
 function SyncSettings() {
@@ -18,7 +20,11 @@ function SyncSettings() {
   async function handleSync() {
     setSyncing(true);
     try {
-      await sync();
+      const pulled = await sync();
+      if (pulled) {
+        invalidateTasks();
+        invalidateGenerators();
+      }
     } finally {
       setSyncing(false);
     }

@@ -34,6 +34,29 @@
   color: var(--text-heading);
 }
 
+.gen-panel__header-actions {
+  display: flex;
+  align-items: center;
+  gap: var(--space-md);
+}
+
+.gen-panel__test-btn {
+  background: var(--bg-tertiary);
+  border: 1px solid var(--border);
+  color: var(--text-primary);
+  padding: var(--space-xs) var(--space-sm);
+  border-radius: var(--radius-sm);
+  font-size: 12px;
+  font-weight: 500;
+  cursor: pointer;
+  transition: all var(--transition-fast);
+}
+
+.gen-panel__test-btn:hover {
+  background: var(--bg-surface-hover);
+  border-color: var(--text-muted);
+}
+
 .gen-panel__close {
   background: none;
   border: none;
@@ -41,10 +64,7 @@
   font-size: 24px;
   line-height: 1;
   padding: 0 var(--space-xs);
-}
-
-.gen-panel__close:hover {
-  color: var(--text-primary);
+  cursor: pointer;
 }
 
 .gen-panel__list {
