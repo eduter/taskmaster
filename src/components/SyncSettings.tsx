@@ -3,8 +3,6 @@ import {
   isAuthenticated,
   startAuthFlow,
   clearTokens,
-  getClientId,
-  setClientId,
 } from "../sync/dropboxAuth.ts";
 import { sync } from "../sync/syncEngine.ts";
 import { invalidateTasks } from "../stores/taskStore.ts";
@@ -14,7 +12,6 @@ import "./SyncSettings.css";
 function SyncSettings() {
   const [showPanel, setShowPanel] = createSignal(false);
   const [syncing, setSyncing] = createSignal(false);
-  const [clientIdInput, setClientIdInput] = createSignal(getClientId() ?? "");
   const [authed, setAuthed] = createSignal(isAuthenticated());
 
   async function handleSync() {
@@ -31,9 +28,6 @@ function SyncSettings() {
   }
 
   async function handleConnect() {
-    const id = clientIdInput().trim();
-    if (!id) return;
-    setClientId(id);
     const url = await startAuthFlow();
     window.location.href = url;
   }
@@ -65,15 +59,8 @@ function SyncSettings() {
               fallback={
                 <div class="sync-panel__connect">
                   <p class="sync-panel__text">
-                    Enter your Dropbox app client ID to enable sync.
+                    Connect to Dropbox to enable sync.
                   </p>
-                  <input
-                    class="sync-panel__input"
-                    type="text"
-                    placeholder="Dropbox App Client ID"
-                    value={clientIdInput()}
-                    onInput={(e) => setClientIdInput(e.currentTarget.value)}
-                  />
                   <button class="sync-panel__btn-primary" onClick={handleConnect}>
                     Connect to Dropbox
                   </button>

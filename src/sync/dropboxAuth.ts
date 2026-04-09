@@ -1,17 +1,9 @@
 import { Dropbox, DropboxAuth } from "dropbox";
 
-const CLIENT_ID_KEY = "taskmaster_dropbox_client_id";
+const DROPBOX_CLIENT_ID = "laodurqous9xun7";
 const TOKEN_KEY = "taskmaster_dropbox_token";
 const REFRESH_TOKEN_KEY = "taskmaster_dropbox_refresh_token";
 const CODE_VERIFIER_KEY = "taskmaster_dropbox_code_verifier";
-
-function getClientId(): string | null {
-  return localStorage.getItem(CLIENT_ID_KEY);
-}
-
-function setClientId(id: string) {
-  localStorage.setItem(CLIENT_ID_KEY, id);
-}
 
 function getStoredToken(): string | null {
   return localStorage.getItem(TOKEN_KEY);
@@ -32,15 +24,12 @@ function isAuthenticated(): boolean {
   return !!getStoredToken();
 }
 
-function createAuth(): DropboxAuth | null {
-  const clientId = getClientId();
-  if (!clientId) return null;
-  return new DropboxAuth({ clientId });
+function createAuth(): DropboxAuth {
+  return new DropboxAuth({ clientId: DROPBOX_CLIENT_ID });
 }
 
 async function startAuthFlow(): Promise<string> {
   const auth = createAuth();
-  if (!auth) throw new Error("No Dropbox client ID configured");
 
   const redirectUri = window.location.origin + window.location.pathname;
   const authUrl = await auth.getAuthenticationUrl(
@@ -68,7 +57,6 @@ async function handleAuthRedirect(): Promise<boolean> {
   if (!codeVerifier) return false;
 
   const auth = createAuth();
-  if (!auth) return false;
 
   auth.setCodeVerifier(codeVerifier);
   const redirectUri = window.location.origin + window.location.pathname;
@@ -84,14 +72,11 @@ async function handleAuthRedirect(): Promise<boolean> {
 
 function getDropboxClient(): Dropbox | null {
   const token = getStoredToken();
-  const clientId = getClientId();
-  if (!token || !clientId) return null;
-  return new Dropbox({ accessToken: token, clientId });
+  if (!token) return null;
+  return new Dropbox({ accessToken: token, clientId: DROPBOX_CLIENT_ID });
 }
 
 export {
-  getClientId,
-  setClientId,
   getStoredToken,
   isAuthenticated,
   startAuthFlow,
