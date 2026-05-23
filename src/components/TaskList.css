@@ -9,13 +9,17 @@
   gap: var(--space-sm);
 }
 
-.task-list__item {
-  transition: opacity var(--transition-fast), transform var(--transition-fast);
+.task-list__items--dragging .task-list__item {
+  transition: transform var(--transition-fast);
+}
+
+.task-list__item--dragging .task-card {
+  opacity: 0.85;
 }
 
 .task-list__item--dragging {
-  opacity: 0.6;
   z-index: 10;
+  transition: none;
 }
 
 .task-list__empty {

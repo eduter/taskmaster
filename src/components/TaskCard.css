@@ -22,6 +22,30 @@
   border-left: 3px solid var(--warning);
 }
 
+.task-card__drag-handle {
+  flex-shrink: 0;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  margin: 0;
+  padding: 0;
+  border: none;
+  border-radius: var(--radius-sm);
+  background: transparent;
+  color: var(--text-muted);
+  touch-action: none;
+  cursor: grab;
+  align-self: center;
+}
+
+.task-card__drag-handle:hover {
+  color: var(--text-secondary);
+}
+
+.task-card__drag-handle:active {
+  cursor: grabbing;
+}
+
 .task-card__check {
   flex-shrink: 0;
   width: 22px;

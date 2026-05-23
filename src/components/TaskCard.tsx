@@ -1,10 +1,11 @@
-import { createMemo } from "solid-js";
+import { createMemo, type JSX } from "solid-js";
 import type { Task } from "../db/types.ts";
 import { toggleComplete, setSelectedTaskId, today } from "../stores/taskStore.ts";
 import "./TaskCard.css";
 
 interface TaskCardProps {
   task: Task;
+  dragHandle?: JSX.Element;
 }
 
 function TaskCard(props: TaskCardProps) {
@@ -16,6 +17,7 @@ function TaskCard(props: TaskCardProps) {
       classList={{ "task-card--completed": props.task.completed, "task-card--carried": isCarriedOver() }}
       onClick={() => setSelectedTaskId(props.task.id)}
     >
+      {props.dragHandle}
       <button
         class="task-card__check"
         classList={{ "task-card__check--done": props.task.completed }}
