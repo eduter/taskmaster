@@ -1,19 +1,19 @@
 :root {
-  --bg-primary: #1a1a2e;
-  --bg-secondary: #16213e;
-  --bg-surface: #1f2940;
-  --bg-surface-hover: #263350;
-  --bg-surface-active: #2d3d5e;
-  --bg-input: #162447;
+  --bg-primary: #181818;
+  --bg-secondary: #1f1f1f;
+  --bg-surface: #252526;
+  --bg-surface-hover: #2d2d2d;
+  --bg-surface-active: #333333;
+  --bg-input: #1f1f1f;
 
-  --text-primary: #e0e0e0;
-  --text-secondary: #9ca3af;
-  --text-muted: #6b7280;
-  --text-heading: #f0f0f0;
+  --text-primary: #cccccc;
+  --text-secondary: #a0a0a0;
+  --text-muted: #6e6e6e;
+  --text-heading: #e8e8e8;
 
-  --accent: #818cf8;
-  --accent-hover: #6366f1;
-  --accent-subtle: rgba(129, 140, 248, 0.15);
+  --accent: #7630b9;
+  --accent-hover: #9333ea;
+  --accent-subtle: rgba(168, 85, 247, 0.15);
 
   --success: #34d399;
   --success-subtle: rgba(52, 211, 153, 0.15);
@@ -22,8 +22,8 @@
   --danger: #f87171;
   --danger-subtle: rgba(248, 113, 113, 0.15);
 
-  --border: #2d3748;
-  --border-light: #374151;
+  --border: #3c3c3c;
+  --border-light: #4a4a4a;
 
   --radius-sm: 4px;
   --radius-md: 8px;
