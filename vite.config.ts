@@ -4,8 +4,17 @@ import { VitePWA } from "vite-plugin-pwa";
 
 const pwa = VitePWA({
   registerType: "autoUpdate",
-  includeAssets: ["favicon.svg"],
+  includeAssets: [
+    "favicon.svg",
+    "favicon.ico",
+    "apple-touch-icon-180x180.png",
+    "pwa-64x64.png",
+    "pwa-192x192.png",
+    "pwa-512x512.png",
+    "maskable-icon-512x512.png",
+  ],
   manifest: {
+    id: "/taskmaster/",
     name: "TaskMaster",
     short_name: "TaskMaster",
     description: "Personal offline-first task manager",
@@ -16,6 +25,11 @@ const pwa = VitePWA({
     start_url: "/taskmaster/",
     icons: [
       {
+        src: "pwa-64x64.png",
+        sizes: "64x64",
+        type: "image/png",
+      },
+      {
         src: "pwa-192x192.png",
         sizes: "192x192",
         type: "image/png",
@@ -24,7 +38,13 @@ const pwa = VitePWA({
         src: "pwa-512x512.png",
         sizes: "512x512",
         type: "image/png",
-        purpose: "any maskable",
+        purpose: "any",
+      },
+      {
+        src: "maskable-icon-512x512.png",
+        sizes: "512x512",
+        type: "image/png",
+        purpose: "maskable",
       },
     ],
   },

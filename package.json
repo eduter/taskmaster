@@ -9,7 +9,8 @@
     "preview": "vite preview",
     "typecheck": "tsc -b --noEmit",
     "test": "vitest",
-    "test:run": "vitest run"
+    "test:run": "vitest run",
+    "generate:icons": "pwa-assets-generator -r public -p minimal -o favicon.svg"
   },
   "dependencies": {
     "@thisbeyond/solid-dnd": "^0.7.5",
@@ -21,6 +22,7 @@
   },
   "devDependencies": {
     "@types/node": "^24.12.0",
+    "@vite-pwa/assets-generator": "^1.0.2",
     "fake-indexeddb": "^6.2.5",
     "typescript": "~5.9.3",
     "vite": "^7.0.0",
