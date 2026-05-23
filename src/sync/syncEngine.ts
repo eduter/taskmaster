@@ -41,8 +41,8 @@ async function applyPayload(payload: SyncPayload): Promise<void> {
   await db.transaction("rw", [db.tasks, db.generators, db.syncMeta], async () => {
     await db.tasks.clear();
     await db.generators.clear();
-    if (payload.tasks.length) await db.tasks.bulkAdd(payload.tasks);
-    if (payload.generators.length) await db.generators.bulkAdd(payload.generators);
+    await db.tasks.bulkAdd(payload.tasks);
+    await db.generators.bulkAdd(payload.generators);
     await updateSyncMeta({
       lastSyncedAt: Date.now(),
       lastModifiedAt: payload.lastModifiedAt,

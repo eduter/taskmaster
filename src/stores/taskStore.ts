@@ -7,9 +7,11 @@ import type { Task } from "../db/types.ts";
 const [today] = createSignal(getLogicalDay());
 const [taskVersion, setTaskVersion] = createSignal(0);
 
-function invalidateTasks() {
+function invalidateTasks(options?: { push?: boolean }) {
   setTaskVersion((v) => v + 1);
-  schedulePush();
+  if (options?.push !== false) {
+    schedulePush();
+  }
 }
 
 async function fetchTasks(): Promise<Task[]> {

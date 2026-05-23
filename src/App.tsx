@@ -3,7 +3,7 @@ import { today, invalidateTasks } from "./stores/taskStore.ts";
 import { setShowGeneratorList, invalidateGenerators } from "./stores/generatorStore.ts";
 import { runGenerators } from "./scheduling/generate.ts";
 import { handleAuthRedirect } from "./sync/dropboxAuth.ts";
-import { sync } from "./sync/syncEngine.ts";
+import { sync, markLocalChange, pushToDropbox } from "./sync/syncEngine.ts";
 import { AddTask } from "./components/AddTask.tsx";
 import { TaskList } from "./components/TaskList.tsx";
 import { TaskDetail } from "./components/TaskDetail.tsx";
@@ -18,14 +18,15 @@ function App() {
     await handleAuthRedirect();
     const pulled = await sync();
     if (pulled) {
-      invalidateTasks();
-      invalidateGenerators();
+      invalidateTasks({ push: false });
+      invalidateGenerators({ push: false });
     }
 
     const created = await runGenerators();
     if (created > 0) {
-      invalidateTasks();
-      await sync();
+      await markLocalChange();
+      invalidateTasks({ push: false });
+      await pushToDropbox();
     }
   });
 

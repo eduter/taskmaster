@@ -19,8 +19,8 @@ function SyncSettings() {
     try {
       const pulled = await sync();
       if (pulled) {
-        invalidateTasks();
-        invalidateGenerators();
+        invalidateTasks({ push: false });
+        invalidateGenerators({ push: false });
       }
     } finally {
       setSyncing(false);

@@ -40,7 +40,7 @@ async function getAllGenerators(): Promise<Generator[]> {
 }
 
 async function getActiveGenerators(): Promise<Generator[]> {
-  return db.generators.where("active").equals('true').toArray();
+  return db.generators.filter((g) => g.active).toArray();
 }
 
 export {

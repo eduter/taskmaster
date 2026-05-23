@@ -10,9 +10,11 @@ import type { Generator, TaskTemplate } from "../db/types.ts";
 
 const [genVersion, setGenVersion] = createSignal(0);
 
-function invalidateGenerators() {
+function invalidateGenerators(options?: { push?: boolean }) {
   setGenVersion((v) => v + 1);
-  schedulePush();
+  if (options?.push !== false) {
+    schedulePush();
+  }
 }
 
 const [generators, { refetch: refetchGenerators }] = createResource(genVersion, () => getAllGenerators());
