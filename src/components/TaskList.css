@@ -9,17 +9,21 @@
   gap: var(--space-sm);
 }
 
-.task-list__items--dragging .task-list__item {
+.task-list__items--dragging .task-list__item:not(.task-list__item--placeholder) {
   transition: transform var(--transition-fast);
-}
-
-.task-list__item--dragging .task-card {
-  opacity: 0.85;
 }
 
 .task-list__item--dragging {
   z-index: 10;
   transition: none;
+}
+
+.task-list__item--placeholder {
+  z-index: 10;
+}
+
+.task-list__item--placeholder .task-row__delete-slot {
+  visibility: hidden;
 }
 
 .task-list__empty {

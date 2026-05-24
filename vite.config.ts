@@ -56,6 +56,9 @@ const pwa = VitePWA({
 export default defineConfig({
   base: "/taskmaster/",
   plugins: [solid(), pwa],
+  server: {
+    host: true,
+  },
   test: {
     environment: "node",
     setupFiles: ["src/test/setup.ts"],

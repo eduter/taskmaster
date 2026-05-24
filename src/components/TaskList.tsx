@@ -1,65 +1,50 @@
-import { createMemo, For, Show } from "solid-js";
+import { createSignal, For, Show } from "solid-js";
 import {
   DragDropProvider,
-  DragDropSensors,
   SortableProvider,
-  createSortable,
   closestCenter,
-  transformStyle,
   useDragDropContext,
 } from "@thisbeyond/solid-dnd";
 import type { DragEvent } from "@thisbeyond/solid-dnd";
 import { tasks, reorder } from "../stores/taskStore.ts";
 import { applyReorder } from "../utils/reorder.ts";
-import { TaskCard } from "./TaskCard.tsx";
+import { TaskRow } from "./TaskRow.tsx";
+import { TaskDragOverlay } from "./TaskDragOverlay.tsx";
+import { TouchDragProvider } from "../gestures/touchDragContext.tsx";
 import type { Task } from "../db/types.ts";
 import "./TaskList.css";
 
-function SortableTask(props: { task: Task }) {
-  const sortable = createSortable(props.task.id);
-  const itemStyle = createMemo(() => transformStyle(sortable.transform));
-
-  function stopHandleEvent(event: Event) {
-    event.stopPropagation();
-  }
-
+function SortableTask(props: {
+  task: Task;
+  deleteRevealed: boolean;
+  onRevealChange: (taskId: string, open: boolean) => void;
+  onRowTouchStart: (taskId: string) => void;
+}) {
   return (
-    <div
-      ref={sortable.ref}
-      class="task-list__item"
-      style={itemStyle()}
-      classList={{
-        "task-list__item--dragging": sortable.isActiveDraggable,
-      }}
-    >
-      <TaskCard
-        task={props.task}
-        dragHandle={
-          <button
-            type="button"
-            class="task-card__drag-handle"
-            aria-label="Drag to reorder"
-            {...sortable.dragActivators}
-            onClick={stopHandleEvent}
-          >
-            <svg viewBox="0 0 16 16" width="16" height="16" fill="currentColor" aria-hidden="true">
-              <circle cx="5" cy="4" r="1.25" />
-              <circle cx="11" cy="4" r="1.25" />
-              <circle cx="5" cy="8" r="1.25" />
-              <circle cx="11" cy="8" r="1.25" />
-              <circle cx="5" cy="12" r="1.25" />
-              <circle cx="11" cy="12" r="1.25" />
-            </svg>
-          </button>
-        }
-      />
-    </div>
+    <TaskRow
+      task={props.task}
+      deleteRevealed={props.deleteRevealed}
+      onRevealChange={props.onRevealChange}
+      onRowTouchStart={props.onRowTouchStart}
+    />
   );
 }
 
 function SortableTaskListItems() {
   const [dndState] = useDragDropContext()!;
+  const [openRevealId, setOpenRevealId] = createSignal<string | null>(null);
   const taskIds = () => (tasks() ?? []).map((t) => t.id);
+
+  function handleRevealChange(taskId: string, open: boolean) {
+    setOpenRevealId(open ? taskId : null);
+  }
+
+  function handleRowTouchStart(taskId: string) {
+    const openId = openRevealId();
+    if (openId && openId !== taskId) {
+      setOpenRevealId(null);
+    }
+  }
 
   return (
     <SortableProvider ids={taskIds()}>
@@ -70,7 +55,14 @@ function SortableTaskListItems() {
         }}
       >
         <For each={tasks() ?? []}>
-          {(task) => <SortableTask task={task} />}
+          {(task) => (
+            <SortableTask
+              task={task}
+              deleteRevealed={openRevealId() === task.id}
+              onRevealChange={handleRevealChange}
+              onRowTouchStart={handleRowTouchStart}
+            />
+          )}
         </For>
       </div>
     </SortableProvider>
@@ -95,8 +87,10 @@ function SortableTaskList() {
 
   return (
     <DragDropProvider onDragEnd={handleDragEnd} collisionDetector={closestCenter}>
-      <DragDropSensors />
-      <SortableTaskListItems />
+      <TouchDragProvider>
+        <TaskDragOverlay />
+        <SortableTaskListItems />
+      </TouchDragProvider>
     </DragDropProvider>
   );
 }

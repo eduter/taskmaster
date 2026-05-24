@@ -1,0 +1,81 @@
+.task-row {
+  position: relative;
+  border-radius: var(--radius-md);
+  overflow: hidden;
+}
+
+.task-row__delete-slot {
+  position: absolute;
+  inset: 0;
+  display: flex;
+  align-items: stretch;
+  justify-content: flex-end;
+  padding-right: var(--space-md);
+  pointer-events: none;
+}
+
+.task-row__delete-slot--hidden {
+  visibility: hidden;
+}
+
+.task-row__delete {
+  flex-shrink: 0;
+  align-self: center;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 48px;
+  height: 48px;
+  margin: 0;
+  padding: 0;
+  border: none;
+  border-radius: var(--radius-md);
+  background: var(--danger);
+  color: #fff;
+  pointer-events: auto;
+  cursor: pointer;
+  transition: background var(--transition-fast);
+}
+
+.task-row__delete:hover {
+  background: #ef4444;
+}
+
+.task-row__delete:active {
+  transform: scale(0.96);
+}
+
+.task-row__surface {
+  position: relative;
+  touch-action: pan-y;
+  transition: transform var(--transition-fast);
+  will-change: transform;
+  user-select: none;
+  -webkit-user-select: none;
+  -webkit-touch-callout: none;
+}
+
+.task-row__surface--drag-pending {
+  touch-action: none;
+}
+
+.task-row__surface--placeholder {
+  visibility: hidden;
+}
+
+.task-row__surface--interacting {
+  transition: none;
+}
+
+.task-row__strike {
+  position: absolute;
+  left: calc(var(--space-md) + 22px + var(--space-sm));
+  right: auto;
+  top: 50%;
+  height: 2px;
+  margin-top: -1px;
+  background: var(--text-primary);
+  border-radius: 1px;
+  pointer-events: none;
+  transform-origin: left center;
+}

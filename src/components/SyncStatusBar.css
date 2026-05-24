@@ -13,6 +13,9 @@
   font-weight: 600;
   z-index: 199;
   font-family: inherit;
+  user-select: none;
+  -webkit-user-select: none;
+  -webkit-touch-callout: none;
 }
 
 .sync-status-bar--error {

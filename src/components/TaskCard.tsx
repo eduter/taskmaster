@@ -1,35 +1,47 @@
-import { createMemo, type JSX } from "solid-js";
+import { createMemo } from "solid-js";
 import type { Task } from "../db/types.ts";
-import { toggleComplete, setSelectedTaskId, today } from "../stores/taskStore.ts";
+import { today } from "../stores/taskStore.ts";
 import "./TaskCard.css";
 
 interface TaskCardProps {
   task: Task;
-  dragHandle?: JSX.Element;
+  /** When set, overrides completed appearance (e.g. swipe-to-check preview). */
+  visualCompleted?: boolean;
+  onCheckClick?: (event: MouseEvent) => void;
 }
 
 function TaskCard(props: TaskCardProps) {
   const isCarriedOver = createMemo(() => props.task.date < today());
 
+  const showCompleted = createMemo(
+    () => props.visualCompleted ?? props.task.completed,
+  );
+
   return (
     <div
       class="task-card"
-      classList={{ "task-card--completed": props.task.completed, "task-card--carried": isCarriedOver() }}
-      onClick={() => setSelectedTaskId(props.task.id)}
+      classList={{
+        "task-card--completed": showCompleted(),
+        "task-card--carried": isCarriedOver(),
+      }}
     >
-      {props.dragHandle}
       <button
+        type="button"
         class="task-card__check"
-        classList={{ "task-card__check--done": props.task.completed }}
-        onClick={(e) => {
-          e.stopPropagation();
-          toggleComplete(props.task.id);
-        }}
-        aria-label={props.task.completed ? "Mark incomplete" : "Mark complete"}
+        classList={{ "task-card__check--done": showCompleted() }}
+        aria-label={showCompleted() ? "Mark incomplete" : "Mark complete"}
+        onClick={props.onCheckClick}
+        onPointerDown={(event) => event.stopPropagation()}
       >
-        {props.task.completed && (
-          <svg viewBox="0 0 16 16" fill="none" width="14" height="14">
-            <path d="M3 8.5l3.5 3.5 6.5-7" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" />
+        {showCompleted() && (
+          <svg viewBox="0 0 16 16" fill="none" width="14" height="14" aria-hidden="true">
+            <path
+              d="M3 8.5l3.5 3.5 6.5-7"
+              stroke="currentColor"
+              stroke-width="2"
+              stroke-linecap="round"
+              stroke-linejoin="round"
+            />
           </svg>
         )}
       </button>

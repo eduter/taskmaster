@@ -9,6 +9,18 @@ function TaskDetail() {
   const [description, setDescription] = createSignal("");
   const [labelInput, setLabelInput] = createSignal("");
   const [labels, setLabels] = createSignal<string[]>([]);
+  let dismissGuardUntil = 0;
+
+  createEffect(
+    on(selectedTaskId, (id) => {
+      if (id) dismissGuardUntil = Date.now() + 500;
+    }),
+  );
+
+  function tryDismiss() {
+    if (Date.now() < dismissGuardUntil) return;
+    setSelectedTaskId(null);
+  }
 
   const selectedTask = (): Task | undefined => {
     const id = selectedTaskId();
@@ -64,11 +76,11 @@ function TaskDetail() {
 
   return (
     <Show when={selectedTask()}>
-      <div class="task-detail-overlay" onClick={() => setSelectedTaskId(null)}>
+      <div class="task-detail-overlay" onClick={tryDismiss}>
         <div class="task-detail" onClick={(e) => e.stopPropagation()}>
           <div class="task-detail__header">
             <h2 class="task-detail__title">Edit Task</h2>
-            <button class="task-detail__close" onClick={() => setSelectedTaskId(null)} aria-label="Close">
+            <button class="task-detail__close" onClick={tryDismiss} aria-label="Close">
               &times;
             </button>
           </div>
