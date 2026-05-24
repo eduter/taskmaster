@@ -6,13 +6,18 @@ import type { SyncPayload } from "./syncEngine.ts";
 const mockFilesUpload = vi.fn();
 const mockFilesDownload = vi.fn();
 
-vi.mock("./dropboxAuth.ts", () => ({
-  isAuthenticated: () => true,
-  getDropboxClient: () => ({
-    filesUpload: mockFilesUpload,
-    filesDownload: mockFilesDownload,
-  }),
-}));
+vi.mock("./dropboxAuth.ts", async (importOriginal) => {
+  const actual = await importOriginal<typeof import("./dropboxAuth.ts")>();
+  return {
+    ...actual,
+    isAuthenticated: () => true,
+    getDropboxClient: () => ({
+      filesUpload: mockFilesUpload,
+      filesDownload: mockFilesDownload,
+      auth: { getAccessToken: () => "test-token" },
+    }),
+  };
+});
 
 const { pullFromDropbox, pushToDropbox, getSyncMeta } = await import("./syncEngine.ts");
 

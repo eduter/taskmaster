@@ -1,5 +1,25 @@
 import { db } from "../db/database.ts";
-import { getDropboxClient, isAuthenticated } from "./dropboxAuth.ts";
+import {
+  clearTokens,
+  getDropboxClient,
+  getDropboxErrorMessage,
+  getDropboxErrorStatus,
+  isAuthenticated,
+  persistTokensFromClient,
+  tryRefreshAccessToken,
+} from "./dropboxAuth.ts";
+import {
+  beginPush,
+  beginSync,
+  endOperation,
+  hydrateLastSyncedAt,
+  lastResult,
+  markNeedsReauth,
+  recordError,
+  recordSuccess,
+  refreshAuthState,
+  setPendingPushScheduled,
+} from "../stores/syncStore.ts";
 import type { Task, Generator, SyncMeta } from "../db/types.ts";
 
 const SYNC_FILE = "/taskmaster/data.json";
@@ -11,6 +31,12 @@ interface SyncPayload {
   tasks: Task[];
   generators: Generator[];
 }
+
+type SyncOutcome = {
+  pulled: boolean;
+  pushed: boolean;
+  dataChanged: boolean;
+};
 
 let debounceTimer: ReturnType<typeof setTimeout> | null = null;
 
@@ -50,6 +76,25 @@ async function applyPayload(payload: SyncPayload): Promise<void> {
   });
 }
 
+async function handleAuthFailure(err: unknown, context: string): Promise<never> {
+  const status = getDropboxErrorStatus(err);
+  const detail = getDropboxErrorMessage(err);
+
+  if (status === 401) {
+    const refreshed = await tryRefreshAccessToken();
+    if (!refreshed) {
+      clearTokens();
+      markNeedsReauth("Dropbox session expired. Connect again to sync.");
+      throw new Error(`${context}: authentication expired (401)`);
+    }
+    refreshAuthState();
+    throw new Error(`${context}: authentication expired (401), retry`);
+  }
+
+  recordError(`${context}: ${detail}`);
+  throw err instanceof Error ? err : new Error(detail);
+}
+
 async function pushToDropbox(): Promise<boolean> {
   const dbx = getDropboxClient();
   if (!dbx) return false;
@@ -64,10 +109,25 @@ async function pushToDropbox(): Promise<boolean> {
       mode: { ".tag": "overwrite" },
       mute: true,
     });
-    await updateSyncMeta({ lastSyncedAt: Date.now() });
+    persistTokensFromClient(dbx);
+    const syncedAt = Date.now();
+    await updateSyncMeta({ lastSyncedAt: syncedAt });
+    recordSuccess("pushed", "Uploaded local changes to Dropbox", syncedAt);
     return true;
-  } catch (err) {
+  } catch (err: unknown) {
+    const status = getDropboxErrorStatus(err);
+    if (status === 401) {
+      try {
+        await handleAuthFailure(err, "Upload failed");
+      } catch (retryErr) {
+        if (retryErr instanceof Error && retryErr.message.includes("retry")) {
+          return pushToDropbox();
+        }
+        return false;
+      }
+    }
     console.error("Dropbox push failed:", err);
+    recordError(`Upload failed: ${getDropboxErrorMessage(err)}`);
     return false;
   }
 }
@@ -78,6 +138,7 @@ async function pullFromDropbox(): Promise<boolean> {
 
   try {
     const response = await dbx.filesDownload({ path: SYNC_FILE });
+    persistTokensFromClient(dbx);
     const blob = (response.result as unknown as { fileBlob: Blob }).fileBlob;
     const text = await blob.text();
     const remote: SyncPayload = JSON.parse(text);
@@ -85,36 +146,79 @@ async function pullFromDropbox(): Promise<boolean> {
     const meta = await getSyncMeta();
     if (remote.lastModifiedAt > meta.lastModifiedAt) {
       await applyPayload(remote);
+      const syncedAt = Date.now();
+      recordSuccess("pulled", "Downloaded newer data from Dropbox", syncedAt);
       return true;
     }
     return false;
   } catch (err: unknown) {
-    const dropboxError = err as { status?: number };
-    if (dropboxError.status === 409) {
+    const status = getDropboxErrorStatus(err);
+    if (status === 409) {
       return false;
     }
+    if (status === 401) {
+      try {
+        await handleAuthFailure(err, "Download failed");
+      } catch (retryErr) {
+        if (retryErr instanceof Error && retryErr.message.includes("retry")) {
+          return pullFromDropbox();
+        }
+        return false;
+      }
+    }
     console.error("Dropbox pull failed:", err);
+    recordError(`Download failed: ${getDropboxErrorMessage(err)}`);
     return false;
   }
 }
 
-async function sync(): Promise<boolean> {
-  if (!isAuthenticated()) return false;
-
-  const pulled = await pullFromDropbox();
-  if (!pulled) {
-    await pushToDropbox();
+async function sync(): Promise<SyncOutcome> {
+  if (!isAuthenticated()) {
+    recordError("Not connected to Dropbox");
+    return { pulled: false, pushed: false, dataChanged: false };
   }
-  return pulled;
+
+  beginSync();
+  try {
+    const pulled = await pullFromDropbox();
+    if (pulled) {
+      return { pulled: true, pushed: false, dataChanged: true };
+    }
+
+    const pushed = await pushToDropbox();
+    if (pushed) {
+      return { pulled: false, pushed: true, dataChanged: true };
+    }
+
+    if (lastResult() !== "error") {
+      recordSuccess("up_to_date", "Already up to date with Dropbox");
+    }
+    return { pulled: false, pushed: false, dataChanged: false };
+  } finally {
+    endOperation();
+  }
 }
 
 function schedulePush(): void {
   if (!isAuthenticated()) return;
   if (debounceTimer) clearTimeout(debounceTimer);
+  setPendingPushScheduled(true);
   debounceTimer = setTimeout(async () => {
-    await markLocalChange();
-    await pushToDropbox();
+    debounceTimer = null;
+    beginPush();
+    try {
+      await markLocalChange();
+      await pushToDropbox();
+    } finally {
+      endOperation();
+      setPendingPushScheduled(false);
+    }
   }, DEBOUNCE_MS);
+}
+
+async function loadSyncMetaIntoStore(): Promise<void> {
+  const meta = await getSyncMeta();
+  hydrateLastSyncedAt(meta.lastSyncedAt);
 }
 
 export {
@@ -124,5 +228,6 @@ export {
   schedulePush,
   markLocalChange,
   getSyncMeta,
+  loadSyncMetaIntoStore,
 };
-export type { SyncPayload };
+export type { SyncPayload, SyncOutcome };

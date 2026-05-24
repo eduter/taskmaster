@@ -1,4 +1,5 @@
 .sync-trigger {
+  position: relative;
   background: none;
   border: none;
   color: var(--text-muted);
@@ -9,6 +10,28 @@
 
 .sync-trigger:hover {
   color: var(--accent);
+}
+
+.sync-trigger--attention {
+  color: var(--warning);
+}
+
+.sync-trigger__badge {
+  position: absolute;
+  top: 2px;
+  right: 2px;
+  width: 7px;
+  height: 7px;
+  border-radius: 50%;
+  background: var(--warning);
+}
+
+.sync-trigger__badge--error {
+  background: var(--danger);
+}
+
+.sync-trigger__badge--pending {
+  background: var(--accent);
 }
 
 .sync-overlay {
@@ -89,10 +112,68 @@
   gap: var(--space-md);
 }
 
+.sync-panel__info {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-xs);
+}
+
 .sync-panel__status {
   font-size: 14px;
-  color: var(--success);
+  font-weight: 600;
+  color: var(--text-secondary);
   margin: 0;
+}
+
+.sync-panel__status--ok {
+  color: var(--success);
+}
+
+.sync-panel__status--error {
+  color: var(--danger);
+}
+
+.sync-panel__status--pending {
+  color: var(--warning);
+}
+
+.sync-panel__meta {
+  font-size: 12px;
+  color: var(--text-muted);
+  margin: 0;
+}
+
+.sync-panel__activity {
+  font-size: 13px;
+  color: var(--warning);
+  margin: 0;
+}
+
+.sync-panel__result {
+  font-size: 13px;
+  margin: 0;
+  color: var(--text-secondary);
+}
+
+.sync-panel__result--ok {
+  color: var(--success);
+}
+
+.sync-panel__result--error {
+  color: var(--danger);
+}
+
+.sync-panel__btn-text {
+  align-self: flex-start;
+  background: none;
+  border: none;
+  color: var(--text-muted);
+  font-size: 13px;
+  padding: 0;
+}
+
+.sync-panel__btn-text:hover {
+  color: var(--danger);
 }
 
 .sync-panel__actions {

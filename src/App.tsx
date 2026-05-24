@@ -3,21 +3,29 @@ import { today, invalidateTasks } from "./stores/taskStore.ts";
 import { setShowGeneratorList, invalidateGenerators } from "./stores/generatorStore.ts";
 import { runGenerators } from "./scheduling/generate.ts";
 import { handleAuthRedirect } from "./sync/dropboxAuth.ts";
-import { sync, markLocalChange, pushToDropbox } from "./sync/syncEngine.ts";
+import { sync, markLocalChange, pushToDropbox, loadSyncMetaIntoStore } from "./sync/syncEngine.ts";
+import { markConnected, refreshAuthState } from "./stores/syncStore.ts";
 import { AddTask } from "./components/AddTask.tsx";
 import { TaskList } from "./components/TaskList.tsx";
 import { TaskDetail } from "./components/TaskDetail.tsx";
 import { GeneratorList } from "./components/GeneratorList.tsx";
 import { SyncSettings } from "./components/SyncSettings.tsx";
 import { OfflineIndicator } from "./components/OfflineIndicator.tsx";
+import { SyncStatusBar } from "./components/SyncStatusBar.tsx";
 import { InstallPrompt } from "./components/InstallPrompt.tsx";
 import "./App.css";
 
 function App() {
   onMount(async () => {
-    await handleAuthRedirect();
-    const pulled = await sync();
-    if (pulled) {
+    const authed = await handleAuthRedirect();
+    if (authed) {
+      markConnected();
+    }
+    refreshAuthState();
+    await loadSyncMetaIntoStore();
+
+    const outcome = await sync();
+    if (outcome.dataChanged) {
       invalidateTasks({ push: false });
       invalidateGenerators({ push: false });
     }
@@ -46,6 +54,7 @@ function App() {
       <TaskList />
       <TaskDetail />
       <GeneratorList />
+      <SyncStatusBar />
       <OfflineIndicator />
       <InstallPrompt />
     </div>
