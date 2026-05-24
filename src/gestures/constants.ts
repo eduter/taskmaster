@@ -17,7 +17,7 @@ const TAP_MAX_PX_TOUCH = 24;
 const SWIPE_HORIZONTAL_DOMINANCE = 1.5;
 
 /** Width of the delete action strip behind the card. */
-const REVEAL_WIDTH_PX = 72;
+const REVEAL_WIDTH_PX = 40;
 
 /** Swipe-left release opens delete when past this fraction of reveal width. */
 const REVEAL_OPEN_RATIO = 0.45;

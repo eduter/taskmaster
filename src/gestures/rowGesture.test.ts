@@ -9,7 +9,7 @@ const config: RowGestureConfig = {
   axisLockPx: 10,
   tapMaxMs: 350,
   tapMaxPx: 12,
-  revealWidthPx: 72,
+  revealWidthPx: 40,
   revealOpenRatio: 0.45,
   checkCompleteRatio: 0.55,
   swipeHorizontalDominance: 1.5,

@@ -10,7 +10,6 @@
   display: flex;
   align-items: stretch;
   justify-content: flex-end;
-  padding-right: var(--space-md);
   pointer-events: none;
 }
 
@@ -24,8 +23,8 @@
   display: flex;
   align-items: center;
   justify-content: center;
-  width: 48px;
-  height: 48px;
+  width: 38px;
+  height: 38px;
   margin: 0;
   padding: 0;
   border: none;

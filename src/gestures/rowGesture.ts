@@ -58,7 +58,7 @@ interface RowGestureResult {
 
 function createInitialRowGestureState(
   initial?: Partial<Pick<RowGestureState, "deleteRevealed" | "cardWidth">>,
-  revealWidthPx = 72,
+  revealWidthPx = 40,
 ): RowGestureState {
   const deleteRevealed = initial?.deleteRevealed ?? false;
   return {
