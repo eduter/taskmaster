@@ -74,12 +74,11 @@ body {
   flex-direction: column;
 }
 
-/* Prevent page scroll while long-pressing / dragging a task row. */
+/* Prevent page scroll while dragging a task row (keep touch-action so PTR still works when unlocked). */
 html.task-gesture-scroll-lock,
 body.task-gesture-scroll-lock {
   overflow: hidden;
   overscroll-behavior: none;
-  touch-action: none;
   user-select: none;
   -webkit-user-select: none;
 }

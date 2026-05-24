@@ -47,9 +47,7 @@
 
 .task-row__surface {
   position: relative;
-  /* Must be none at touchstart — pan-y lets the browser claim vertical pan before
-     Solid applies --drag-pending, which breaks pure-vertical sort drags (pointercancel). */
-  touch-action: none;
+  touch-action: pan-y;
   transition: transform var(--transition-fast);
   will-change: transform;
   user-select: none;

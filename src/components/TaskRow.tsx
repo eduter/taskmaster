@@ -42,7 +42,7 @@ interface TaskRowProps {
 const MOUSE_DRAG_VERTICAL_PX = 14;
 const TAP_SUPPRESS_AFTER_DRAG_MS = 350;
 
-const TOUCH_LISTENER_OPTIONS: AddEventListenerOptions = { passive: false, capture: true };
+const DOCUMENT_POINTER_OPTIONS: AddEventListenerOptions = { passive: false, capture: true };
 
 function nowMs(): number {
   return Date.now();
@@ -57,7 +57,7 @@ function TaskRow(props: TaskRowProps) {
   let scrollLockTimer: ReturnType<typeof setTimeout> | undefined;
   let interactionConsumed = false;
   let lastPointerType: string = "touch";
-  let activeTouchPointerId: number | null = null;
+  let activePointerId: number | null = null;
   let suppressTapUntil = 0;
   let lastClientX = 0;
   let lastClientY = 0;
@@ -119,11 +119,18 @@ function TaskRow(props: TaskRowProps) {
     unlockGestureScroll();
   }
 
-  function detachTouchDocumentListeners() {
+  function detachDocumentPointerListeners() {
     document.removeEventListener("pointermove", onDocumentPointerMove, true);
     document.removeEventListener("pointerup", onDocumentPointerEnd, true);
     document.removeEventListener("pointercancel", onDocumentPointerEnd, true);
-    activeTouchPointerId = null;
+    activePointerId = null;
+  }
+
+  function attachDocumentPointerListeners(pointerId: number) {
+    activePointerId = pointerId;
+    document.addEventListener("pointermove", onDocumentPointerMove, DOCUMENT_POINTER_OPTIONS);
+    document.addEventListener("pointerup", onDocumentPointerEnd, DOCUMENT_POINTER_OPTIONS);
+    document.addEventListener("pointercancel", onDocumentPointerEnd, DOCUMENT_POINTER_OPTIONS);
   }
 
   function markInteractionConsumed() {
@@ -193,14 +200,26 @@ function TaskRow(props: TaskRowProps) {
     return gesture().phase === "dragging" || touchDrag.isDragging();
   }
 
-  function shouldPreventTouchScroll(g: RowGestureState): boolean {
-    return (
-      g.phase === "pending" ||
+  function shouldPreventTouchScroll(
+    g: RowGestureState,
+    dx: number,
+    dy: number,
+  ): boolean {
+    if (
       g.phase === "dragging" ||
       g.phase === "reveal-pull" ||
       g.phase === "reveal-close" ||
       g.phase === "check-stroke"
-    );
+    ) {
+      return true;
+    }
+    if (g.phase === "pending") {
+      const absX = Math.abs(dx);
+      const absY = Math.abs(dy);
+      if (absY > absX && absY >= AXIS_LOCK_PX) return false;
+      return true;
+    }
+    return false;
   }
 
   function handlePointerMove(event: PointerEvent) {
@@ -215,13 +234,21 @@ function TaskRow(props: TaskRowProps) {
       return;
     }
 
-    if (event.pointerType === "touch" && shouldPreventTouchScroll(g)) {
+    const dx = event.clientX - g.startX;
+    const dy = event.clientY - g.startY;
+
+    if (g.phase === "pending" && event.pointerType === "touch") {
+      const absX = Math.abs(dx);
+      const absY = Math.abs(dy);
+      if (absY > absX && absY >= AXIS_LOCK_PX) {
+        clearLongPress();
+      }
+    }
+
+    if (event.pointerType === "touch" && shouldPreventTouchScroll(g, dx, dy)) {
       event.preventDefault();
       event.stopPropagation();
     }
-
-    const dx = event.clientX - g.startX;
-    const dy = event.clientY - g.startY;
 
     if (g.phase === "pending" && event.pointerType === "mouse") {
       const axis = resolveAxis(dx, dy, AXIS_LOCK_PX);
@@ -274,15 +301,15 @@ function TaskRow(props: TaskRowProps) {
   }
 
   function onDocumentPointerMove(event: PointerEvent) {
-    if (event.pointerId !== activeTouchPointerId) return;
+    if (event.pointerId !== activePointerId) return;
     handlePointerMove(event);
   }
 
   function onDocumentPointerEnd(event: PointerEvent) {
-    if (event.pointerId !== activeTouchPointerId) return;
+    if (event.pointerId !== activePointerId) return;
     event.preventDefault();
     event.stopPropagation();
-    detachTouchDocumentListeners();
+    detachDocumentPointerListeners();
     handlePointerUp(event);
   }
 
@@ -316,32 +343,21 @@ function TaskRow(props: TaskRowProps) {
     clearLongPress();
     clearScrollLockTimer();
 
-    if (event.pointerType === "touch") {
-      activeTouchPointerId = event.pointerId;
-      document.addEventListener("pointermove", onDocumentPointerMove, TOUCH_LISTENER_OPTIONS);
-      document.addEventListener("pointerup", onDocumentPointerEnd, TOUCH_LISTENER_OPTIONS);
-      document.addEventListener("pointercancel", onDocumentPointerEnd, TOUCH_LISTENER_OPTIONS);
+    attachDocumentPointerListeners(event.pointerId);
+
+    if (event.pointerType === "mouse") {
+      scrollLockTimer = setTimeout(() => {
+        if (gesture().phase === "pending") {
+          lockGestureScroll();
+        }
+      }, SCROLL_LOCK_DELAY_MS);
     }
 
-    scrollLockTimer = setTimeout(() => {
-      if (gesture().phase === "pending") {
-        lockGestureScroll();
-      }
-    }, SCROLL_LOCK_DELAY_MS);
-
-    longPressTimer = setTimeout(() => {
-      startDragAt(lastClientX, lastClientY);
-    }, LONG_PRESS_MS);
-  }
-
-  function handleSurfacePointerMove(event: PointerEvent) {
-    if (event.pointerType === "touch") return;
-    handlePointerMove(event);
-  }
-
-  function handleSurfacePointerUp(event: PointerEvent) {
-    if (event.pointerType === "touch") return;
-    handlePointerUp(event);
+    if (event.pointerType === "touch") {
+      longPressTimer = setTimeout(() => {
+        startDragAt(lastClientX, lastClientY);
+      }, LONG_PRESS_MS);
+    }
   }
 
   function handleSurfaceClick(event: MouseEvent) {
@@ -392,7 +408,7 @@ function TaskRow(props: TaskRowProps) {
   onCleanup(() => {
     clearLongPress();
     releaseScrollLock();
-    detachTouchDocumentListeners();
+    detachDocumentPointerListeners();
     if (touchDrag.isDragging() && isDraggingThis()) {
       touchDrag.endDragIfActive();
     }
@@ -441,9 +457,6 @@ function TaskRow(props: TaskRowProps) {
           }}
           style={{ transform: surfaceTransform() }}
           onPointerDown={handlePointerDown}
-          onPointerMove={handleSurfacePointerMove}
-          onPointerUp={handleSurfacePointerUp}
-          onPointerCancel={handleSurfacePointerUp}
           onClick={handleSurfaceClick}
         >
           <TaskCard
