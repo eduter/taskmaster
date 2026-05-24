@@ -110,6 +110,13 @@ describe("reduceRowGesture", () => {
     expect(state.phase).toBe("pending");
   });
 
+  it("stays pending on vertical movement while waiting to drag", () => {
+    let state = createInitialRowGestureState();
+    ({ state } = down(state));
+    ({ state } = move(state, 0, 30, 50));
+    expect(state.phase).toBe("pending");
+  });
+
   it("emits MARK_COMPLETE when stroke passes threshold", () => {
     let state = createInitialRowGestureState();
     let effects;

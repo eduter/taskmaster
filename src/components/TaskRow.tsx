@@ -59,6 +59,8 @@ function TaskRow(props: TaskRowProps) {
   let lastPointerType: string = "touch";
   let activeTouchPointerId: number | null = null;
   let suppressTapUntil = 0;
+  let lastClientX = 0;
+  let lastClientY = 0;
   let gestureConfig: RowGestureConfig = buildGestureConfig(TAP_MAX_PX_TOUCH);
 
   function buildGestureConfig(tapMaxPx: number): RowGestureConfig {
@@ -202,6 +204,8 @@ function TaskRow(props: TaskRowProps) {
   }
 
   function handlePointerMove(event: PointerEvent) {
+    lastClientX = event.clientX;
+    lastClientY = event.clientY;
     const g = gesture();
 
     if (isActiveDrag()) {
@@ -245,7 +249,6 @@ function TaskRow(props: TaskRowProps) {
 
   function handlePointerUp(event: PointerEvent) {
     clearLongPress();
-    releaseScrollLock();
 
     if (isActiveDrag()) {
       event.preventDefault();
@@ -254,6 +257,8 @@ function TaskRow(props: TaskRowProps) {
       suppressTapUntil = nowMs() + TAP_SUPPRESS_AFTER_DRAG_MS;
       return;
     }
+
+    releaseScrollLock();
 
     if (nowMs() < suppressTapUntil) {
       event.preventDefault();
@@ -306,8 +311,8 @@ function TaskRow(props: TaskRowProps) {
       event.clientY,
     );
 
-    const startX = event.clientX;
-    const startY = event.clientY;
+    lastClientX = event.clientX;
+    lastClientY = event.clientY;
     clearLongPress();
     clearScrollLockTimer();
 
@@ -325,7 +330,7 @@ function TaskRow(props: TaskRowProps) {
     }, SCROLL_LOCK_DELAY_MS);
 
     longPressTimer = setTimeout(() => {
-      startDragAt(startX, startY);
+      startDragAt(lastClientX, lastClientY);
     }, LONG_PRESS_MS);
   }
 
