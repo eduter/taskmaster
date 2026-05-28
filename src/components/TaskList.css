@@ -1,33 +1,33 @@
 .task-list {
-  flex: 1;
-  padding: 0 var(--space-md);
+    flex: 1;
+    padding: 0 var(--space-md);
 }
 
 .task-list__items {
-  display: flex;
-  flex-direction: column;
-  gap: var(--space-sm);
+    display: flex;
+    flex-direction: column;
+    gap: var(--space-sm);
 }
 
 .task-list__items--dragging .task-list__item:not(.task-list__item--placeholder) {
-  transition: transform var(--transition-fast);
+    transition: transform var(--transition-fast);
 }
 
 .task-list__item--dragging {
-  z-index: 10;
-  transition: none;
+    z-index: 10;
+    transition: none;
 }
 
 .task-list__item--placeholder {
-  z-index: 10;
+    z-index: 10;
 }
 
 .task-list__item--placeholder .task-row__delete-slot {
-  visibility: hidden;
+    visibility: hidden;
 }
 
 .task-list__empty {
-  text-align: center;
-  color: var(--text-muted);
-  padding: var(--space-xl) 0;
+    text-align: center;
+    color: var(--text-muted);
+    padding: var(--space-xl) 0;
 }

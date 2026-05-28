@@ -1,44 +1,44 @@
 .add-task {
-  display: flex;
-  gap: var(--space-sm);
-  padding: var(--space-md);
+    display: flex;
+    gap: var(--space-sm);
+    padding: var(--space-md);
 }
 
 .add-task__input {
-  flex: 1;
-  padding: var(--space-sm) var(--space-md);
-  border-radius: var(--radius-md);
-  border: 1px solid var(--border);
-  background: var(--bg-input);
-  color: var(--text-primary);
-  outline: none;
-  transition: border-color var(--transition-fast);
+    flex: 1;
+    padding: var(--space-sm) var(--space-md);
+    border-radius: var(--radius-md);
+    border: 1px solid var(--border);
+    background: var(--bg-input);
+    color: var(--text-primary);
+    outline: none;
+    transition: border-color var(--transition-fast);
 }
 
 .add-task__input::placeholder {
-  color: var(--text-muted);
+    color: var(--text-muted);
 }
 
 .add-task__input:focus {
-  border-color: var(--accent);
+    border-color: var(--accent);
 }
 
 .add-task__btn {
-  padding: var(--space-sm) var(--space-md);
-  border-radius: var(--radius-md);
-  border: none;
-  background: var(--accent);
-  color: #fff;
-  font-weight: 600;
-  font-size: 14px;
-  transition: background var(--transition-fast);
+    padding: var(--space-sm) var(--space-md);
+    border-radius: var(--radius-md);
+    border: none;
+    background: var(--accent);
+    color: #fff;
+    font-weight: 600;
+    font-size: 14px;
+    transition: background var(--transition-fast);
 }
 
 .add-task__btn:hover:not(:disabled) {
-  background: var(--accent-hover);
+    background: var(--accent-hover);
 }
 
 .add-task__btn:disabled {
-  opacity: 0.4;
-  cursor: default;
+    opacity: 0.4;
+    cursor: default;
 }

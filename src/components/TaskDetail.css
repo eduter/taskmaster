@@ -1,176 +1,176 @@
 .task-detail-overlay {
-  position: fixed;
-  inset: 0;
-  background: rgba(0, 0, 0, 0.6);
-  display: flex;
-  align-items: flex-end;
-  justify-content: center;
-  z-index: 100;
+    position: fixed;
+    inset: 0;
+    background: rgba(0, 0, 0, 0.6);
+    display: flex;
+    align-items: flex-end;
+    justify-content: center;
+    z-index: 100;
 }
 
 .task-detail {
-  width: 100%;
-  max-width: 600px;
-  max-height: 85dvh;
-  overflow-y: auto;
-  background: var(--bg-secondary);
-  border-radius: var(--radius-lg) var(--radius-lg) 0 0;
-  padding: var(--space-lg);
-  display: flex;
-  flex-direction: column;
-  gap: var(--space-md);
+    width: 100%;
+    max-width: 600px;
+    max-height: 85dvh;
+    overflow-y: auto;
+    background: var(--bg-secondary);
+    border-radius: var(--radius-lg) var(--radius-lg) 0 0;
+    padding: var(--space-lg);
+    display: flex;
+    flex-direction: column;
+    gap: var(--space-md);
 }
 
 .task-detail__header {
-  display: flex;
-  justify-content: space-between;
-  align-items: center;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
 }
 
 .task-detail__title {
-  margin: 0;
-  font-size: 18px;
-  font-weight: 600;
-  color: var(--text-heading);
+    margin: 0;
+    font-size: 18px;
+    font-weight: 600;
+    color: var(--text-heading);
 }
 
 .task-detail__close {
-  background: none;
-  border: none;
-  color: var(--text-muted);
-  font-size: 24px;
-  line-height: 1;
-  padding: 0 var(--space-xs);
+    background: none;
+    border: none;
+    color: var(--text-muted);
+    font-size: 24px;
+    line-height: 1;
+    padding: 0 var(--space-xs);
 }
 
 .task-detail__close:hover {
-  color: var(--text-primary);
+    color: var(--text-primary);
 }
 
 .task-detail__field {
-  display: flex;
-  flex-direction: column;
-  gap: var(--space-xs);
+    display: flex;
+    flex-direction: column;
+    gap: var(--space-xs);
 }
 
 .task-detail__label {
-  font-size: 13px;
-  font-weight: 600;
-  color: var(--text-secondary);
-  text-transform: uppercase;
-  letter-spacing: 0.5px;
+    font-size: 13px;
+    font-weight: 600;
+    color: var(--text-secondary);
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
 }
 
 .task-detail__input {
-  padding: var(--space-sm) var(--space-md);
-  border-radius: var(--radius-md);
-  border: 1px solid var(--border);
-  background: var(--bg-input);
-  color: var(--text-primary);
-  outline: none;
+    padding: var(--space-sm) var(--space-md);
+    border-radius: var(--radius-md);
+    border: 1px solid var(--border);
+    background: var(--bg-input);
+    color: var(--text-primary);
+    outline: none;
 }
 
 .task-detail__input:focus {
-  border-color: var(--accent);
+    border-color: var(--accent);
 }
 
 .task-detail__textarea {
-  padding: var(--space-sm) var(--space-md);
-  border-radius: var(--radius-md);
-  border: 1px solid var(--border);
-  background: var(--bg-input);
-  color: var(--text-primary);
-  outline: none;
-  resize: vertical;
-  min-height: 80px;
+    padding: var(--space-sm) var(--space-md);
+    border-radius: var(--radius-md);
+    border: 1px solid var(--border);
+    background: var(--bg-input);
+    color: var(--text-primary);
+    outline: none;
+    resize: vertical;
+    min-height: 80px;
 }
 
 .task-detail__textarea:focus {
-  border-color: var(--accent);
+    border-color: var(--accent);
 }
 
 .task-detail__labels {
-  display: flex;
-  flex-wrap: wrap;
-  gap: var(--space-xs);
+    display: flex;
+    flex-wrap: wrap;
+    gap: var(--space-xs);
 }
 
 .task-detail__label-tag {
-  display: inline-flex;
-  align-items: center;
-  gap: 2px;
-  font-size: 12px;
-  padding: 2px 8px;
-  border-radius: var(--radius-sm);
-  background: var(--accent-subtle);
-  color: var(--accent);
+    display: inline-flex;
+    align-items: center;
+    gap: 2px;
+    font-size: 12px;
+    padding: 2px 8px;
+    border-radius: var(--radius-sm);
+    background: var(--accent-subtle);
+    color: var(--accent);
 }
 
 .task-detail__label-remove {
-  background: none;
-  border: none;
-  color: inherit;
-  font-size: 14px;
-  padding: 0 2px;
-  line-height: 1;
-  opacity: 0.7;
+    background: none;
+    border: none;
+    color: inherit;
+    font-size: 14px;
+    padding: 0 2px;
+    line-height: 1;
+    opacity: 0.7;
 }
 
 .task-detail__label-remove:hover {
-  opacity: 1;
+    opacity: 1;
 }
 
 .task-detail__label-add {
-  display: flex;
-  gap: var(--space-sm);
+    display: flex;
+    gap: var(--space-sm);
 }
 
 .task-detail__actions {
-  display: flex;
-  gap: var(--space-sm);
-  padding-top: var(--space-sm);
+    display: flex;
+    gap: var(--space-sm);
+    padding-top: var(--space-sm);
 }
 
 .task-detail__btn-primary {
-  flex: 1;
-  padding: var(--space-sm) var(--space-md);
-  border-radius: var(--radius-md);
-  border: none;
-  background: var(--accent);
-  color: #fff;
-  font-weight: 600;
-  font-size: 14px;
-  transition: background var(--transition-fast);
+    flex: 1;
+    padding: var(--space-sm) var(--space-md);
+    border-radius: var(--radius-md);
+    border: none;
+    background: var(--accent);
+    color: #fff;
+    font-weight: 600;
+    font-size: 14px;
+    transition: background var(--transition-fast);
 }
 
 .task-detail__btn-primary:hover {
-  background: var(--accent-hover);
+    background: var(--accent-hover);
 }
 
 .task-detail__btn-secondary {
-  padding: var(--space-sm) var(--space-md);
-  border-radius: var(--radius-md);
-  border: 1px solid var(--border);
-  background: transparent;
-  color: var(--text-secondary);
-  font-size: 14px;
-  transition: background var(--transition-fast);
+    padding: var(--space-sm) var(--space-md);
+    border-radius: var(--radius-md);
+    border: 1px solid var(--border);
+    background: transparent;
+    color: var(--text-secondary);
+    font-size: 14px;
+    transition: background var(--transition-fast);
 }
 
 .task-detail__btn-secondary:hover {
-  background: var(--bg-surface-hover);
+    background: var(--bg-surface-hover);
 }
 
 .task-detail__btn-danger {
-  padding: var(--space-sm) var(--space-md);
-  border-radius: var(--radius-md);
-  border: 1px solid var(--danger-subtle);
-  background: transparent;
-  color: var(--danger);
-  font-size: 14px;
-  transition: background var(--transition-fast);
+    padding: var(--space-sm) var(--space-md);
+    border-radius: var(--radius-md);
+    border: 1px solid var(--danger-subtle);
+    background: transparent;
+    color: var(--danger);
+    font-size: 14px;
+    transition: background var(--transition-fast);
 }
 
 .task-detail__btn-danger:hover {
-  background: var(--danger-subtle);
+    background: var(--danger-subtle);
 }

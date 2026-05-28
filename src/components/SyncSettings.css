@@ -1,215 +1,215 @@
 .sync-trigger {
-  position: relative;
-  background: none;
-  border: none;
-  color: var(--text-muted);
-  padding: var(--space-xs);
-  border-radius: var(--radius-sm);
-  transition: color var(--transition-fast);
+    position: relative;
+    background: none;
+    border: none;
+    color: var(--text-muted);
+    padding: var(--space-xs);
+    border-radius: var(--radius-sm);
+    transition: color var(--transition-fast);
 }
 
 .sync-trigger:hover {
-  color: var(--accent);
+    color: var(--accent);
 }
 
 .sync-trigger--attention {
-  color: var(--warning);
+    color: var(--warning);
 }
 
 .sync-trigger__badge {
-  position: absolute;
-  top: 2px;
-  right: 2px;
-  width: 7px;
-  height: 7px;
-  border-radius: 50%;
-  background: var(--warning);
+    position: absolute;
+    top: 2px;
+    right: 2px;
+    width: 7px;
+    height: 7px;
+    border-radius: 50%;
+    background: var(--warning);
 }
 
 .sync-trigger__badge--error {
-  background: var(--danger);
+    background: var(--danger);
 }
 
 .sync-trigger__badge--pending {
-  background: var(--accent);
+    background: var(--accent);
 }
 
 .sync-overlay {
-  position: fixed;
-  inset: 0;
-  background: rgba(0, 0, 0, 0.6);
-  display: flex;
-  align-items: flex-end;
-  justify-content: center;
-  z-index: 100;
+    position: fixed;
+    inset: 0;
+    background: rgba(0, 0, 0, 0.6);
+    display: flex;
+    align-items: flex-end;
+    justify-content: center;
+    z-index: 100;
 }
 
 .sync-panel {
-  width: 100%;
-  max-width: 600px;
-  background: var(--bg-secondary);
-  border-radius: var(--radius-lg) var(--radius-lg) 0 0;
-  padding: var(--space-lg);
-  display: flex;
-  flex-direction: column;
-  gap: var(--space-md);
+    width: 100%;
+    max-width: 600px;
+    background: var(--bg-secondary);
+    border-radius: var(--radius-lg) var(--radius-lg) 0 0;
+    padding: var(--space-lg);
+    display: flex;
+    flex-direction: column;
+    gap: var(--space-md);
 }
 
 .sync-panel__header {
-  display: flex;
-  justify-content: space-between;
-  align-items: center;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
 }
 
 .sync-panel__title {
-  margin: 0;
-  font-size: 18px;
-  font-weight: 600;
-  color: var(--text-heading);
+    margin: 0;
+    font-size: 18px;
+    font-weight: 600;
+    color: var(--text-heading);
 }
 
 .sync-panel__close {
-  background: none;
-  border: none;
-  color: var(--text-muted);
-  font-size: 24px;
-  line-height: 1;
-  padding: 0 var(--space-xs);
+    background: none;
+    border: none;
+    color: var(--text-muted);
+    font-size: 24px;
+    line-height: 1;
+    padding: 0 var(--space-xs);
 }
 
 .sync-panel__close:hover {
-  color: var(--text-primary);
+    color: var(--text-primary);
 }
 
 .sync-panel__connect {
-  display: flex;
-  flex-direction: column;
-  gap: var(--space-sm);
+    display: flex;
+    flex-direction: column;
+    gap: var(--space-sm);
 }
 
 .sync-panel__text {
-  font-size: 14px;
-  color: var(--text-secondary);
-  margin: 0;
+    font-size: 14px;
+    color: var(--text-secondary);
+    margin: 0;
 }
 
 .sync-panel__input {
-  padding: var(--space-sm) var(--space-md);
-  border-radius: var(--radius-md);
-  border: 1px solid var(--border);
-  background: var(--bg-input);
-  color: var(--text-primary);
-  outline: none;
+    padding: var(--space-sm) var(--space-md);
+    border-radius: var(--radius-md);
+    border: 1px solid var(--border);
+    background: var(--bg-input);
+    color: var(--text-primary);
+    outline: none;
 }
 
 .sync-panel__input:focus {
-  border-color: var(--accent);
+    border-color: var(--accent);
 }
 
 .sync-panel__connected {
-  display: flex;
-  flex-direction: column;
-  gap: var(--space-md);
+    display: flex;
+    flex-direction: column;
+    gap: var(--space-md);
 }
 
 .sync-panel__info {
-  display: flex;
-  flex-direction: column;
-  gap: var(--space-xs);
+    display: flex;
+    flex-direction: column;
+    gap: var(--space-xs);
 }
 
 .sync-panel__status {
-  font-size: 14px;
-  font-weight: 600;
-  color: var(--text-secondary);
-  margin: 0;
+    font-size: 14px;
+    font-weight: 600;
+    color: var(--text-secondary);
+    margin: 0;
 }
 
 .sync-panel__status--ok {
-  color: var(--success);
+    color: var(--success);
 }
 
 .sync-panel__status--error {
-  color: var(--danger);
+    color: var(--danger);
 }
 
 .sync-panel__status--pending {
-  color: var(--warning);
+    color: var(--warning);
 }
 
 .sync-panel__meta {
-  font-size: 12px;
-  color: var(--text-muted);
-  margin: 0;
+    font-size: 12px;
+    color: var(--text-muted);
+    margin: 0;
 }
 
 .sync-panel__activity {
-  font-size: 13px;
-  color: var(--warning);
-  margin: 0;
+    font-size: 13px;
+    color: var(--warning);
+    margin: 0;
 }
 
 .sync-panel__result {
-  font-size: 13px;
-  margin: 0;
-  color: var(--text-secondary);
+    font-size: 13px;
+    margin: 0;
+    color: var(--text-secondary);
 }
 
 .sync-panel__result--ok {
-  color: var(--success);
+    color: var(--success);
 }
 
 .sync-panel__result--error {
-  color: var(--danger);
+    color: var(--danger);
 }
 
 .sync-panel__btn-text {
-  align-self: flex-start;
-  background: none;
-  border: none;
-  color: var(--text-muted);
-  font-size: 13px;
-  padding: 0;
+    align-self: flex-start;
+    background: none;
+    border: none;
+    color: var(--text-muted);
+    font-size: 13px;
+    padding: 0;
 }
 
 .sync-panel__btn-text:hover {
-  color: var(--danger);
+    color: var(--danger);
 }
 
 .sync-panel__actions {
-  display: flex;
-  gap: var(--space-sm);
+    display: flex;
+    gap: var(--space-sm);
 }
 
 .sync-panel__btn-primary {
-  flex: 1;
-  padding: var(--space-sm) var(--space-md);
-  border-radius: var(--radius-md);
-  border: none;
-  background: var(--accent);
-  color: #fff;
-  font-weight: 600;
-  font-size: 14px;
+    flex: 1;
+    padding: var(--space-sm) var(--space-md);
+    border-radius: var(--radius-md);
+    border: none;
+    background: var(--accent);
+    color: #fff;
+    font-weight: 600;
+    font-size: 14px;
 }
 
 .sync-panel__btn-primary:hover:not(:disabled) {
-  background: var(--accent-hover);
+    background: var(--accent-hover);
 }
 
 .sync-panel__btn-primary:disabled {
-  opacity: 0.5;
-  cursor: default;
+    opacity: 0.5;
+    cursor: default;
 }
 
 .sync-panel__btn-danger {
-  padding: var(--space-sm) var(--space-md);
-  border-radius: var(--radius-md);
-  border: 1px solid var(--danger-subtle);
-  background: transparent;
-  color: var(--danger);
-  font-size: 14px;
+    padding: var(--space-sm) var(--space-md);
+    border-radius: var(--radius-md);
+    border: 1px solid var(--danger-subtle);
+    background: transparent;
+    color: var(--danger);
+    font-size: 14px;
 }
 
 .sync-panel__btn-danger:hover {
-  background: var(--danger-subtle);
+    background: var(--danger-subtle);
 }

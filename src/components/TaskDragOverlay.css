@@ -1,12 +1,12 @@
 .task-drag-overlay {
-  z-index: 50;
-  box-shadow: var(--shadow-lg);
-  border-radius: var(--radius-md);
-  pointer-events: none;
-  box-sizing: border-box;
+    z-index: 50;
+    box-shadow: var(--shadow-lg);
+    border-radius: var(--radius-md);
+    pointer-events: none;
+    box-sizing: border-box;
 }
 
 .task-drag-overlay__card {
-  border-radius: var(--radius-md);
-  width: 100%;
+    border-radius: var(--radius-md);
+    width: 100%;
 }

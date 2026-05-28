@@ -1,24 +1,24 @@
 .sync-status-bar {
-  position: fixed;
-  bottom: 0;
-  left: 0;
-  right: 0;
-  width: 100%;
-  border: none;
-  background: var(--danger-subtle);
-  color: var(--danger);
-  text-align: center;
-  padding: var(--space-xs) var(--space-md);
-  font-size: 13px;
-  font-weight: 600;
-  z-index: 199;
-  font-family: inherit;
-  user-select: none;
-  -webkit-user-select: none;
-  -webkit-touch-callout: none;
+    position: fixed;
+    bottom: 0;
+    left: 0;
+    right: 0;
+    width: 100%;
+    border: none;
+    background: var(--danger-subtle);
+    color: var(--danger);
+    text-align: center;
+    padding: var(--space-xs) var(--space-md);
+    font-size: 13px;
+    font-weight: 600;
+    z-index: 199;
+    font-family: inherit;
+    user-select: none;
+    -webkit-user-select: none;
+    -webkit-touch-callout: none;
 }
 
 .sync-status-bar--error {
-  background: var(--danger-subtle);
-  color: var(--danger);
+    background: var(--danger-subtle);
+    color: var(--danger);
 }

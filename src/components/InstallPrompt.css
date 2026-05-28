@@ -1,51 +1,51 @@
 .install-banner {
-  position: fixed;
-  bottom: 0;
-  left: 0;
-  right: 0;
-  display: flex;
-  align-items: center;
-  justify-content: space-between;
-  padding: var(--space-sm) var(--space-md);
-  background: var(--bg-secondary);
-  border-top: 1px solid var(--accent);
-  z-index: 200;
+    position: fixed;
+    bottom: 0;
+    left: 0;
+    right: 0;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    padding: var(--space-sm) var(--space-md);
+    background: var(--bg-secondary);
+    border-top: 1px solid var(--accent);
+    z-index: 200;
 }
 
 .install-banner__text {
-  font-size: 14px;
-  color: var(--text-primary);
+    font-size: 14px;
+    color: var(--text-primary);
 }
 
 .install-banner__actions {
-  display: flex;
-  align-items: center;
-  gap: var(--space-sm);
+    display: flex;
+    align-items: center;
+    gap: var(--space-sm);
 }
 
 .install-banner__btn {
-  padding: var(--space-xs) var(--space-md);
-  border-radius: var(--radius-md);
-  border: none;
-  background: var(--accent);
-  color: #fff;
-  font-weight: 600;
-  font-size: 13px;
+    padding: var(--space-xs) var(--space-md);
+    border-radius: var(--radius-md);
+    border: none;
+    background: var(--accent);
+    color: #fff;
+    font-weight: 600;
+    font-size: 13px;
 }
 
 .install-banner__btn:hover {
-  background: var(--accent-hover);
+    background: var(--accent-hover);
 }
 
 .install-banner__dismiss {
-  background: none;
-  border: none;
-  color: var(--text-muted);
-  font-size: 20px;
-  line-height: 1;
-  padding: 0 var(--space-xs);
+    background: none;
+    border: none;
+    color: var(--text-muted);
+    font-size: 20px;
+    line-height: 1;
+    padding: 0 var(--space-xs);
 }
 
 .install-banner__dismiss:hover {
-  color: var(--text-primary);
+    color: var(--text-primary);
 }

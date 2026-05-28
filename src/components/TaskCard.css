@@ -1,93 +1,93 @@
 .task-card {
-  display: flex;
-  align-items: flex-start;
-  gap: var(--space-sm);
-  padding: var(--space-sm) var(--space-md);
-  border-radius: var(--radius-md);
-  background: var(--bg-surface);
-  transition: background var(--transition-fast);
-  user-select: none;
+    display: flex;
+    align-items: flex-start;
+    gap: var(--space-sm);
+    padding: var(--space-sm) var(--space-md);
+    border-radius: var(--radius-md);
+    background: var(--bg-surface);
+    transition: background var(--transition-fast);
+    user-select: none;
 }
 
 .task-card:hover {
-  background: var(--bg-surface-hover);
+    background: var(--bg-surface-hover);
 }
 
 .task-card--completed {
-  background: var(--bg-surface-completed);
+    background: var(--bg-surface-completed);
 }
 
 .task-card--carried {
-  border-left: 3px solid var(--warning);
+    border-left: 3px solid var(--warning);
 }
 
 .task-card__check {
-  flex-shrink: 0;
-  width: 22px;
-  height: 22px;
-  border-radius: 50%;
-  border: 2px solid var(--border-light);
-  background: transparent;
-  color: var(--text-muted);
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  padding: 0;
-  margin-top: 1px;
-  cursor: pointer;
-  transition:
-    border-color var(--transition-fast),
-    background var(--transition-fast);
+    flex-shrink: 0;
+    width: 22px;
+    height: 22px;
+    border-radius: 50%;
+    border: 2px solid var(--border-light);
+    background: transparent;
+    color: var(--text-muted);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    padding: 0;
+    margin-top: 1px;
+    cursor: pointer;
+    transition:
+        border-color var(--transition-fast),
+        background var(--transition-fast);
 }
 
 .task-card__check:hover {
-  border-color: var(--text-secondary);
+    border-color: var(--text-secondary);
 }
 
 .task-card__check--done {
-  border-color: var(--success);
-  background: var(--success-subtle);
-  color: var(--success);
+    border-color: var(--success);
+    background: var(--success-subtle);
+    color: var(--success);
 }
 
 .task-card__content {
-  flex: 1;
-  min-width: 0;
+    flex: 1;
+    min-width: 0;
 }
 
 .task-card__summary {
-  display: block;
-  font-size: 15px;
-  line-height: 1.4;
-  color: var(--text-primary);
+    display: block;
+    font-size: 15px;
+    line-height: 1.4;
+    color: var(--text-primary);
 }
 
 .task-card--completed .task-card__summary {
-  text-decoration: line-through;
-  color: var(--text-muted);
+    text-decoration: line-through;
+    color: var(--text-muted);
 }
 
 .task-card__labels {
-  display: flex;
-  flex-wrap: wrap;
-  gap: var(--space-xs);
-  margin-top: var(--space-xs);
+    display: flex;
+    flex-wrap: wrap;
+    gap: var(--space-xs);
+    margin-top: var(--space-xs);
 }
 
 .task-card__label {
-  font-size: 11px;
-  padding: 1px 6px;
-  border-radius: var(--radius-sm);
-  background: var(--accent-subtle);
-  color: var(--accent);
+    font-size: 11px;
+    padding: 1px 6px;
+    border-radius: var(--radius-sm);
+    background: var(--accent-subtle);
+    color: var(--accent);
 }
 
 .task-card__carried-badge {
-  font-size: 11px;
-  padding: 1px 6px;
-  border-radius: var(--radius-sm);
-  background: var(--warning-subtle);
-  color: var(--warning);
-  flex-shrink: 0;
-  margin-top: 2px;
+    font-size: 11px;
+    padding: 1px 6px;
+    border-radius: var(--radius-sm);
+    background: var(--warning-subtle);
+    color: var(--warning);
+    flex-shrink: 0;
+    margin-top: 2px;
 }
