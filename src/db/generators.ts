@@ -1,5 +1,5 @@
-import { db } from './database.ts';
 import { generateId } from '../utils/id.ts';
+import { db } from './database.ts';
 import type { Generator, TaskTemplate } from './types.ts';
 
 async function createGenerator(
@@ -40,4 +40,4 @@ async function getActiveGenerators(): Promise<Generator[]> {
     return db.generators.filter((g) => g.active).toArray();
 }
 
-export { createGenerator, updateGenerator, deleteGenerator, getGenerator, getAllGenerators, getActiveGenerators };
+export { createGenerator, deleteGenerator, getActiveGenerators, getAllGenerators, getGenerator, updateGenerator };

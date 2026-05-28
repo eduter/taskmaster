@@ -1,25 +1,33 @@
-import { Show, createMemo } from 'solid-js';
 import { DragOverlay, useDragDropContext } from '@thisbeyond/solid-dnd';
+import { createMemo, Show } from 'solid-js';
 import { DRAG_ROTATE_DEG } from '../gestures/constants.ts';
 import { useTouchDrag } from '../gestures/touchDragContext.tsx';
-import { TaskCard } from './TaskCard.tsx';
 import { tasks } from '../stores/taskStore.ts';
+import { TaskCard } from './TaskCard.tsx';
 import './TaskDragOverlay.css';
 
 function TaskDragOverlay() {
-    const [dndState] = useDragDropContext()!;
+    const dndContext = useDragDropContext();
+    if (!dndContext) {
+        throw new Error('TaskDragOverlay must be used within DragDropProvider');
+    }
+    const [dndState] = dndContext;
     const touchDrag = useTouchDrag();
 
     const activeTask = createMemo(() => {
         const id = dndState.active.draggableId;
-        if (id == null) return undefined;
+        if (id == null) {
+            return undefined;
+        }
         return (tasks() ?? []).find((t) => t.id === String(id));
     });
 
     const overlayStyle = createMemo(() => {
         const overlay = dndState.active.overlay;
         const draggable = dndState.active.draggable;
-        if (!overlay || !draggable) return {};
+        if (!overlay || !draggable) {
+            return {};
+        }
         const grab = touchDrag.grabOffset();
         const t = overlay.transform;
         return {
@@ -33,9 +41,11 @@ function TaskDragOverlay() {
     return (
         <DragOverlay class="task-drag-overlay" style={overlayStyle()}>
             <Show when={activeTask()}>
-                <div class="task-drag-overlay__card">
-                    <TaskCard task={activeTask()!} />
-                </div>
+                {(task) => (
+                    <div class="task-drag-overlay__card">
+                        <TaskCard task={task()} />
+                    </div>
+                )}
             </Show>
         </DragOverlay>
     );

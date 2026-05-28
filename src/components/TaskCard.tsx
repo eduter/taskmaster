@@ -58,5 +58,5 @@ function TaskCard(props: TaskCardProps) {
     );
 }
 
-export { TaskCard };
 export type { TaskCardProps };
+export { TaskCard };

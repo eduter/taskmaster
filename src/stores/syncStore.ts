@@ -15,7 +15,9 @@ const [lastErrorAt, setLastErrorAt] = createSignal<number | null>(null);
 const [pendingPush, setPendingPush] = createSignal(false);
 
 function refreshAuthState(): void {
-    if (connection() === 'needs_reauth') return;
+    if (connection() === 'needs_reauth') {
+        return;
+    }
     setConnection(isAuthenticated() ? 'connected' : 'disconnected');
 }
 
@@ -90,16 +92,26 @@ function hydrateLastSyncedAt(timestamp: number): void {
 }
 
 function formatRelativeTime(timestamp: number | null): string {
-    if (timestamp == null || timestamp === 0) return 'Never';
+    if (timestamp == null || timestamp === 0) {
+        return 'Never';
+    }
 
     const diffMs = Date.now() - timestamp;
     const diffSec = Math.floor(diffMs / 1000);
-    if (diffSec < 10) return 'Just now';
-    if (diffSec < 60) return `${diffSec}s ago`;
+    if (diffSec < 10) {
+        return 'Just now';
+    }
+    if (diffSec < 60) {
+        return `${diffSec}s ago`;
+    }
     const diffMin = Math.floor(diffSec / 60);
-    if (diffMin < 60) return `${diffMin}m ago`;
+    if (diffMin < 60) {
+        return `${diffMin}m ago`;
+    }
     const diffHr = Math.floor(diffMin / 60);
-    if (diffHr < 24) return `${diffHr}h ago`;
+    if (diffHr < 24) {
+        return `${diffHr}h ago`;
+    }
     return new Date(timestamp).toLocaleString();
 }
 
@@ -107,26 +119,26 @@ function hasSyncIssue(): boolean {
     return connection() === 'needs_reauth' || lastResult() === 'error';
 }
 
+export type { SyncConnectionState, SyncOperationState, SyncResultKind };
 export {
-    connection,
-    operation,
-    lastResult,
-    lastMessage,
-    lastSyncedAt,
-    lastErrorAt,
-    pendingPush,
-    refreshAuthState,
-    markNeedsReauth,
-    markDisconnected,
-    markConnected,
-    beginSync,
     beginPush,
+    beginSync,
+    connection,
     endOperation,
-    recordSuccess,
-    recordError,
-    setPendingPushScheduled,
-    hydrateLastSyncedAt,
     formatRelativeTime,
     hasSyncIssue,
+    hydrateLastSyncedAt,
+    lastErrorAt,
+    lastMessage,
+    lastResult,
+    lastSyncedAt,
+    markConnected,
+    markDisconnected,
+    markNeedsReauth,
+    operation,
+    pendingPush,
+    recordError,
+    recordSuccess,
+    refreshAuthState,
+    setPendingPushScheduled,
 };
-export type { SyncConnectionState, SyncOperationState, SyncResultKind };

@@ -1,18 +1,18 @@
 import { onMount } from 'solid-js';
-import { today, invalidateTasks } from './stores/taskStore.ts';
-import { setShowGeneratorList, invalidateGenerators } from './stores/generatorStore.ts';
-import { runGenerators } from './scheduling/generate.ts';
-import { handleAuthRedirect } from './sync/dropboxAuth.ts';
-import { sync, markLocalChange, pushToDropbox, loadSyncMetaIntoStore } from './sync/syncEngine.ts';
-import { markConnected, refreshAuthState } from './stores/syncStore.ts';
 import { AddTask } from './components/AddTask.tsx';
-import { TaskList } from './components/TaskList.tsx';
-import { TaskDetail } from './components/TaskDetail.tsx';
 import { GeneratorList } from './components/GeneratorList.tsx';
-import { SyncSettings } from './components/SyncSettings.tsx';
-import { OfflineIndicator } from './components/OfflineIndicator.tsx';
-import { SyncStatusBar } from './components/SyncStatusBar.tsx';
 import { InstallPrompt } from './components/InstallPrompt.tsx';
+import { OfflineIndicator } from './components/OfflineIndicator.tsx';
+import { SyncSettings } from './components/SyncSettings.tsx';
+import { SyncStatusBar } from './components/SyncStatusBar.tsx';
+import { TaskDetail } from './components/TaskDetail.tsx';
+import { TaskList } from './components/TaskList.tsx';
+import { runGenerators } from './scheduling/generate.ts';
+import { invalidateGenerators, setShowGeneratorList } from './stores/generatorStore.ts';
+import { markConnected, refreshAuthState } from './stores/syncStore.ts';
+import { invalidateTasks, today } from './stores/taskStore.ts';
+import { handleAuthRedirect } from './sync/dropboxAuth.ts';
+import { loadSyncMetaIntoStore, markLocalChange, pushToDropbox, sync } from './sync/syncEngine.ts';
 import './App.css';
 
 function App() {
@@ -44,8 +44,13 @@ function App() {
                 <h1>TaskMaster</h1>
                 <span class="app-date">{today()}</span>
                 <SyncSettings />
-                <button class="app-generators-btn" onClick={() => setShowGeneratorList(true)} aria-label="Generators">
-                    <svg viewBox="0 0 20 20" width="20" height="20" fill="none">
+                <button
+                    type="button"
+                    class="app-generators-btn"
+                    onClick={() => setShowGeneratorList(true)}
+                    aria-label="Generators"
+                >
+                    <svg viewBox="0 0 20 20" width="20" height="20" fill="none" aria-hidden="true">
                         <path d="M10 3v14M3 10h14" stroke="currentColor" stroke-width="2" stroke-linecap="round" />
                     </svg>
                 </button>

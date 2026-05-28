@@ -9,11 +9,13 @@ async function runGenerators(today: string = getLogicalDay()): Promise<number> {
 
     for (const gen of generators) {
         const startDate = getGenerationStartDate(gen);
-        if (startDate > today) continue;
+        if (startDate > today) {
+            continue;
+        }
 
         const rule = parseGeneratorRule(gen);
-        const start = new Date(startDate + 'T00:00:00');
-        const end = new Date(today + 'T23:59:59');
+        const start = new Date(`${startDate}T00:00:00`);
+        const end = new Date(`${today}T23:59:59`);
         const occurrences = rule.between(start, end, true);
 
         for (const occ of occurrences) {

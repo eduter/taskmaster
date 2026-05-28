@@ -5,14 +5,14 @@ import { resetDb, seedGenerator } from '../test/helpers.ts';
 import { runGenerators } from './generate.ts';
 
 function dailyRrule(dtstart: string): string {
-    const dObj = new Date(dtstart + 'T12:00:00');
-    const dStr = dObj.toISOString().replace(/[-:]/g, '').split('.')[0] + 'Z';
+    const dObj = new Date(`${dtstart}T12:00:00`);
+    const dStr = `${dObj.toISOString().replace(/[-:]/g, '').split('.')[0]}Z`;
     return `DTSTART:${dStr}\nRRULE:FREQ=DAILY;INTERVAL=1`;
 }
 
 function weeklyRrule(dtstart: string, byday: string): string {
-    const dObj = new Date(dtstart + 'T12:00:00');
-    const dStr = dObj.toISOString().replace(/[-:]/g, '').split('.')[0] + 'Z';
+    const dObj = new Date(`${dtstart}T12:00:00`);
+    const dStr = `${dObj.toISOString().replace(/[-:]/g, '').split('.')[0]}Z`;
     return `DTSTART:${dStr}\nRRULE:FREQ=WEEKLY;INTERVAL=1;BYDAY=${byday}`;
 }
 

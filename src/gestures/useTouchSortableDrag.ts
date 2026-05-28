@@ -1,6 +1,6 @@
-import { createSignal, onCleanup, onMount } from 'solid-js';
-import { useDragDropContext } from '@thisbeyond/solid-dnd';
 import type { Id } from '@thisbeyond/solid-dnd';
+import { useDragDropContext } from '@thisbeyond/solid-dnd';
+import { createSignal, onCleanup, onMount } from 'solid-js';
 import { lockGestureScroll, unlockGestureScroll } from './scrollLock.ts';
 
 const SENSOR_ID = 'touch-row-sensor';
@@ -36,7 +36,9 @@ function useTouchSortableDrag() {
     }
 
     function moveDrag(clientX: number, clientY: number) {
-        if (state.active.sensorId !== SENSOR_ID) return;
+        if (state.active.sensorId !== SENSOR_ID) {
+            return;
+        }
         actions.sensorMove({ x: clientX, y: clientY });
     }
 
@@ -53,5 +55,5 @@ function useTouchSortableDrag() {
     return { startDrag, moveDrag, endDragIfActive, isDragging, grabOffset };
 }
 
-export { useTouchSortableDrag, SENSOR_ID };
 export type { GrabOffset };
+export { SENSOR_ID, useTouchSortableDrag };

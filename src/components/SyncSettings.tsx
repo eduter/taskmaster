@@ -1,21 +1,21 @@
 import { createSignal, onMount, Show } from 'solid-js';
-import { startAuthFlow, clearTokens } from '../sync/dropboxAuth.ts';
-import { sync, loadSyncMetaIntoStore } from '../sync/syncEngine.ts';
-import { invalidateTasks } from '../stores/taskStore.ts';
 import { invalidateGenerators } from '../stores/generatorStore.ts';
 import {
     connection,
-    operation,
-    lastResult,
-    lastMessage,
-    lastSyncedAt,
-    lastErrorAt,
-    pendingPush,
-    refreshAuthState,
-    markDisconnected,
     formatRelativeTime,
     hasSyncIssue,
+    lastErrorAt,
+    lastMessage,
+    lastResult,
+    lastSyncedAt,
+    markDisconnected,
+    operation,
+    pendingPush,
+    refreshAuthState,
 } from '../stores/syncStore.ts';
+import { invalidateTasks } from '../stores/taskStore.ts';
+import { clearTokens, startAuthFlow } from '../sync/dropboxAuth.ts';
+import { loadSyncMetaIntoStore, sync } from '../sync/syncEngine.ts';
 import './SyncSettings.css';
 
 function SyncSettings() {
@@ -56,10 +56,18 @@ function SyncSettings() {
 
     function statusClass(): string {
         const conn = connection();
-        if (conn === 'needs_reauth') return 'sync-panel__status--error';
-        if (lastResult() === 'error') return 'sync-panel__status--error';
-        if (pendingPush() || operation() !== 'idle') return 'sync-panel__status--pending';
-        if (conn === 'connected') return 'sync-panel__status--ok';
+        if (conn === 'needs_reauth') {
+            return 'sync-panel__status--error';
+        }
+        if (lastResult() === 'error') {
+            return 'sync-panel__status--error';
+        }
+        if (pendingPush() || operation() !== 'idle') {
+            return 'sync-panel__status--pending';
+        }
+        if (conn === 'connected') {
+            return 'sync-panel__status--ok';
+        }
         return '';
     }
 
@@ -75,14 +83,22 @@ function SyncSettings() {
     }
 
     function operationLabel(): string | null {
-        if (operation() === 'syncing') return 'Syncing with Dropbox…';
-        if (operation() === 'pushing') return 'Uploading local changes…';
-        if (pendingPush()) return 'Changes waiting to upload…';
+        if (operation() === 'syncing') {
+            return 'Syncing with Dropbox…';
+        }
+        if (operation() === 'pushing') {
+            return 'Uploading local changes…';
+        }
+        if (pendingPush()) {
+            return 'Changes waiting to upload…';
+        }
         return null;
     }
 
     function resultLabel(): string | null {
-        if (operation() !== 'idle') return null;
+        if (operation() !== 'idle') {
+            return null;
+        }
         return lastMessage();
     }
 
@@ -91,12 +107,13 @@ function SyncSettings() {
     return (
         <>
             <button
+                type="button"
                 class="sync-trigger"
                 classList={{ 'sync-trigger--attention': hasSyncIssue() }}
                 onClick={openPanel}
                 aria-label="Sync settings"
             >
-                <svg viewBox="0 0 20 20" width="20" height="20" fill="none">
+                <svg viewBox="0 0 20 20" width="20" height="20" fill="none" aria-hidden="true">
                     <path
                         d="M14 3l3 3-3 3M6 17l-3-3 3-3M17 6H7M3 14h10"
                         stroke="currentColor"
@@ -116,11 +133,22 @@ function SyncSettings() {
                 </Show>
             </button>
             <Show when={showPanel()}>
-                <div class="sync-overlay" onClick={() => setShowPanel(false)}>
-                    <div class="sync-panel" onClick={(e) => e.stopPropagation()}>
+                <div class="sync-overlay">
+                    <button
+                        type="button"
+                        class="sync-overlay__backdrop"
+                        aria-label="Close sync settings"
+                        onClick={() => setShowPanel(false)}
+                    />
+                    <div class="sync-panel">
                         <div class="sync-panel__header">
                             <h2 class="sync-panel__title">Dropbox Sync</h2>
-                            <button class="sync-panel__close" onClick={() => setShowPanel(false)} aria-label="Close">
+                            <button
+                                type="button"
+                                class="sync-panel__close"
+                                onClick={() => setShowPanel(false)}
+                                aria-label="Close"
+                            >
                                 &times;
                             </button>
                         </div>
@@ -156,7 +184,7 @@ function SyncSettings() {
                                     <p class="sync-panel__text">
                                         Connect to Dropbox to sync tasks across your devices.
                                     </p>
-                                    <button class="sync-panel__btn-primary" onClick={handleConnect}>
+                                    <button type="button" class="sync-panel__btn-primary" onClick={handleConnect}>
                                         Connect to Dropbox
                                     </button>
                                 </div>
@@ -165,6 +193,7 @@ function SyncSettings() {
                             <div class="sync-panel__connected">
                                 <div class="sync-panel__actions">
                                     <button
+                                        type="button"
                                         class="sync-panel__btn-primary"
                                         onClick={handleSync}
                                         disabled={operation() !== 'idle'}
@@ -174,18 +203,22 @@ function SyncSettings() {
                                     <Show
                                         when={connection() === 'needs_reauth'}
                                         fallback={
-                                            <button class="sync-panel__btn-danger" onClick={handleDisconnect}>
+                                            <button
+                                                type="button"
+                                                class="sync-panel__btn-danger"
+                                                onClick={handleDisconnect}
+                                            >
                                                 Disconnect
                                             </button>
                                         }
                                     >
-                                        <button class="sync-panel__btn-primary" onClick={handleConnect}>
+                                        <button type="button" class="sync-panel__btn-primary" onClick={handleConnect}>
                                             Reconnect
                                         </button>
                                     </Show>
                                 </div>
                                 <Show when={connection() === 'connected'}>
-                                    <button class="sync-panel__btn-text" onClick={handleDisconnect}>
+                                    <button type="button" class="sync-panel__btn-text" onClick={handleDisconnect}>
                                         Disconnect
                                     </button>
                                 </Show>

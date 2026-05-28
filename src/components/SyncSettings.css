@@ -37,14 +37,27 @@
 .sync-overlay {
     position: fixed;
     inset: 0;
-    background: rgba(0, 0, 0, 0.6);
-    display: flex;
+    display: grid;
+    grid-template: 1fr / 1fr;
     align-items: flex-end;
-    justify-content: center;
+    justify-items: center;
     z-index: 100;
 }
 
+.sync-overlay__backdrop {
+    grid-area: 1 / 1;
+    align-self: stretch;
+    justify-self: stretch;
+    margin: 0;
+    padding: 0;
+    border: none;
+    background: rgba(0, 0, 0, 0.6);
+    cursor: default;
+}
+
 .sync-panel {
+    grid-area: 1 / 1;
+    z-index: 1;
     width: 100%;
     max-width: 600px;
     background: var(--bg-secondary);

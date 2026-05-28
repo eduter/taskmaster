@@ -1,14 +1,14 @@
-import { createSignal, For, Show, createEffect, on } from 'solid-js';
 import { RRule } from 'rrule';
+import { createEffect, createSignal, For, on, Show } from 'solid-js';
+import type { Generator, TaskTemplate } from '../db/types.ts';
 import {
-    generators,
-    editingGeneratorId,
-    setEditingGeneratorId,
     addGenerator,
     editGenerator,
+    editingGeneratorId,
+    generators,
     removeGenerator,
+    setEditingGeneratorId,
 } from '../stores/generatorStore.ts';
-import type { Generator, TaskTemplate } from '../db/types.ts';
 import './GeneratorEditor.css';
 
 const DAY_MAP = [
@@ -42,7 +42,9 @@ function GeneratorEditor() {
 
     const editingGen = (): Generator | undefined => {
         const id = editingGeneratorId();
-        if (!id) return undefined;
+        if (!id) {
+            return undefined;
+        }
         return (generators() ?? []).find((g) => g.id === id);
     };
 
@@ -95,7 +97,9 @@ function GeneratorEditor() {
 
     function addTemplate() {
         const summary = newTemplateSummary().trim();
-        if (!summary) return;
+        if (!summary) {
+            return;
+        }
         setTemplates([...templates(), { summary, description: '', labels: [] }]);
         setNewTemplateSummary('');
     }
@@ -113,19 +117,25 @@ function GeneratorEditor() {
 
     async function handleSave() {
         const n = name().trim();
-        if (!n) return;
+        if (!n) {
+            return;
+        }
 
         let ruleStr = `FREQ=${freq()};INTERVAL=${interval()}`;
         if (freq() === 'WEEKLY' && byday().length > 0) {
             ruleStr += `;BYDAY=${byday().join(',')}`;
         }
 
-        const dObj = new Date(dtstart() + 'T12:00:00');
-        const dStr = dObj.toISOString().replace(/[-:]/g, '').split('.')[0] + 'Z';
+        const dObj = new Date(`${dtstart()}T12:00:00`);
+        const dStr = `${dObj.toISOString().replace(/[-:]/g, '').split('.')[0]}Z`;
         const rule = `DTSTART:${dStr}\nRRULE:${ruleStr}`;
 
         if (isEditing()) {
-            await editGenerator(editingGeneratorId()!, {
+            const id = editingGeneratorId();
+            if (!id) {
+                return;
+            }
+            await editGenerator(id, {
                 name: n,
                 rrule: rule,
                 templates: templates(),
@@ -139,7 +149,9 @@ function GeneratorEditor() {
 
     async function handleDelete() {
         const id = editingGeneratorId();
-        if (!id) return;
+        if (!id) {
+            return;
+        }
         await removeGenerator(id);
         resetForm();
     }
@@ -147,8 +159,11 @@ function GeneratorEditor() {
     return (
         <div class="gen-editor">
             <div class="gen-editor__field">
-                <label class="gen-editor__label">Generator name</label>
+                <label class="gen-editor__label" for="gen-editor-name">
+                    Generator name
+                </label>
                 <input
+                    id="gen-editor-name"
                     class="gen-editor__input"
                     type="text"
                     placeholder="e.g. Daily language practice"
@@ -158,8 +173,11 @@ function GeneratorEditor() {
             </div>
 
             <div class="gen-editor__field">
-                <label class="gen-editor__label">Next Occurrence (Anchor)</label>
+                <label class="gen-editor__label" for="gen-editor-dtstart">
+                    Next Occurrence (Anchor)
+                </label>
                 <input
+                    id="gen-editor-dtstart"
                     class="gen-editor__input"
                     type="date"
                     value={dtstart()}
@@ -168,14 +186,17 @@ function GeneratorEditor() {
             </div>
 
             <div class="gen-editor__field gen-editor__recurrence-group">
-                <label class="gen-editor__label">Repeat Every</label>
+                <label class="gen-editor__label" for="gen-editor-interval">
+                    Repeat Every
+                </label>
                 <div class="gen-editor__recurrence-row">
                     <input
+                        id="gen-editor-interval"
                         class="gen-editor__input gen-editor__interval-input"
                         type="number"
                         min="1"
                         value={interval()}
-                        onInput={(e) => setIntervalVal(parseInt(e.currentTarget.value) || 1)}
+                        onInput={(e) => setIntervalVal(parseInt(e.currentTarget.value, 10) || 1)}
                     />
                     <select class="gen-editor__select" value={freq()} onChange={(e) => setFreq(e.currentTarget.value)}>
                         <option value="DAILY">Days</option>
@@ -187,8 +208,8 @@ function GeneratorEditor() {
             </div>
 
             <Show when={freq() === 'WEEKLY'}>
-                <div class="gen-editor__field">
-                    <label class="gen-editor__label">On Days</label>
+                <fieldset class="gen-editor__field">
+                    <legend class="gen-editor__label">On Days</legend>
                     <div class="gen-editor__day-toggles">
                         <For each={DAY_MAP}>
                             {(day) => (
@@ -209,16 +230,20 @@ function GeneratorEditor() {
                             )}
                         </For>
                     </div>
-                </div>
+                </fieldset>
             </Show>
 
             <div class="gen-editor__field">
-                <label class="gen-editor__label">Task templates</label>
+                <span class="gen-editor__label">Task templates</span>
                 <For each={templates()}>
                     {(tmpl, i) => (
                         <div class="gen-editor__template">
                             <span>{tmpl.summary}</span>
-                            <button class="gen-editor__template-remove" onClick={() => removeTemplate(i())}>
+                            <button
+                                type="button"
+                                class="gen-editor__template-remove"
+                                onClick={() => removeTemplate(i())}
+                            >
                                 &times;
                             </button>
                         </div>
@@ -253,15 +278,15 @@ function GeneratorEditor() {
             </Show>
 
             <div class="gen-editor__actions">
-                <button class="gen-editor__btn-primary" onClick={handleSave}>
+                <button type="button" class="gen-editor__btn-primary" onClick={handleSave}>
                     {isEditing() ? 'Update' : 'Create'}
                 </button>
                 <Show when={isEditing()}>
-                    <button class="gen-editor__btn-danger" onClick={handleDelete}>
+                    <button type="button" class="gen-editor__btn-danger" onClick={handleDelete}>
                         Delete
                     </button>
                 </Show>
-                <button class="gen-editor__btn-secondary" onClick={resetForm}>
+                <button type="button" class="gen-editor__btn-secondary" onClick={resetForm}>
                     Cancel
                 </button>
             </div>

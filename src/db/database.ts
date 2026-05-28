@@ -1,6 +1,6 @@
-import Dexie from 'dexie';
 import type { Table } from 'dexie';
-import type { Task, Generator, SyncMeta } from './types.ts';
+import Dexie from 'dexie';
+import type { Generator, SyncMeta, Task } from './types.ts';
 
 class TaskMasterDB extends Dexie {
     tasks!: Table<Task, string>;

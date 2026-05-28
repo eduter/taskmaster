@@ -1,12 +1,12 @@
-import { createSignal, For, Show } from 'solid-js';
-import { DragDropProvider, SortableProvider, closestCenter, useDragDropContext } from '@thisbeyond/solid-dnd';
 import type { DragEvent } from '@thisbeyond/solid-dnd';
-import { tasks, reorder } from '../stores/taskStore.ts';
-import { applyReorder } from '../utils/reorder.ts';
-import { TaskRow } from './TaskRow.tsx';
-import { TaskDragOverlay } from './TaskDragOverlay.tsx';
-import { TouchDragProvider } from '../gestures/touchDragContext.tsx';
+import { closestCenter, DragDropProvider, SortableProvider, useDragDropContext } from '@thisbeyond/solid-dnd';
+import { createSignal, For, Show } from 'solid-js';
 import type { Task } from '../db/types.ts';
+import { TouchDragProvider } from '../gestures/touchDragContext.tsx';
+import { reorder, tasks } from '../stores/taskStore.ts';
+import { applyReorder } from '../utils/reorder.ts';
+import { TaskDragOverlay } from './TaskDragOverlay.tsx';
+import { TaskRow } from './TaskRow.tsx';
 import './TaskList.css';
 
 function SortableTask(props: {
@@ -26,7 +26,11 @@ function SortableTask(props: {
 }
 
 function SortableTaskListItems() {
-    const [dndState] = useDragDropContext()!;
+    const dndContext = useDragDropContext();
+    if (!dndContext) {
+        throw new Error('SortableTaskListItems must be used within DragDropProvider');
+    }
+    const [dndState] = dndContext;
     const [openRevealId, setOpenRevealId] = createSignal<string | null>(null);
     const taskIds = () => (tasks() ?? []).map((t) => t.id);
 
@@ -69,10 +73,14 @@ function SortableTaskList() {
 
     async function handleDragEnd(event: DragEvent) {
         const { draggable, droppable } = event;
-        if (!draggable || !droppable) return;
+        if (!draggable || !droppable) {
+            return;
+        }
 
         const reordered = applyReorder(taskIds(), String(draggable.id), String(droppable.id));
-        if (!reordered) return;
+        if (!reordered) {
+            return;
+        }
         await reorder(reordered);
     }
 

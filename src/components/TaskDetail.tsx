@@ -1,7 +1,7 @@
-import { createSignal, createEffect, Show, on } from 'solid-js';
-import { selectedTaskId, setSelectedTaskId, editTask, removeTask, tasks } from '../stores/taskStore.ts';
-import { PostponeMenu } from './PostponeMenu.tsx';
+import { createEffect, createSignal, on, Show } from 'solid-js';
 import type { Task } from '../db/types.ts';
+import { editTask, removeTask, selectedTaskId, setSelectedTaskId, tasks } from '../stores/taskStore.ts';
+import { PostponeMenu } from './PostponeMenu.tsx';
 import './TaskDetail.css';
 
 function TaskDetail() {
@@ -13,18 +13,24 @@ function TaskDetail() {
 
     createEffect(
         on(selectedTaskId, (id) => {
-            if (id) dismissGuardUntil = Date.now() + 500;
+            if (id) {
+                dismissGuardUntil = Date.now() + 500;
+            }
         })
     );
 
     function tryDismiss() {
-        if (Date.now() < dismissGuardUntil) return;
+        if (Date.now() < dismissGuardUntil) {
+            return;
+        }
         setSelectedTaskId(null);
     }
 
     const selectedTask = (): Task | undefined => {
         const id = selectedTaskId();
-        if (!id) return undefined;
+        if (!id) {
+            return undefined;
+        }
         return (tasks() ?? []).find((t) => t.id === id);
     };
 
@@ -42,7 +48,9 @@ function TaskDetail() {
 
     async function save() {
         const id = selectedTaskId();
-        if (!id) return;
+        if (!id) {
+            return;
+        }
         await editTask(id, {
             summary: summary(),
             description: description(),
@@ -52,7 +60,9 @@ function TaskDetail() {
 
     function addLabel() {
         const val = labelInput().trim();
-        if (!val || labels().includes(val)) return;
+        if (!val || labels().includes(val)) {
+            return;
+        }
         setLabels([...labels(), val]);
         setLabelInput('');
     }
@@ -70,80 +80,101 @@ function TaskDetail() {
 
     async function handleDelete() {
         const id = selectedTaskId();
-        if (!id) return;
+        if (!id) {
+            return;
+        }
         await removeTask(id);
     }
 
     return (
         <Show when={selectedTask()}>
-            <div class="task-detail-overlay" onClick={tryDismiss}>
-                <div class="task-detail" onClick={(e) => e.stopPropagation()}>
-                    <div class="task-detail__header">
-                        <h2 class="task-detail__title">Edit Task</h2>
-                        <button class="task-detail__close" onClick={tryDismiss} aria-label="Close">
-                            &times;
-                        </button>
-                    </div>
-
-                    <div class="task-detail__field">
-                        <label class="task-detail__label">Summary</label>
-                        <input
-                            class="task-detail__input"
-                            type="text"
-                            value={summary()}
-                            onInput={(e) => setSummary(e.currentTarget.value)}
-                        />
-                    </div>
-
-                    <div class="task-detail__field">
-                        <label class="task-detail__label">Description</label>
-                        <textarea
-                            class="task-detail__textarea"
-                            value={description()}
-                            onInput={(e) => setDescription(e.currentTarget.value)}
-                            rows={4}
-                        />
-                    </div>
-
-                    <div class="task-detail__field">
-                        <label class="task-detail__label">Labels</label>
-                        <div class="task-detail__labels">
-                            {labels().map((label) => (
-                                <span class="task-detail__label-tag">
-                                    {label}
-                                    <button class="task-detail__label-remove" onClick={() => removeLabel(label)}>
-                                        &times;
-                                    </button>
-                                </span>
-                            ))}
+            {(task) => (
+                <div class="task-detail-overlay">
+                    <button
+                        type="button"
+                        class="task-detail-overlay__backdrop"
+                        aria-label="Close"
+                        onClick={tryDismiss}
+                    />
+                    <div class="task-detail">
+                        <div class="task-detail__header">
+                            <h2 class="task-detail__title">Edit Task</h2>
+                            <button type="button" class="task-detail__close" onClick={tryDismiss} aria-label="Close">
+                                &times;
+                            </button>
                         </div>
-                        <div class="task-detail__label-add">
+
+                        <div class="task-detail__field">
+                            <label class="task-detail__label" for="task-detail-summary">
+                                Summary
+                            </label>
                             <input
+                                id="task-detail-summary"
                                 class="task-detail__input"
                                 type="text"
-                                placeholder="Add label…"
-                                value={labelInput()}
-                                onInput={(e) => setLabelInput(e.currentTarget.value)}
-                                onKeyDown={handleLabelKeyDown}
+                                value={summary()}
+                                onInput={(e) => setSummary(e.currentTarget.value)}
                             />
-                            <button class="task-detail__btn-secondary" type="button" onClick={addLabel}>
-                                Add
+                        </div>
+
+                        <div class="task-detail__field">
+                            <label class="task-detail__label" for="task-detail-description">
+                                Description
+                            </label>
+                            <textarea
+                                id="task-detail-description"
+                                class="task-detail__textarea"
+                                value={description()}
+                                onInput={(e) => setDescription(e.currentTarget.value)}
+                                rows={4}
+                            />
+                        </div>
+
+                        <div class="task-detail__field">
+                            <span class="task-detail__label">Labels</span>
+                            <div class="task-detail__labels">
+                                {labels().map((label) => (
+                                    <span class="task-detail__label-tag">
+                                        {label}
+                                        <button
+                                            type="button"
+                                            class="task-detail__label-remove"
+                                            onClick={() => removeLabel(label)}
+                                        >
+                                            &times;
+                                        </button>
+                                    </span>
+                                ))}
+                            </div>
+                            <div class="task-detail__label-add">
+                                <input
+                                    id="task-detail-label-input"
+                                    class="task-detail__input"
+                                    type="text"
+                                    placeholder="Add label…"
+                                    value={labelInput()}
+                                    onInput={(e) => setLabelInput(e.currentTarget.value)}
+                                    onKeyDown={handleLabelKeyDown}
+                                />
+                                <button class="task-detail__btn-secondary" type="button" onClick={addLabel}>
+                                    Add
+                                </button>
+                            </div>
+                        </div>
+
+                        <PostponeMenu taskId={task().id} onDone={() => setSelectedTaskId(null)} />
+
+                        <div class="task-detail__actions">
+                            <button type="button" class="task-detail__btn-primary" onClick={save}>
+                                Save
+                            </button>
+                            <button type="button" class="task-detail__btn-danger" onClick={handleDelete}>
+                                Delete
                             </button>
                         </div>
                     </div>
-
-                    <PostponeMenu taskId={selectedTaskId()!} onDone={() => setSelectedTaskId(null)} />
-
-                    <div class="task-detail__actions">
-                        <button class="task-detail__btn-primary" onClick={save}>
-                            Save
-                        </button>
-                        <button class="task-detail__btn-danger" onClick={handleDelete}>
-                            Delete
-                        </button>
-                    </div>
                 </div>
-            </div>
+            )}
         </Show>
     );
 }

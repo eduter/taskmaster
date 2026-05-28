@@ -3,9 +3,15 @@ type Axis = 'horizontal' | 'vertical' | null;
 function resolveAxis(dx: number, dy: number, threshold: number): Axis {
     const absX = Math.abs(dx);
     const absY = Math.abs(dy);
-    if (absX < threshold && absY < threshold) return null;
-    if (absX > absY) return 'horizontal';
-    if (absY > absX) return 'vertical';
+    if (absX < threshold && absY < threshold) {
+        return null;
+    }
+    if (absX > absY) {
+        return 'horizontal';
+    }
+    if (absY > absX) {
+        return 'vertical';
+    }
     return null;
 }
 
@@ -13,9 +19,11 @@ function resolveAxis(dx: number, dy: number, threshold: number): Axis {
 function isDominantHorizontal(dx: number, dy: number, threshold: number, dominance = 1.5): boolean {
     const absX = Math.abs(dx);
     const absY = Math.abs(dy);
-    if (absX < threshold) return false;
+    if (absX < threshold) {
+        return false;
+    }
     return absX > absY * dominance;
 }
 
-export { resolveAxis, isDominantHorizontal };
 export type { Axis };
+export { isDominantHorizontal, resolveAxis };

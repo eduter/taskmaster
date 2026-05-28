@@ -108,7 +108,9 @@ function reduceRowGesture(
             };
 
         case 'POINTER_DOWN': {
-            if (state.phase !== 'idle') return { state, effects };
+            if (state.phase !== 'idle') {
+                return { state, effects };
+            }
             const revealOffsetX0 = action.deleteRevealed ? -config.revealWidthPx : 0;
             return {
                 state: {
@@ -129,7 +131,9 @@ function reduceRowGesture(
         }
 
         case 'POINTER_MOVE': {
-            if (state.phase === 'idle' || state.pointerId === null) return { state, effects };
+            if (state.phase === 'idle' || state.pointerId === null) {
+                return { state, effects };
+            }
             const dx = action.x - state.startX;
             const dy = action.y - state.startY;
 
@@ -211,7 +215,9 @@ function reduceRowGesture(
         }
 
         case 'LONG_PRESS': {
-            if (state.phase !== 'pending') return { state, effects };
+            if (state.phase !== 'pending') {
+                return { state, effects };
+            }
             effects.push({ type: 'START_DRAG', x: action.x, y: action.y });
             return {
                 state: { ...state, phase: 'dragging' },
@@ -220,7 +226,9 @@ function reduceRowGesture(
         }
 
         case 'POINTER_UP': {
-            if (state.phase === 'idle' || state.pointerId === null) return { state, effects };
+            if (state.phase === 'idle' || state.pointerId === null) {
+                return { state, effects };
+            }
 
             const dx = action.x - state.startX;
             const dy = action.y - state.startY;
@@ -293,5 +301,5 @@ function reduceRowGesture(
     }
 }
 
+export type { RowGestureAction, RowGestureConfig, RowGestureEffect, RowGestureResult, RowGestureState, RowPhase };
 export { createInitialRowGestureState, reduceRowGesture };
-export type { RowGestureConfig, RowGestureState, RowGestureAction, RowGestureEffect, RowGestureResult, RowPhase };

@@ -1,8 +1,7 @@
-import { createSignal, createMemo, createEffect, onCleanup, Show } from 'solid-js';
 import { createSortable, transformStyle, useDragDropContext } from '@thisbeyond/solid-dnd';
+import { createEffect, createMemo, createSignal, onCleanup, Show } from 'solid-js';
 import type { Task } from '../db/types.ts';
-import { setSelectedTaskId, toggleComplete, removeTask } from '../stores/taskStore.ts';
-import { TaskCard } from './TaskCard.tsx';
+import { resolveAxis } from '../gestures/axisLock.ts';
 import {
     AXIS_LOCK_PX,
     CHECK_COMPLETE_RATIO,
@@ -15,16 +14,17 @@ import {
     TAP_MAX_PX,
     TAP_MAX_PX_TOUCH,
 } from '../gestures/constants.ts';
-import { lockGestureScroll, unlockGestureScroll } from '../gestures/scrollLock.ts';
-import { resolveAxis } from '../gestures/axisLock.ts';
 import {
     createInitialRowGestureState,
-    reduceRowGesture,
     type RowGestureConfig,
     type RowGestureEffect,
     type RowGestureState,
+    reduceRowGesture,
 } from '../gestures/rowGesture.ts';
+import { lockGestureScroll, unlockGestureScroll } from '../gestures/scrollLock.ts';
 import { useTouchDrag } from '../gestures/touchDragContext.tsx';
+import { removeTask, setSelectedTaskId, toggleComplete } from '../stores/taskStore.ts';
+import { TaskCard } from './TaskCard.tsx';
 import './TaskRow.css';
 
 interface TaskRowProps {
@@ -47,7 +47,11 @@ function nowMs(): number {
 function TaskRow(props: TaskRowProps) {
     const sortable = createSortable(props.task.id);
     const touchDrag = useTouchDrag();
-    const [dndState] = useDragDropContext()!;
+    const dndContext = useDragDropContext();
+    if (!dndContext) {
+        throw new Error('TaskRow must be used within DragDropProvider');
+    }
+    const [dndState] = dndContext;
     let surfaceEl: HTMLDivElement | undefined;
     let longPressTimer: ReturnType<typeof setTimeout> | undefined;
     let scrollLockTimer: ReturnType<typeof setTimeout> | undefined;
@@ -202,7 +206,9 @@ function TaskRow(props: TaskRowProps) {
         if (g.phase === 'pending') {
             const absX = Math.abs(dx);
             const absY = Math.abs(dy);
-            if (absY > absX && absY >= AXIS_LOCK_PX) return false;
+            if (absY > absX && absY >= AXIS_LOCK_PX) {
+                return false;
+            }
             return true;
         }
         return false;
@@ -283,12 +289,16 @@ function TaskRow(props: TaskRowProps) {
     }
 
     function onDocumentPointerMove(event: PointerEvent) {
-        if (event.pointerId !== activePointerId) return;
+        if (event.pointerId !== activePointerId) {
+            return;
+        }
         handlePointerMove(event);
     }
 
     function onDocumentPointerEnd(event: PointerEvent) {
-        if (event.pointerId !== activePointerId) return;
+        if (event.pointerId !== activePointerId) {
+            return;
+        }
         event.preventDefault();
         event.stopPropagation();
         detachDocumentPointerListeners();
@@ -296,7 +306,9 @@ function TaskRow(props: TaskRowProps) {
     }
 
     function handlePointerDown(event: PointerEvent) {
-        if (event.button !== 0) return;
+        if (event.button !== 0) {
+            return;
+        }
         interactionConsumed = false;
         lastPointerType = event.pointerType;
         gestureConfig = buildGestureConfig(event.pointerType === 'touch' ? TAP_MAX_PX_TOUCH : TAP_MAX_PX);
@@ -341,7 +353,9 @@ function TaskRow(props: TaskRowProps) {
     }
 
     function handleSurfaceClick(event: MouseEvent) {
-        if (lastPointerType === 'touch') return;
+        if (lastPointerType === 'touch') {
+            return;
+        }
         if (interactionConsumed) {
             event.preventDefault();
             return;
@@ -363,7 +377,9 @@ function TaskRow(props: TaskRowProps) {
     createEffect(() => {
         const revealed = props.deleteRevealed;
         setGesture((prev) => {
-            if (prev.phase !== 'idle') return prev;
+            if (prev.phase !== 'idle') {
+                return prev;
+            }
             return {
                 ...prev,
                 deleteRevealed: revealed,
@@ -377,7 +393,9 @@ function TaskRow(props: TaskRowProps) {
         const dragging = isDraggingThis();
         if (wasDraggingThis && !dragging) {
             setGesture((prev) => {
-                if (prev.phase !== 'dragging') return prev;
+                if (prev.phase !== 'dragging') {
+                    return prev;
+                }
                 return reduceRowGesture(prev, { type: 'DRAG_END' }, gestureConfig).state;
             });
             props.onDragEnd?.();
@@ -418,6 +436,9 @@ function TaskRow(props: TaskRowProps) {
                         </svg>
                     </button>
                 </div>
+                {/* Gesture surface: div required (nested controls in TaskCard); pointer + click open detail on desktop */}
+                {/* biome-ignore lint/a11y/noStaticElementInteractions: custom pointer gesture handler */}
+                {/* biome-ignore lint/a11y/useKeyWithClickEvents: task check button provides keyboard completion */}
                 <div
                     ref={surfaceEl}
                     class="task-row__surface"
@@ -441,5 +462,5 @@ function TaskRow(props: TaskRowProps) {
     );
 }
 
-export { TaskRow };
 export type { TaskRowProps };
+export { TaskRow };

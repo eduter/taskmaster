@@ -36,4 +36,4 @@ interface SyncMeta {
     lastModifiedAt: number;
 }
 
-export type { Task, TaskTemplate, Generator, SyncMeta };
+export type { Generator, SyncMeta, Task, TaskTemplate };

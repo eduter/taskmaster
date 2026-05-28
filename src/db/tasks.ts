@@ -1,6 +1,6 @@
-import { db } from './database.ts';
 import { generateId } from '../utils/id.ts';
 import { getLogicalDay } from '../utils/logicalDay.ts';
+import { db } from './database.ts';
 import type { Task } from './types.ts';
 
 async function createTask(
@@ -39,7 +39,9 @@ async function getTask(id: string): Promise<Task | undefined> {
 
 async function toggleTaskCompleted(id: string): Promise<boolean> {
     const task = await db.tasks.get(id);
-    if (!task) return false;
+    if (!task) {
+        return false;
+    }
     const completed = !task.completed;
     await db.tasks.update(id, {
         completed,
@@ -59,7 +61,9 @@ async function getVisibleTasks(today: string): Promise<Task[]> {
     return tasks
         .filter((t) => !t.completed || t.date === today)
         .sort((a, b) => {
-            if (a.date !== b.date) return a.date < b.date ? -1 : 1;
+            if (a.date !== b.date) {
+                return a.date < b.date ? -1 : 1;
+            }
             return a.sortOrder - b.sortOrder;
         });
 }
@@ -75,11 +79,11 @@ async function reorderTasks(orderedIds: string[]): Promise<void> {
 
 export {
     createTask,
-    updateTask,
     deleteTask,
     getTask,
-    toggleTaskCompleted,
     getTasksForDay,
     getVisibleTasks,
     reorderTasks,
+    toggleTaskCompleted,
+    updateTask,
 };

@@ -16,17 +16,17 @@ function toDateString(date: Date): string {
 }
 
 function addDays(dateStr: string, days: number): string {
-    const date = new Date(dateStr + 'T12:00:00');
+    const date = new Date(`${dateStr}T12:00:00`);
     date.setDate(date.getDate() + days);
     return toDateString(date);
 }
 
 function getNextMonday(dateStr: string): string {
-    const date = new Date(dateStr + 'T12:00:00');
+    const date = new Date(`${dateStr}T12:00:00`);
     const day = date.getDay();
     const daysUntilMonday = day === 0 ? 1 : 8 - day;
     date.setDate(date.getDate() + daysUntilMonday);
     return toDateString(date);
 }
 
-export { DAY_BOUNDARY_HOUR, getLogicalDay, toDateString, addDays, getNextMonday };
+export { addDays, DAY_BOUNDARY_HOUR, getLogicalDay, getNextMonday, toDateString };

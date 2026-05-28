@@ -19,7 +19,9 @@ function InstallPrompt() {
 
     async function handleInstall() {
         const prompt = deferredPrompt();
-        if (!prompt) return;
+        if (!prompt) {
+            return;
+        }
         await prompt.prompt();
         const { outcome } = await prompt.userChoice;
         if (outcome === 'accepted') {
@@ -36,10 +38,10 @@ function InstallPrompt() {
             <div class="install-banner">
                 <span class="install-banner__text">Install TaskMaster for offline use</span>
                 <div class="install-banner__actions">
-                    <button class="install-banner__btn" onClick={handleInstall}>
+                    <button type="button" class="install-banner__btn" onClick={handleInstall}>
                         Install
                     </button>
-                    <button class="install-banner__dismiss" onClick={handleDismiss}>
+                    <button type="button" class="install-banner__dismiss" onClick={handleDismiss}>
                         &times;
                     </button>
                 </div>

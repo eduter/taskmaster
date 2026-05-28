@@ -1,5 +1,5 @@
 import { Show } from 'solid-js';
-import { connection, lastMessage, hasSyncIssue } from '../stores/syncStore.ts';
+import { connection, hasSyncIssue, lastMessage } from '../stores/syncStore.ts';
 import './SyncStatusBar.css';
 
 function SyncStatusBar() {

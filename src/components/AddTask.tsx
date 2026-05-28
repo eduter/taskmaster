@@ -8,7 +8,9 @@ function AddTask() {
     async function handleSubmit(e: SubmitEvent) {
         e.preventDefault();
         const summary = value().trim();
-        if (!summary) return;
+        if (!summary) {
+            return;
+        }
         await addTask(summary);
         setValue('');
     }

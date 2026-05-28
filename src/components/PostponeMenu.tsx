@@ -20,23 +20,25 @@ function PostponeMenu(props: PostponeMenuProps) {
     function handleCustomSubmit(e: SubmitEvent) {
         e.preventDefault();
         const d = customDate();
-        if (d) postponeTo(d);
+        if (d) {
+            postponeTo(d);
+        }
     }
 
     return (
         <div class="postpone-menu">
             <span class="postpone-menu__title">Postpone to</span>
             <div class="postpone-menu__options">
-                <button class="postpone-menu__btn" onClick={() => postponeTo(addDays(today(), 1))}>
+                <button type="button" class="postpone-menu__btn" onClick={() => postponeTo(addDays(today(), 1))}>
                     Tomorrow
                 </button>
-                <button class="postpone-menu__btn" onClick={() => postponeTo(getNextMonday(today()))}>
+                <button type="button" class="postpone-menu__btn" onClick={() => postponeTo(getNextMonday(today()))}>
                     Next Monday
                 </button>
-                <button class="postpone-menu__btn" onClick={() => postponeTo(addDays(today(), 7))}>
+                <button type="button" class="postpone-menu__btn" onClick={() => postponeTo(addDays(today(), 7))}>
                     Next week
                 </button>
-                <button class="postpone-menu__btn" onClick={() => setShowDatePicker(!showDatePicker())}>
+                <button type="button" class="postpone-menu__btn" onClick={() => setShowDatePicker(!showDatePicker())}>
                     Pick date…
                 </button>
             </div>
@@ -58,5 +60,5 @@ function PostponeMenu(props: PostponeMenuProps) {
     );
 }
 
-export { PostponeMenu };
 export type { PostponeMenuProps };
+export { PostponeMenu };

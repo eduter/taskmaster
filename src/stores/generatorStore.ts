@@ -1,7 +1,7 @@
-import { createSignal, createResource } from 'solid-js';
-import { getAllGenerators, createGenerator, updateGenerator, deleteGenerator } from '../db/generators.ts';
-import { schedulePush } from '../sync/syncEngine.ts';
+import { createResource, createSignal } from 'solid-js';
+import { createGenerator, deleteGenerator, getAllGenerators, updateGenerator } from '../db/generators.ts';
 import type { Generator, TaskTemplate } from '../db/types.ts';
+import { schedulePush } from '../sync/syncEngine.ts';
 
 const [genVersion, setGenVersion] = createSignal(0);
 
@@ -30,19 +30,21 @@ async function editGenerator(id: string, changes: Partial<Omit<Generator, 'id' |
 
 async function removeGenerator(id: string): Promise<void> {
     await deleteGenerator(id);
-    if (editingGeneratorId() === id) setEditingGeneratorId(null);
+    if (editingGeneratorId() === id) {
+        setEditingGeneratorId(null);
+    }
     invalidateGenerators();
 }
 
 export {
-    generators,
-    refetchGenerators,
-    editingGeneratorId,
-    setEditingGeneratorId,
-    showGeneratorList,
-    setShowGeneratorList,
     addGenerator,
     editGenerator,
-    removeGenerator,
+    editingGeneratorId,
+    generators,
     invalidateGenerators,
+    refetchGenerators,
+    removeGenerator,
+    setEditingGeneratorId,
+    setShowGeneratorList,
+    showGeneratorList,
 };

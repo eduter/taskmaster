@@ -1,13 +1,5 @@
 import { db } from '../db/database.ts';
-import {
-    clearTokens,
-    getDropboxClient,
-    getDropboxErrorMessage,
-    getDropboxErrorStatus,
-    isAuthenticated,
-    persistTokensFromClient,
-    tryRefreshAccessToken,
-} from './dropboxAuth.ts';
+import type { Generator, SyncMeta, Task } from '../db/types.ts';
 import {
     beginPush,
     beginSync,
@@ -20,7 +12,15 @@ import {
     refreshAuthState,
     setPendingPushScheduled,
 } from '../stores/syncStore.ts';
-import type { Task, Generator, SyncMeta } from '../db/types.ts';
+import {
+    clearTokens,
+    getDropboxClient,
+    getDropboxErrorMessage,
+    getDropboxErrorStatus,
+    isAuthenticated,
+    persistTokensFromClient,
+    tryRefreshAccessToken,
+} from './dropboxAuth.ts';
 
 const SYNC_FILE = '/taskmaster/data.json';
 const DEBOUNCE_MS = 2000;
@@ -93,7 +93,9 @@ async function handleAuthFailure(err: unknown, context: string): Promise<never> 
 
 async function pushToDropbox(): Promise<boolean> {
     const dbx = getDropboxClient();
-    if (!dbx) return false;
+    if (!dbx) {
+        return false;
+    }
 
     const payload = await buildPayload();
     const contents = JSON.stringify(payload);
@@ -130,7 +132,9 @@ async function pushToDropbox(): Promise<boolean> {
 
 async function pullFromDropbox(): Promise<boolean> {
     const dbx = getDropboxClient();
-    if (!dbx) return false;
+    if (!dbx) {
+        return false;
+    }
 
     try {
         const response = await dbx.filesDownload({ path: SYNC_FILE });
@@ -196,8 +200,12 @@ async function sync(): Promise<SyncOutcome> {
 }
 
 function schedulePush(): void {
-    if (!isAuthenticated()) return;
-    if (debounceTimer) clearTimeout(debounceTimer);
+    if (!isAuthenticated()) {
+        return;
+    }
+    if (debounceTimer) {
+        clearTimeout(debounceTimer);
+    }
     setPendingPushScheduled(true);
     debounceTimer = setTimeout(async () => {
         debounceTimer = null;
@@ -217,5 +225,5 @@ async function loadSyncMetaIntoStore(): Promise<void> {
     hydrateLastSyncedAt(meta.lastSyncedAt);
 }
 
-export { sync, pushToDropbox, pullFromDropbox, schedulePush, markLocalChange, getSyncMeta, loadSyncMetaIntoStore };
-export type { SyncPayload, SyncOutcome };
+export type { SyncOutcome, SyncPayload };
+export { getSyncMeta, loadSyncMetaIntoStore, markLocalChange, pullFromDropbox, pushToDropbox, schedulePush, sync };

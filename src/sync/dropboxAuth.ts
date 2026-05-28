@@ -1,5 +1,5 @@
-import { Dropbox, DropboxAuth } from 'dropbox';
 import type { DropboxResponseError } from 'dropbox';
+import { Dropbox, DropboxAuth } from 'dropbox';
 
 const DROPBOX_CLIENT_ID = 'laodurqous9xun7';
 const TOKEN_KEY = 'taskmaster_dropbox_token';
@@ -16,7 +16,9 @@ function getStoredRefreshToken(): string | null {
 
 function storeTokens(accessToken: string, refreshToken?: string) {
     localStorage.setItem(TOKEN_KEY, accessToken);
-    if (refreshToken) localStorage.setItem(REFRESH_TOKEN_KEY, refreshToken);
+    if (refreshToken) {
+        localStorage.setItem(REFRESH_TOKEN_KEY, refreshToken);
+    }
 }
 
 function clearTokens() {
@@ -56,10 +58,14 @@ async function startAuthFlow(): Promise<string> {
 async function handleAuthRedirect(): Promise<boolean> {
     const params = new URLSearchParams(window.location.search);
     const code = params.get('code');
-    if (!code) return false;
+    if (!code) {
+        return false;
+    }
 
     const codeVerifier = localStorage.getItem(CODE_VERIFIER_KEY);
-    if (!codeVerifier) return false;
+    if (!codeVerifier) {
+        return false;
+    }
 
     const auth = createAuth();
 
@@ -77,7 +83,9 @@ async function handleAuthRedirect(): Promise<boolean> {
 
 function getDropboxClient(): Dropbox | null {
     const accessToken = getStoredToken();
-    if (!accessToken) return null;
+    if (!accessToken) {
+        return null;
+    }
 
     const refreshToken = getStoredRefreshToken();
     return new Dropbox({
@@ -88,7 +96,9 @@ function getDropboxClient(): Dropbox | null {
 }
 
 function persistTokensFromClient(dbx: Dropbox): void {
-    if (typeof localStorage === 'undefined') return;
+    if (typeof localStorage === 'undefined') {
+        return;
+    }
     const accessToken = (dbx as Dropbox & { auth: DropboxAuth }).auth.getAccessToken();
     if (accessToken && accessToken !== getStoredToken()) {
         localStorage.setItem(TOKEN_KEY, accessToken);
@@ -104,10 +114,14 @@ function getDropboxErrorStatus(err: unknown): number | undefined {
 }
 
 function getDropboxErrorMessage(err: unknown): string {
-    if (err instanceof Error) return err.message;
+    if (err instanceof Error) {
+        return err.message;
+    }
     if (err && typeof err === 'object' && 'error' in err) {
         const inner = (err as { error: unknown }).error;
-        if (typeof inner === 'string') return inner;
+        if (typeof inner === 'string') {
+            return inner;
+        }
         if (inner && typeof inner === 'object' && 'error_summary' in inner) {
             return String((inner as { error_summary: string }).error_summary);
         }
@@ -117,7 +131,9 @@ function getDropboxErrorMessage(err: unknown): string {
 
 async function tryRefreshAccessToken(): Promise<boolean> {
     const refreshToken = getStoredRefreshToken();
-    if (!refreshToken) return false;
+    if (!refreshToken) {
+        return false;
+    }
 
     const auth = createAuth();
     auth.setRefreshToken(refreshToken);
@@ -126,7 +142,9 @@ async function tryRefreshAccessToken(): Promise<boolean> {
     try {
         await auth.refreshAccessToken();
         const accessToken = auth.getAccessToken();
-        if (!accessToken) return false;
+        if (!accessToken) {
+            return false;
+        }
         storeTokens(accessToken, refreshToken);
         return true;
     } catch {
@@ -135,16 +153,16 @@ async function tryRefreshAccessToken(): Promise<boolean> {
 }
 
 export {
-    getStoredToken,
-    getStoredRefreshToken,
-    isAuthenticated,
-    startAuthFlow,
-    handleAuthRedirect,
-    getDropboxClient,
     clearTokens,
-    storeTokens,
-    persistTokensFromClient,
-    getDropboxErrorStatus,
+    getDropboxClient,
     getDropboxErrorMessage,
+    getDropboxErrorStatus,
+    getStoredRefreshToken,
+    getStoredToken,
+    handleAuthRedirect,
+    isAuthenticated,
+    persistTokensFromClient,
+    startAuthFlow,
+    storeTokens,
     tryRefreshAccessToken,
 };
