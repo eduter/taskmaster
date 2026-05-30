@@ -1,6 +1,8 @@
-import { onMount } from 'solid-js';
+import { onMount, Show } from 'solid-js';
 import { AddTask } from './components/AddTask.tsx';
-import { GeneratorList } from './components/GeneratorList.tsx';
+import { AppTabs } from './components/AppTabs.tsx';
+import { GeneratorEditorModal } from './components/GeneratorEditorModal.tsx';
+import { GeneratorsTab } from './components/GeneratorsTab.tsx';
 import { InstallPrompt } from './components/InstallPrompt.tsx';
 import { OfflineIndicator } from './components/OfflineIndicator.tsx';
 import { SyncSettings } from './components/SyncSettings.tsx';
@@ -8,9 +10,10 @@ import { SyncStatusBar } from './components/SyncStatusBar.tsx';
 import { TaskDetail } from './components/TaskDetail.tsx';
 import { TaskList } from './components/TaskList.tsx';
 import { runGenerators } from './scheduling/generate.ts';
-import { invalidateGenerators, setShowGeneratorList } from './stores/generatorStore.ts';
+import { activeTab } from './stores/appStore.ts';
+import { invalidateGenerators } from './stores/generatorStore.ts';
 import { markConnected, refreshAuthState } from './stores/syncStore.ts';
-import { invalidateTasks, today } from './stores/taskStore.ts';
+import { invalidateTasks } from './stores/taskStore.ts';
 import { handleAuthRedirect } from './sync/dropboxAuth.ts';
 import { loadSyncMetaIntoStore, markLocalChange, pushToDropbox, sync } from './sync/syncEngine.ts';
 import './App.css';
@@ -41,24 +44,21 @@ function App() {
     return (
         <div class="app">
             <header class="app-header">
-                <h1>TaskMaster</h1>
-                <span class="app-date">{today()}</span>
+                <AppTabs />
                 <SyncSettings />
-                <button
-                    type="button"
-                    class="app-generators-btn"
-                    onClick={() => setShowGeneratorList(true)}
-                    aria-label="Generators"
-                >
-                    <svg viewBox="0 0 20 20" width="20" height="20" fill="none" aria-hidden="true">
-                        <path d="M10 3v14M3 10h14" stroke="currentColor" stroke-width="2" stroke-linecap="round" />
-                    </svg>
-                </button>
             </header>
-            <AddTask />
-            <TaskList />
+            <Show when={activeTab() === 'today'}>
+                <AddTask />
+                <TaskList />
+            </Show>
+            <Show when={activeTab() === 'calendar'}>
+                <p class="app-placeholder">Not implemented yet.</p>
+            </Show>
+            <Show when={activeTab() === 'generators'}>
+                <GeneratorsTab />
+            </Show>
             <TaskDetail />
-            <GeneratorList />
+            <GeneratorEditorModal />
             <SyncStatusBar />
             <OfflineIndicator />
             <InstallPrompt />

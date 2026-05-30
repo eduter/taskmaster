@@ -28,7 +28,11 @@ function formatDate(d: Date): string {
     return `${y}-${m}-${day}`;
 }
 
-function GeneratorEditor() {
+interface GeneratorEditorProps {
+    onClose?: () => void;
+}
+
+function GeneratorEditor(props: GeneratorEditorProps) {
     const [name, setName] = createSignal('');
     const [freq, setFreq] = createSignal<string>('DAILY');
     const [interval, setIntervalVal] = createSignal<number>(1);
@@ -78,12 +82,12 @@ function GeneratorEditor() {
                     setDtstart(formatDate(new Date()));
                 }
             } else {
-                resetForm();
+                clearFormFields();
             }
         })
     );
 
-    function resetForm() {
+    function clearFormFields() {
         setName('');
         setFreq('DAILY');
         setIntervalVal(1);
@@ -92,7 +96,12 @@ function GeneratorEditor() {
         setTemplates([]);
         setNewTemplateSummary('');
         setActive(true);
+    }
+
+    function resetForm() {
+        clearFormFields();
         setEditingGeneratorId(null);
+        props.onClose?.();
     }
 
     function addTemplate() {

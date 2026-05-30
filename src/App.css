@@ -6,35 +6,19 @@
 
 .app-header {
     display: flex;
-    align-items: baseline;
+    align-items: flex-end;
     gap: var(--space-md);
-    padding: var(--space-md) var(--space-lg);
+    padding: var(--space-md) var(--space-lg) 0;
     border-bottom: 1px solid var(--border);
 }
 
-.app-header h1 {
+.app-header .sync-trigger {
+    margin-bottom: var(--space-sm);
+}
+
+.app-placeholder {
+    text-align: center;
+    color: var(--text-muted);
+    padding: var(--space-xl) var(--space-lg);
     margin: 0;
-    font-size: 20px;
-    font-weight: 700;
-    letter-spacing: -0.3px;
-    color: var(--text-heading);
-}
-
-.app-date {
-    font-size: 14px;
-    color: var(--text-muted);
-    flex: 1;
-}
-
-.app-generators-btn {
-    background: none;
-    border: none;
-    color: var(--text-muted);
-    padding: var(--space-xs);
-    border-radius: var(--radius-sm);
-    transition: color var(--transition-fast);
-}
-
-.app-generators-btn:hover {
-    color: var(--accent);
 }

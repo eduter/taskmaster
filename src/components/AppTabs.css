@@ -1,0 +1,43 @@
+.app-tabs {
+    display: flex;
+    align-items: flex-end;
+    gap: 2px;
+    flex: 1;
+    margin-bottom: -1px;
+}
+
+.app-tabs__tab {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    background: transparent;
+    border: 1px solid transparent;
+    border-bottom: none;
+    border-radius: var(--radius-md) var(--radius-md) 0 0;
+    color: var(--text-muted);
+    padding: var(--space-sm) var(--space-md);
+    transition:
+        color var(--transition-fast),
+        background var(--transition-fast),
+        border-color var(--transition-fast);
+}
+
+.app-tabs__tab:hover:not(.app-tabs__tab--active) {
+    color: var(--text-primary);
+    background: var(--bg-surface);
+    border-color: var(--border);
+}
+
+.app-tabs__tab--active {
+    color: var(--accent);
+    background: var(--bg-primary);
+    border-color: var(--border);
+    /* Cover the header rule so the tab reads as attached to the content pane */
+    box-shadow: 0 1px 0 var(--bg-primary);
+    position: relative;
+    z-index: 1;
+}
+
+.app-tabs__tab--active:hover {
+    color: var(--accent-hover);
+}

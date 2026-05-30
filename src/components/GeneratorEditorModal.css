@@ -1,0 +1,58 @@
+.gen-editor-overlay {
+    position: fixed;
+    inset: 0;
+    display: grid;
+    grid-template: 1fr / 1fr;
+    align-items: flex-end;
+    justify-items: center;
+    z-index: 100;
+}
+
+.gen-editor-overlay__backdrop {
+    grid-area: 1 / 1;
+    align-self: stretch;
+    justify-self: stretch;
+    margin: 0;
+    padding: 0;
+    border: none;
+    background: rgba(0, 0, 0, 0.6);
+    cursor: default;
+}
+
+.gen-editor-panel {
+    grid-area: 1 / 1;
+    z-index: 1;
+    width: 100%;
+    max-width: 600px;
+    max-height: 90dvh;
+    overflow-y: auto;
+    background: var(--bg-secondary);
+    border-radius: var(--radius-lg) var(--radius-lg) 0 0;
+    padding: var(--space-lg);
+    display: flex;
+    flex-direction: column;
+    gap: var(--space-md);
+}
+
+.gen-editor-panel__header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+}
+
+.gen-editor-panel__title {
+    margin: 0;
+    font-size: 18px;
+    font-weight: 600;
+    color: var(--text-heading);
+}
+
+.gen-editor-panel__close {
+    background: none;
+    border: none;
+    color: var(--text-muted);
+    font-size: 24px;
+    line-height: 1;
+    padding: 0 var(--space-xs);
+    cursor: pointer;
+}
