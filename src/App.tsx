@@ -1,4 +1,5 @@
-import { onMount, Show } from 'solid-js';
+import { Navigate } from '@solidjs/router';
+import { onMount, type JSX } from 'solid-js';
 import { AddTask } from './components/AddTask.tsx';
 import { AppTabs } from './components/AppTabs.tsx';
 import { GeneratorEditorModal } from './components/GeneratorEditorModal.tsx';
@@ -10,7 +11,6 @@ import { SyncStatusBar } from './components/SyncStatusBar.tsx';
 import { TaskDetail } from './components/TaskDetail.tsx';
 import { TaskList } from './components/TaskList.tsx';
 import { runGenerators } from './scheduling/generate.ts';
-import { activeTab } from './stores/appStore.ts';
 import { invalidateGenerators } from './stores/generatorStore.ts';
 import { markConnected, refreshAuthState } from './stores/syncStore.ts';
 import { invalidateTasks } from './stores/taskStore.ts';
@@ -18,7 +18,11 @@ import { handleAuthRedirect } from './sync/dropboxAuth.ts';
 import { loadSyncMetaIntoStore, markLocalChange, pushToDropbox, sync } from './sync/syncEngine.ts';
 import './App.css';
 
-function App() {
+interface AppProps {
+    children?: JSX.Element;
+}
+
+function App(props: AppProps) {
     onMount(async () => {
         const authed = await handleAuthRedirect();
         if (authed) {
@@ -47,18 +51,7 @@ function App() {
                 <AppTabs />
                 <SyncSettings />
             </header>
-            <Show when={activeTab() === 'today'}>
-                <AddTask />
-                <TaskList />
-            </Show>
-            <Show when={activeTab() === 'calendar'}>
-                <p class="app-placeholder">Not implemented yet.</p>
-            </Show>
-            <Show when={activeTab() === 'generators'}>
-                <GeneratorsTab />
-            </Show>
-            <TaskDetail />
-            <GeneratorEditorModal />
+            {props.children}
             <SyncStatusBar />
             <OfflineIndicator />
             <InstallPrompt />
@@ -66,4 +59,31 @@ function App() {
     );
 }
 
-export { App };
+function RedirectToTasks() {
+    return <Navigate href="/tasks" />;
+}
+
+function TasksSection() {
+    return (
+        <>
+            <AddTask />
+            <TaskList />
+            <TaskDetail />
+        </>
+    );
+}
+
+function CalendarSection() {
+    return <p class="app-placeholder">Not implemented yet.</p>;
+}
+
+function GeneratorsSection() {
+    return (
+        <>
+            <GeneratorsTab />
+            <GeneratorEditorModal />
+        </>
+    );
+}
+
+export { App, CalendarSection, GeneratorsSection, RedirectToTasks, TasksSection };

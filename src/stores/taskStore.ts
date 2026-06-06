@@ -21,8 +21,6 @@ async function fetchTasks(): Promise<Task[]> {
 
 const [tasks, { refetch: refetchTasks }] = createResource(taskVersion, fetchTasks);
 
-const [selectedTaskId, setSelectedTaskId] = createSignal<string | null>(null);
-
 async function addTask(summary: string): Promise<Task> {
     const task = await createTask({ summary, date: today() });
     invalidateTasks();
@@ -36,9 +34,6 @@ async function editTask(id: string, changes: Partial<Omit<Task, 'id' | 'createdA
 
 async function removeTask(id: string): Promise<void> {
     await deleteTask(id);
-    if (selectedTaskId() === id) {
-        setSelectedTaskId(null);
-    }
     invalidateTasks();
 }
 
@@ -52,16 +47,4 @@ async function reorder(orderedIds: string[]): Promise<void> {
     invalidateTasks();
 }
 
-export {
-    addTask,
-    editTask,
-    invalidateTasks,
-    refetchTasks,
-    removeTask,
-    reorder,
-    selectedTaskId,
-    setSelectedTaskId,
-    tasks,
-    today,
-    toggleComplete,
-};
+export { addTask, editTask, invalidateTasks, refetchTasks, removeTask, reorder, tasks, today, toggleComplete };

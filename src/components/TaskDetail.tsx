@@ -1,18 +1,24 @@
+import { useParams } from '@solidjs/router';
 import { createEffect, createSignal, on, Show } from 'solid-js';
 import type { Task } from '../db/types.ts';
-import { editTask, removeTask, selectedTaskId, setSelectedTaskId, tasks } from '../stores/taskStore.ts';
+import { useAppNavigate } from '../routing/navigation.ts';
+import { editTask, removeTask, tasks } from '../stores/taskStore.ts';
 import { PostponeMenu } from './PostponeMenu.tsx';
 import './TaskDetail.css';
 
 function TaskDetail() {
+    const params = useParams();
+    const { toTasksList } = useAppNavigate();
     const [summary, setSummary] = createSignal('');
     const [description, setDescription] = createSignal('');
     const [labelInput, setLabelInput] = createSignal('');
     const [labels, setLabels] = createSignal<string[]>([]);
     let dismissGuardUntil = 0;
 
+    const taskId = () => params.id;
+
     createEffect(
-        on(selectedTaskId, (id) => {
+        on(taskId, (id) => {
             if (id) {
                 dismissGuardUntil = Date.now() + 500;
             }
@@ -23,19 +29,29 @@ function TaskDetail() {
         if (Date.now() < dismissGuardUntil) {
             return;
         }
-        setSelectedTaskId(null);
+        toTasksList();
     }
 
     const selectedTask = (): Task | undefined => {
-        const id = selectedTaskId();
+        const id = taskId();
         if (!id) {
             return undefined;
         }
         return (tasks() ?? []).find((t) => t.id === id);
     };
 
+    createEffect(() => {
+        const id = taskId();
+        if (!id || tasks.loading) {
+            return;
+        }
+        if (!selectedTask()) {
+            toTasksList();
+        }
+    });
+
     createEffect(
-        on(selectedTaskId, () => {
+        on(taskId, () => {
             const task = selectedTask();
             if (task) {
                 setSummary(task.summary);
@@ -47,7 +63,7 @@ function TaskDetail() {
     );
 
     async function save() {
-        const id = selectedTaskId();
+        const id = taskId();
         if (!id) {
             return;
         }
@@ -79,11 +95,12 @@ function TaskDetail() {
     }
 
     async function handleDelete() {
-        const id = selectedTaskId();
+        const id = taskId();
         if (!id) {
             return;
         }
         await removeTask(id);
+        toTasksList();
     }
 
     return (
@@ -162,7 +179,7 @@ function TaskDetail() {
                             </div>
                         </div>
 
-                        <PostponeMenu taskId={task().id} onDone={() => setSelectedTaskId(null)} />
+                        <PostponeMenu taskId={task().id} onDone={toTasksList} />
 
                         <div class="task-detail__actions">
                             <button type="button" class="task-detail__btn-primary" onClick={save}>

@@ -1,14 +1,8 @@
+import { useParams } from '@solidjs/router';
 import { RRule } from 'rrule';
 import { createEffect, createSignal, For, on, Show } from 'solid-js';
 import type { Generator, TaskTemplate } from '../db/types.ts';
-import {
-    addGenerator,
-    editGenerator,
-    editingGeneratorId,
-    generators,
-    removeGenerator,
-    setEditingGeneratorId,
-} from '../stores/generatorStore.ts';
+import { addGenerator, editGenerator, generators, removeGenerator } from '../stores/generatorStore.ts';
 import './GeneratorEditor.css';
 
 const DAY_MAP = [
@@ -33,6 +27,7 @@ interface GeneratorEditorProps {
 }
 
 function GeneratorEditor(props: GeneratorEditorProps) {
+    const params = useParams();
     const [name, setName] = createSignal('');
     const [freq, setFreq] = createSignal<string>('DAILY');
     const [interval, setIntervalVal] = createSignal<number>(1);
@@ -42,18 +37,19 @@ function GeneratorEditor(props: GeneratorEditorProps) {
     const [newTemplateSummary, setNewTemplateSummary] = createSignal('');
     const [active, setActive] = createSignal(true);
 
-    const isEditing = () => editingGeneratorId() !== null;
+    const generatorId = () => params.id;
+    const isEditing = () => generatorId() !== undefined && generatorId() !== 'new';
 
     const editingGen = (): Generator | undefined => {
-        const id = editingGeneratorId();
-        if (!id) {
+        const id = generatorId();
+        if (!id || id === 'new') {
             return undefined;
         }
         return (generators() ?? []).find((g) => g.id === id);
     };
 
     createEffect(
-        on(editingGeneratorId, () => {
+        on(generatorId, () => {
             const gen = editingGen();
             if (gen) {
                 setName(gen.name);
@@ -81,11 +77,21 @@ function GeneratorEditor(props: GeneratorEditorProps) {
                     console.error(e);
                     setDtstart(formatDate(new Date()));
                 }
-            } else {
+            } else if (generatorId() === 'new') {
                 clearFormFields();
             }
         })
     );
+
+    createEffect(() => {
+        const id = generatorId();
+        if (!id || id === 'new' || generators.loading) {
+            return;
+        }
+        if (!editingGen()) {
+            props.onClose?.();
+        }
+    });
 
     function clearFormFields() {
         setName('');
@@ -100,7 +106,6 @@ function GeneratorEditor(props: GeneratorEditorProps) {
 
     function resetForm() {
         clearFormFields();
-        setEditingGeneratorId(null);
         props.onClose?.();
     }
 
@@ -140,7 +145,7 @@ function GeneratorEditor(props: GeneratorEditorProps) {
         const rule = `DTSTART:${dStr}\nRRULE:${ruleStr}`;
 
         if (isEditing()) {
-            const id = editingGeneratorId();
+            const id = generatorId();
             if (!id) {
                 return;
             }
@@ -157,8 +162,8 @@ function GeneratorEditor(props: GeneratorEditorProps) {
     }
 
     async function handleDelete() {
-        const id = editingGeneratorId();
-        if (!id) {
+        const id = generatorId();
+        if (!id || id === 'new') {
             return;
         }
         await removeGenerator(id);

@@ -14,9 +14,6 @@ function invalidateGenerators(options?: { push?: boolean }) {
 
 const [generators, { refetch: refetchGenerators }] = createResource(genVersion, () => getAllGenerators());
 
-const [editingGeneratorId, setEditingGeneratorId] = createSignal<string | null>(null);
-const [showGeneratorEditor, setShowGeneratorEditor] = createSignal(false);
-
 async function addGenerator(name: string, rrule: string, templates: TaskTemplate[]): Promise<Generator> {
     const gen = await createGenerator({ name, rrule, templates });
     invalidateGenerators();
@@ -30,21 +27,7 @@ async function editGenerator(id: string, changes: Partial<Omit<Generator, 'id' |
 
 async function removeGenerator(id: string): Promise<void> {
     await deleteGenerator(id);
-    if (editingGeneratorId() === id) {
-        setEditingGeneratorId(null);
-    }
     invalidateGenerators();
 }
 
-export {
-    addGenerator,
-    editGenerator,
-    editingGeneratorId,
-    generators,
-    invalidateGenerators,
-    refetchGenerators,
-    removeGenerator,
-    setEditingGeneratorId,
-    setShowGeneratorEditor,
-    showGeneratorEditor,
-};
+export { addGenerator, editGenerator, generators, invalidateGenerators, refetchGenerators, removeGenerator };

@@ -1,8 +1,7 @@
-import type { AppTab } from '../stores/appStore.ts';
 import calendarIcon from '../icons/tab-calendar.svg?raw';
 import generatorsIcon from '../icons/tab-generators.svg?raw';
 import todayIcon from '../icons/tab-today.svg?raw';
-import { activeTab, setActiveTab } from '../stores/appStore.ts';
+import { type AppTab, useActiveTab, useAppNavigate } from '../routing/navigation.ts';
 import { Icon } from './Icon.tsx';
 import './AppTabs.css';
 
@@ -19,6 +18,9 @@ const TABS: TabConfig[] = [
 ];
 
 function AppTabs() {
+    const activeTab = useActiveTab();
+    const { toTab } = useAppNavigate();
+
     return (
         <nav class="app-tabs" aria-label="Main navigation">
             {TABS.map((tab) => (
@@ -28,7 +30,7 @@ function AppTabs() {
                     classList={{ 'app-tabs__tab--active': activeTab() === tab.id }}
                     aria-label={tab.label}
                     aria-current={activeTab() === tab.id ? 'page' : undefined}
-                    onClick={() => setActiveTab(tab.id)}
+                    onClick={() => toTab(tab.id)}
                 >
                     <Icon src={tab.icon} />
                 </button>

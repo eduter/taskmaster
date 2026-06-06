@@ -8,22 +8,18 @@
     "build": "tsc -b && vite build",
     "preview": "vite preview",
     "generate:icons": "pwa-assets-generator -r public -p minimal -o favicon.svg",
-
     "lint": "biome lint .",
     "lint:fix": "biome lint --write .",
-
     "typecheck": "tsc -b --noEmit",
-
     "format": "biome format --write .",
     "format:check": "biome format .",
-
     "test": "vitest run",
     "test:watch": "vitest",
-
     "check": "npm run lint && npm run typecheck && npm run format:check && npm run test",
     "fix": "npm run lint:fix && npm run format"
   },
   "dependencies": {
+    "@solidjs/router": "^0.16.1",
     "@thisbeyond/solid-dnd": "^0.7.5",
     "dexie": "^4.4.1",
     "dropbox": "^10.34.0",

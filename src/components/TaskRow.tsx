@@ -23,7 +23,8 @@ import {
 } from '../gestures/rowGesture.ts';
 import { lockGestureScroll, unlockGestureScroll } from '../gestures/scrollLock.ts';
 import { useTouchDrag } from '../gestures/touchDragContext.tsx';
-import { removeTask, setSelectedTaskId, toggleComplete } from '../stores/taskStore.ts';
+import { useAppNavigate } from '../routing/navigation.ts';
+import { removeTask, toggleComplete } from '../stores/taskStore.ts';
 import { TaskCard } from './TaskCard.tsx';
 import './TaskRow.css';
 
@@ -45,6 +46,7 @@ function nowMs(): number {
 }
 
 function TaskRow(props: TaskRowProps) {
+    const { toTask } = useAppNavigate();
     const sortable = createSortable(props.task.id);
     const touchDrag = useTouchDrag();
     const dndContext = useDragDropContext();
@@ -140,7 +142,7 @@ function TaskRow(props: TaskRowProps) {
             if (props.deleteRevealed) {
                 props.onRevealChange(props.task.id, false);
             }
-            setSelectedTaskId(props.task.id);
+            toTask(props.task.id);
         }, 0);
     }
 
