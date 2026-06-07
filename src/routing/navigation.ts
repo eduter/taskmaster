@@ -46,11 +46,17 @@ function useAppNavigate() {
         toTask(id: string) {
             navigate(taskDetailPath(id));
         },
+        closeTaskDetail() {
+            navigate(-1);
+        },
         toTasksList() {
             navigate(pathKeepingOverlays(TAB_ROUTES.today), { replace: true });
         },
         toGenerator(id: string | 'new') {
             navigate(generatorDetailPath(id));
+        },
+        closeGeneratorDetail() {
+            navigate(-1);
         },
         toGeneratorsList() {
             navigate(pathKeepingOverlays(TAB_ROUTES.generators), { replace: true });

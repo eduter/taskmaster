@@ -9,7 +9,7 @@ import './TaskDetail.css';
 
 function TaskDetail() {
     const params = useParams();
-    const { toTasksList } = useAppNavigate();
+    const { closeTaskDetail, toTasksList } = useAppNavigate();
     const [summary, setSummary] = createSignal('');
     const [description, setDescription] = createSignal('');
     const [labelInput, setLabelInput] = createSignal('');
@@ -34,7 +34,7 @@ function TaskDetail() {
         if (!canClose()) {
             return;
         }
-        toTasksList();
+        closeTaskDetail();
     }
 
     const selectedTask = (): Task | undefined => {
@@ -105,7 +105,7 @@ function TaskDetail() {
             return;
         }
         await removeTask(id);
-        toTasksList();
+        closeTaskDetail();
     }
 
     return (
@@ -170,7 +170,7 @@ function TaskDetail() {
                         </div>
                     </div>
 
-                    <PostponeMenu taskId={task().id} onDone={toTasksList} />
+                    <PostponeMenu taskId={task().id} onDone={closeTaskDetail} />
 
                     <div class="task-detail__actions">
                         <button type="button" class="task-detail__btn-primary" onClick={save}>

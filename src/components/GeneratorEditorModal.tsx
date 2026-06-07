@@ -6,12 +6,12 @@ import { GeneratorEditor } from './GeneratorEditor.tsx';
 
 function GeneratorEditorModal() {
     const params = useParams();
-    const { toGeneratorsList } = useAppNavigate();
+    const { closeGeneratorDetail } = useAppNavigate();
 
     return (
         <Show when={params.id}>
-            <Dialog open={true} onClose={toGeneratorsList} title="Generator">
-                <GeneratorEditor onClose={toGeneratorsList} />
+            <Dialog open={true} onClose={closeGeneratorDetail} title="Generator">
+                <GeneratorEditor onClose={closeGeneratorDetail} />
             </Dialog>
         </Show>
     );
