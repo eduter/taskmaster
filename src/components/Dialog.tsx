@@ -66,7 +66,7 @@ function Dialog(props: DialogProps) {
                         &times;
                     </button>
                 </div>
-                {props.children}
+                <div class="dialog__body">{props.children}</div>
             </div>
         </dialog>
     );

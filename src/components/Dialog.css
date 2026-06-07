@@ -11,9 +11,21 @@
     background: transparent;
     display: grid;
     grid-template: 1fr / 1fr;
-    align-items: flex-end;
+    align-items: center;
     justify-items: center;
     z-index: 100;
+}
+
+@media (pointer: fine) {
+    .dialog {
+        padding: var(--space-md);
+    }
+}
+
+@media (pointer: coarse) {
+    .dialog {
+        align-items: flex-start;
+    }
 }
 
 .dialog:not([open]) {
@@ -41,19 +53,33 @@
     width: 100%;
     max-width: 600px;
     max-height: 90dvh;
-    overflow-y: auto;
+    overflow: hidden;
     background: var(--bg-secondary);
-    border-radius: var(--radius-lg) var(--radius-lg) 0 0;
+    border-radius: var(--radius-lg);
     padding: var(--space-lg);
     display: flex;
     flex-direction: column;
     gap: var(--space-md);
 }
 
+@media (pointer: coarse) {
+    .dialog__panel {
+        border-radius: 0 0 var(--radius-lg) var(--radius-lg);
+        max-height: 100dvh;
+    }
+}
+
 .dialog__header {
     display: flex;
     justify-content: space-between;
     align-items: center;
+    flex-shrink: 0;
+}
+
+.dialog__body {
+    flex: 1 1 auto;
+    min-height: 0;
+    overflow-y: auto;
 }
 
 .dialog__title {
