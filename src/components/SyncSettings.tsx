@@ -1,4 +1,5 @@
-import { createSignal, onMount, Show } from 'solid-js';
+import { onMount, Show } from 'solid-js';
+import { useAppNavigate, useSyncPanelOpen } from '../routing/navigation.ts';
 import { invalidateGenerators } from '../stores/generatorStore.ts';
 import {
     connection,
@@ -20,7 +21,8 @@ import { Dialog } from './Dialog.tsx';
 import './SyncSettings.css';
 
 function SyncSettings() {
-    const [showPanel, setShowPanel] = createSignal(false);
+    const syncPanelOpen = useSyncPanelOpen();
+    const { openSyncPanel, closeSyncPanel } = useAppNavigate();
 
     onMount(async () => {
         refreshAuthState();
@@ -30,7 +32,7 @@ function SyncSettings() {
     function openPanel() {
         refreshAuthState();
         void loadSyncMetaIntoStore();
-        setShowPanel(true);
+        openSyncPanel();
     }
 
     async function handleSync() {
@@ -133,7 +135,7 @@ function SyncSettings() {
                     />
                 </Show>
             </button>
-            <Dialog open={showPanel()} onClose={() => setShowPanel(false)} title="Dropbox Sync">
+            <Dialog open={syncPanelOpen()} onClose={closeSyncPanel} title="Dropbox Sync">
                 <div class="sync-panel__info">
                     <p class={`sync-panel__status ${statusClass()}`}>{connectionLabel()}</p>
                     <Show when={isConnected()}>

@@ -1,8 +1,10 @@
 import { Show } from 'solid-js';
+import { useAppNavigate } from '../routing/navigation.ts';
 import { connection, hasSyncIssue, lastMessage } from '../stores/syncStore.ts';
 import './SyncStatusBar.css';
 
 function SyncStatusBar() {
+    const { openSyncPanel } = useAppNavigate();
     const showBar = () => connection() === 'needs_reauth' || (hasSyncIssue() && !!lastMessage());
 
     const barMessage = () => {
@@ -18,7 +20,7 @@ function SyncStatusBar() {
                 type="button"
                 class="sync-status-bar"
                 classList={{ 'sync-status-bar--error': hasSyncIssue() }}
-                onClick={() => document.querySelector<HTMLButtonElement>('.sync-trigger')?.click()}
+                onClick={openSyncPanel}
             >
                 {barMessage()}
             </button>

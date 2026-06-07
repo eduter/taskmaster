@@ -1,7 +1,10 @@
-import { createMemo } from 'solid-js';
-import { useLocation, useNavigate, useResolvedPath } from '@solidjs/router';
+import { createEffect, createMemo } from 'solid-js';
+import { useLocation, useNavigate, useResolvedPath, useSearchParams } from '@solidjs/router';
+import { hasSyncModal, MODAL_PARAM, SYNC_MODAL } from './modalParams.ts';
 
 type AppTab = 'today' | 'calendar' | 'generators';
+
+let syncModalPushed = false;
 
 const TAB_ROUTES: Record<AppTab, string> = {
     today: '/tasks',
@@ -29,24 +32,57 @@ function generatorDetailPath(id: string | 'new'): string {
 /** Route-aware navigation helpers aligned with the app's history rules. */
 function useAppNavigate() {
     const navigate = useNavigate();
+    const location = useLocation();
+    const [, setSearchParams] = useSearchParams();
+
+    function pathKeepingOverlays(pathname: string): string {
+        return hasSyncModal(location.search) ? `${pathname}${location.search}` : pathname;
+    }
 
     return {
         toTab(tab: AppTab) {
-            navigate(TAB_ROUTES[tab], { replace: true });
+            navigate(pathKeepingOverlays(TAB_ROUTES[tab]), { replace: true });
         },
         toTask(id: string) {
             navigate(taskDetailPath(id));
         },
         toTasksList() {
-            navigate(TAB_ROUTES.today, { replace: true });
+            navigate(pathKeepingOverlays(TAB_ROUTES.today), { replace: true });
         },
         toGenerator(id: string | 'new') {
             navigate(generatorDetailPath(id));
         },
         toGeneratorsList() {
-            navigate(TAB_ROUTES.generators, { replace: true });
+            navigate(pathKeepingOverlays(TAB_ROUTES.generators), { replace: true });
+        },
+        openSyncPanel() {
+            setSearchParams({ [MODAL_PARAM]: SYNC_MODAL });
+            syncModalPushed = true;
+        },
+        closeSyncPanel() {
+            if (syncModalPushed) {
+                syncModalPushed = false;
+                navigate(-1);
+                return;
+            }
+            setSearchParams({ [MODAL_PARAM]: null }, { replace: true });
         },
     };
+}
+
+/** Whether the sync settings overlay is open for the current location. */
+function useSyncPanelOpen() {
+    const location = useLocation();
+
+    const open = createMemo(() => hasSyncModal(location.search));
+
+    createEffect(() => {
+        if (!open()) {
+            syncModalPushed = false;
+        }
+    });
+
+    return open;
 }
 
 /** Derive the active main tab from the current pathname. */
@@ -68,4 +104,5 @@ function useActiveTab() {
 }
 
 export type { AppTab };
-export { generatorDetailPath, TAB_ROUTES, taskDetailPath, useActiveTab, useAppNavigate };
+export { generatorDetailPath, TAB_ROUTES, taskDetailPath, useActiveTab, useAppNavigate, useSyncPanelOpen };
+export { hasSyncModal, MODAL_PARAM, SYNC_MODAL } from './modalParams.ts';
