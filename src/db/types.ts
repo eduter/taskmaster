@@ -36,6 +36,7 @@ interface SyncMeta {
     lastModifiedAt: number;
     lastBackupDay?: string;
     pushPending?: boolean;
+    localChangedAt?: number;
 }
 
 export type { Generator, SyncMeta, Task, TaskTemplate };

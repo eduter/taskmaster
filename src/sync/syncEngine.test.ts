@@ -30,6 +30,7 @@ const {
     pushToDropbox,
     getSyncMeta,
     isPushPending,
+    markLocalDirty,
     schedulePush,
     setPushPending,
     sync,
@@ -232,8 +233,9 @@ describe('syncEngine', () => {
 
     describe('sync serialization', () => {
         it('debounced push waits for active sync', async () => {
-            vi.useFakeTimers({ toFake: ['setTimeout', 'clearTimeout'] });
+            vi.useFakeTimers({ toFake: ['setTimeout', 'clearTimeout', 'Date'] });
             try {
+                vi.setSystemTime(1500);
                 await seedTask({ id: 'stale', summary: 'Stale local', updatedAt: 500 });
                 await db.syncMeta.put({ key: 'primary', lastSyncedAt: 0, lastModifiedAt: 1000 });
 
@@ -270,6 +272,7 @@ describe('syncEngine', () => {
 
                 const syncPromise = sync();
                 schedulePush();
+                await Promise.resolve();
                 await vi.advanceTimersByTimeAsync(2000);
 
                 expect(mockFilesUpload).not.toHaveBeenCalled();
@@ -296,8 +299,9 @@ describe('syncEngine', () => {
         });
 
         it('queued operations do not clear busy state early', async () => {
-            vi.useFakeTimers({ toFake: ['setTimeout', 'clearTimeout'] });
+            vi.useFakeTimers({ toFake: ['setTimeout', 'clearTimeout', 'Date'] });
             try {
+                vi.setSystemTime(1500);
                 await db.syncMeta.put({ key: 'primary', lastSyncedAt: 0, lastModifiedAt: 5000 });
 
                 const remote = makePayload({ lastModifiedAt: 5000 });
@@ -317,6 +321,7 @@ describe('syncEngine', () => {
                 expect(isSyncRunning()).toBe(true);
 
                 schedulePush();
+                await Promise.resolve();
                 await vi.advanceTimersByTimeAsync(2000);
                 expect(isSyncRunning()).toBe(true);
 
@@ -677,6 +682,131 @@ describe('syncEngine', () => {
             expect(outcome.ok).toBe(false);
             expect(outcome.pushed).toBe(false);
             expect(await isPushPending()).toBe(true);
+        });
+    });
+
+    describe('localChangedAt', () => {
+        it('deleted task triggers upload after reload via persisted localChangedAt', async () => {
+            const sharedTs = 1000;
+            const changeTs = 8000;
+            await seedTask({ id: 'gone', summary: 'Gone', updatedAt: 500 });
+            await db.syncMeta.put({ key: 'primary', lastSyncedAt: 0, lastModifiedAt: sharedTs });
+            await db.tasks.delete('gone');
+            await db.syncMeta.put({
+                key: 'primary',
+                lastSyncedAt: 0,
+                lastModifiedAt: sharedTs,
+                localChangedAt: changeTs,
+            });
+
+            const remote = makePayload({ lastModifiedAt: sharedTs });
+            mockFilesDownload.mockResolvedValue({
+                result: { fileBlob: blobFromPayload(remote) },
+            });
+
+            const outcome = await sync();
+
+            expect(outcome.pushed).toBe(true);
+            const uploaded = JSON.parse(mockFilesUpload.mock.calls[0][0].contents as string) as SyncPayload;
+            expect(uploaded.tasks).toHaveLength(0);
+        });
+
+        it('deleted generator triggers upload after reload via persisted localChangedAt', async () => {
+            const sharedTs = 1000;
+            const changeTs = 8000;
+            await seedGenerator({ id: 'gen-gone', name: 'Gone', rrule: 'FREQ=DAILY' });
+            await db.syncMeta.put({ key: 'primary', lastSyncedAt: 0, lastModifiedAt: sharedTs });
+            await db.generators.delete('gen-gone');
+            await db.syncMeta.put({
+                key: 'primary',
+                lastSyncedAt: 0,
+                lastModifiedAt: sharedTs,
+                localChangedAt: changeTs,
+            });
+
+            const remote = makePayload({ lastModifiedAt: sharedTs });
+            mockFilesDownload.mockResolvedValue({
+                result: { fileBlob: blobFromPayload(remote) },
+            });
+
+            const outcome = await sync();
+
+            expect(outcome.pushed).toBe(true);
+            const uploaded = JSON.parse(mockFilesUpload.mock.calls[0][0].contents as string) as SyncPayload;
+            expect(uploaded.generators).toHaveLength(0);
+        });
+
+        it('failed upload keeps localChangedAt', async () => {
+            const changeTs = 8000;
+            await seedTask({ id: 'local', summary: 'Local', updatedAt: changeTs });
+            await db.syncMeta.put({
+                key: 'primary',
+                lastSyncedAt: 0,
+                lastModifiedAt: 1000,
+                localChangedAt: changeTs,
+            });
+
+            const remote = makePayload({ lastModifiedAt: 1000 });
+            mockFilesDownload.mockResolvedValue({
+                result: { fileBlob: blobFromPayload(remote) },
+            });
+            mockFilesUpload.mockRejectedValue(new Error('upload failed'));
+
+            const outcome = await sync();
+
+            expect(outcome.pushed).toBe(false);
+            expect((await getSyncMeta()).localChangedAt).toBe(changeTs);
+        });
+
+        it('successful upload clears localChangedAt', async () => {
+            await seedTask({ id: 'local', summary: 'Local', updatedAt: 8000 });
+            await markLocalDirty();
+            expect((await getSyncMeta()).localChangedAt).toBeGreaterThan(0);
+
+            const remote = makePayload({ lastModifiedAt: 1000 });
+            mockFilesDownload.mockResolvedValue({
+                result: { fileBlob: blobFromPayload(remote) },
+            });
+
+            const outcome = await sync();
+
+            expect(outcome.pushed).toBe(true);
+            expect((await getSyncMeta()).localChangedAt).toBeUndefined();
+        });
+
+        it('remote-newer pull clears localChangedAt', async () => {
+            const changeTs = 8000;
+            await seedTask({ id: 'local', summary: 'Local', updatedAt: 500 });
+            await db.syncMeta.put({
+                key: 'primary',
+                lastSyncedAt: 0,
+                lastModifiedAt: 1000,
+                localChangedAt: changeTs,
+            });
+
+            const remoteTask = {
+                id: 'remote',
+                summary: 'Remote',
+                description: '',
+                labels: [],
+                date: '2026-05-23',
+                sortOrder: 1,
+                completed: false,
+                completedAt: null,
+                createdAt: 1,
+                updatedAt: 9000,
+                generatorId: null,
+                parentTaskId: null,
+            };
+            const remote = makePayload({ lastModifiedAt: 9000, tasks: [remoteTask] });
+            mockFilesDownload.mockResolvedValue({
+                result: { fileBlob: blobFromPayload(remote) },
+            });
+
+            const outcome = await sync();
+
+            expect(outcome.pulled).toBe(true);
+            expect((await getSyncMeta()).localChangedAt).toBeUndefined();
         });
     });
 });

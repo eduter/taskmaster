@@ -116,7 +116,7 @@ async function setPushPending(pending: boolean): Promise<void> {
 
 async function getEffectiveLocalModifiedAt(): Promise<number> {
     const [tasks, generators, meta] = await Promise.all([db.tasks.toArray(), db.generators.toArray(), getSyncMeta()]);
-    return Math.max(meta.lastModifiedAt, maxRecordUpdatedAt({ tasks, generators }));
+    return Math.max(meta.lastModifiedAt, meta.localChangedAt ?? 0, maxRecordUpdatedAt({ tasks, generators }));
 }
 
 function maxRecordUpdatedAt(payload: Pick<SyncPayload, 'tasks' | 'generators'>): number {
@@ -148,6 +148,7 @@ async function applyPayload(payload: SyncPayload): Promise<void> {
             lastSyncedAt: Date.now(),
             lastModifiedAt: payload.lastModifiedAt,
             pushPending: undefined,
+            localChangedAt: undefined,
         });
     });
     localDirty = false;
@@ -276,6 +277,7 @@ async function uploadLocal(remoteForBackup: SyncPayload | null): Promise<boolean
             lastSyncedAt: syncedAt,
             lastModifiedAt: payload.lastModifiedAt,
             pushPending: undefined,
+            localChangedAt: undefined,
         });
         localDirty = false;
         recordSuccess('pushed', 'Uploaded local changes to Dropbox', syncedAt);
@@ -371,7 +373,7 @@ function schedulePush(): void {
     if (!isAuthenticated()) {
         return;
     }
-    markLocalDirty();
+    void markLocalDirty();
     if (debounceTimer) {
         clearTimeout(debounceTimer);
     }
