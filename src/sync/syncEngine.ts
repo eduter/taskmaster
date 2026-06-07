@@ -1,7 +1,6 @@
 import { db } from '../db/database.ts';
 import type { Generator, SyncMeta, Task } from '../db/types.ts';
 import {
-    beginPush,
     beginSync,
     endOperation,
     hydrateLastBackupDay,
@@ -66,17 +65,13 @@ function isSyncRunning(): boolean {
     return activeSyncOperations + queuedSyncOperations > 0;
 }
 
-async function runSerializedSync<T>(operation: 'syncing' | 'pushing', work: () => Promise<T>): Promise<T> {
+async function runSerializedSync<T>(work: () => Promise<T>): Promise<T> {
     queuedSyncOperations++;
 
     const run = async (): Promise<T> => {
         queuedSyncOperations--;
         activeSyncOperations++;
-        if (operation === 'syncing') {
-            beginSync();
-        } else {
-            beginPush();
-        }
+        beginSync();
 
         try {
             return await work();
@@ -95,8 +90,9 @@ async function runSerializedSync<T>(operation: 'syncing' | 'pushing', work: () =
     return current;
 }
 
-function markLocalDirty(): void {
+async function markLocalDirty(): Promise<void> {
     localDirty = true;
+    await updateSyncMeta({ localChangedAt: Date.now() });
 }
 
 async function getSyncMeta(): Promise<SyncMeta> {
@@ -316,7 +312,7 @@ async function sync(): Promise<SyncOutcome> {
         return { ok: false, pulled: false, pushed: false, dataChanged: false };
     }
 
-    return runSerializedSync('syncing', syncNow);
+    return runSerializedSync(syncNow);
 }
 
 async function syncNow(): Promise<SyncOutcome> {
@@ -382,32 +378,9 @@ function schedulePush(): void {
     setPendingPushScheduled(true);
     debounceTimer = setTimeout(() => {
         debounceTimer = null;
-        void runSerializedSync('pushing', pushScheduledNow);
-    }, DEBOUNCE_MS);
-}
-
-async function pushScheduledNow(): Promise<void> {
-    try {
-        const download = await attemptWithRetry(downloadRemote, (r) => !r.ok);
-        if (!download.ok) {
-            recordError('Upload skipped — could not verify remote state');
-            return;
-        }
-
-        const effectiveLocal = await getEffectiveLocalModifiedAt();
-        const remote = download.payload;
-        if (remote !== null && remote.lastModifiedAt > effectiveLocal) {
-            recordError('Upload skipped — newer data exists on Dropbox. Sync to merge.');
-            return;
-        }
-
-        await attemptWithRetry(
-            () => uploadLocal(remote),
-            (ok) => !ok
-        );
-    } finally {
         setPendingPushScheduled(false);
-    }
+        void sync();
+    }, DEBOUNCE_MS);
 }
 
 /** @deprecated Use sync() — kept for tests that exercise pull in isolation */
