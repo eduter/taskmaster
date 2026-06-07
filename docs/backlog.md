@@ -14,4 +14,3 @@ in code comments, or other doc files — not the backlog.
 * Animate sync icon while syncing is in progress
 * Bug: completing a carried task shouldn't make it disappear. Tasks remain on the day they were actually completed.
 * Implement the calendar tab
-* Bug: scrolling scrolls the whole body. It should scrool only the contents of the tab.

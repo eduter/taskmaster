@@ -55,6 +55,12 @@
     box-sizing: border-box;
 }
 
+html,
+body {
+    height: 100dvh;
+    overflow: hidden;
+}
+
 body {
     margin: 0;
     font-family: var(--font-sans);
@@ -69,9 +75,10 @@ body {
 #root {
     max-width: 600px;
     margin: 0 auto;
-    min-height: 100dvh;
+    height: 100dvh;
     display: flex;
     flex-direction: column;
+    overflow: hidden;
 }
 
 /* Prevent page scroll while dragging a task row (keep touch-action so PTR still works when unlocked). */
@@ -83,11 +90,19 @@ body.task-gesture-scroll-lock {
     -webkit-user-select: none;
 }
 
+html.task-gesture-scroll-lock .app-main {
+    overflow: hidden;
+}
+
 /* Prevent page scroll while a modal dialog is open. */
 html.dialog-scroll-lock,
 body.dialog-scroll-lock {
     overflow: hidden;
     overscroll-behavior: none;
+}
+
+html.dialog-scroll-lock .app-main {
+    overflow: hidden;
 }
 
 button {

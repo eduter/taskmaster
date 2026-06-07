@@ -51,7 +51,7 @@ function App(props: AppProps) {
                 <AppTabs />
                 <SyncSettings />
             </header>
-            {props.children}
+            <main class="app-main">{props.children}</main>
             <SyncStatusBar />
             <OfflineIndicator />
             <InstallPrompt />
