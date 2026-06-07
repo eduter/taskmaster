@@ -3,6 +3,9 @@
 
 ## Tech and conventions
 
+- **Android / Chromium only.** The sole user has no Apple devices — do not
+  add Safari or WebKit workarounds. Target current Chrome for Android and
+  desktop.
 - **TypeScript everywhere.**
 - **Tests.** `npm run check` runs typecheck, lint, and tests.
   Use it to check your changes before committing them.

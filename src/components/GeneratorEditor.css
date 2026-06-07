@@ -67,6 +67,12 @@
 .gen-editor__template-add {
     display: flex;
     gap: var(--space-sm);
+    min-width: 0;
+}
+
+.gen-editor__template-add .gen-editor__input {
+    flex: 1;
+    min-width: 0;
 }
 
 .gen-editor__active-toggle label {

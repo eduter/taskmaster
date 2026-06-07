@@ -83,6 +83,13 @@ body.task-gesture-scroll-lock {
     -webkit-user-select: none;
 }
 
+/* Prevent page scroll while a modal dialog is open. */
+html.dialog-scroll-lock,
+body.dialog-scroll-lock {
+    overflow: hidden;
+    overscroll-behavior: none;
+}
+
 button {
     font-family: inherit;
     cursor: pointer;

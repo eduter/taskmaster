@@ -1,5 +1,7 @@
-import { createEffect, type JSX } from 'solid-js';
+import { createEffect, onCleanup, type JSX } from 'solid-js';
 import './Dialog.css';
+
+const DIALOG_SCROLL_LOCK_CLASS = 'dialog-scroll-lock';
 
 interface DialogProps {
     open: boolean;
@@ -30,6 +32,18 @@ function Dialog(props: DialogProps) {
         } else if (el.open) {
             el.close();
         }
+    });
+
+    createEffect(() => {
+        if (!props.open) {
+            return;
+        }
+        document.documentElement.classList.add(DIALOG_SCROLL_LOCK_CLASS);
+        document.body.classList.add(DIALOG_SCROLL_LOCK_CLASS);
+        onCleanup(() => {
+            document.documentElement.classList.remove(DIALOG_SCROLL_LOCK_CLASS);
+            document.body.classList.remove(DIALOG_SCROLL_LOCK_CLASS);
+        });
     });
 
     function requestClose() {
