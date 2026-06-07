@@ -1,6 +1,6 @@
 import { onMount, Show } from 'solid-js';
 import { useAppNavigate, useSyncPanelOpen } from '../routing/navigation.ts';
-import { invalidateGenerators } from '../stores/generatorStore.ts';
+import { onAppResume } from '../app/resume.ts';
 import {
     connection,
     formatRelativeTime,
@@ -8,15 +8,15 @@ import {
     lastErrorAt,
     lastMessage,
     lastResult,
+    lastBackupDay,
     lastSyncedAt,
     markDisconnected,
     operation,
     pendingPush,
     refreshAuthState,
 } from '../stores/syncStore.ts';
-import { invalidateTasks } from '../stores/taskStore.ts';
 import { clearTokens, startAuthFlow } from '../sync/dropboxAuth.ts';
-import { loadSyncMetaIntoStore, sync } from '../sync/syncEngine.ts';
+import { loadSyncMetaIntoStore } from '../sync/syncEngine.ts';
 import { Dialog } from './Dialog.tsx';
 import './SyncSettings.css';
 
@@ -36,14 +36,7 @@ function SyncSettings() {
     }
 
     async function handleSync() {
-        const outcome = await sync();
-        if (!outcome.ok) {
-            return;
-        }
-        if (outcome.dataChanged) {
-            invalidateTasks({ push: false });
-            invalidateGenerators({ push: false });
-        }
+        await onAppResume();
     }
 
     async function handleConnect() {
@@ -115,7 +108,10 @@ function SyncSettings() {
             <button
                 type="button"
                 class="sync-trigger"
-                classList={{ 'sync-trigger--attention': hasSyncIssue() }}
+                classList={{
+                    'sync-trigger--attention': hasSyncIssue(),
+                    'sync-trigger--active': operation() !== 'idle' || pendingPush(),
+                }}
                 onClick={openPanel}
                 aria-label="Sync settings"
             >
@@ -143,6 +139,7 @@ function SyncSettings() {
                     <p class={`sync-panel__status ${statusClass()}`}>{connectionLabel()}</p>
                     <Show when={isConnected()}>
                         <p class="sync-panel__meta">Last synced: {formatRelativeTime(lastSyncedAt())}</p>
+                        <p class="sync-panel__meta">Latest backup: {lastBackupDay() ?? 'None'}</p>
                     </Show>
                     <Show when={operationLabel()}>
                         <p class="sync-panel__activity">{operationLabel()}</p>

@@ -2,7 +2,7 @@ import { afterEach, beforeEach, describe, expect, it } from 'vitest';
 import { db } from '../db/database.ts';
 import { getActiveGenerators } from '../db/generators.ts';
 import { resetDb, seedGenerator } from '../test/helpers.ts';
-import { runGenerators } from './generate.ts';
+import { commitGeneratorRuns, runGenerators } from './generate.ts';
 
 function dailyRrule(dtstart: string): string {
     const dObj = new Date(`${dtstart}T12:00:00`);
@@ -51,12 +51,16 @@ describe('runGenerators', () => {
             lastGeneratedDate: null,
         });
 
-        const created = await runGenerators('2026-05-23');
+        const { created, generatorIds } = await runGenerators('2026-05-23');
         expect(created).toBe(4);
 
         const tasks = await db.tasks.toArray();
         expect(tasks.map((t) => t.date).sort()).toEqual(['2026-05-20', '2026-05-21', '2026-05-22', '2026-05-23']);
 
+        const genBefore = await db.generators.get('daily');
+        expect(genBefore?.lastGeneratedDate).toBeNull();
+
+        await commitGeneratorRuns(generatorIds, '2026-05-23');
         const gen = await db.generators.get('daily');
         expect(gen?.lastGeneratedDate).toBe('2026-05-23');
     });
@@ -69,7 +73,7 @@ describe('runGenerators', () => {
             lastGeneratedDate: '2026-05-20',
         });
 
-        const created = await runGenerators('2026-05-23');
+        const { created } = await runGenerators('2026-05-23');
         expect(created).toBe(3);
 
         const tasks = await db.tasks.toArray();
@@ -85,10 +89,11 @@ describe('runGenerators', () => {
         });
 
         const first = await runGenerators('2026-05-23');
+        await commitGeneratorRuns(first.generatorIds, '2026-05-23');
         const second = await runGenerators('2026-05-23');
 
-        expect(first).toBe(1);
-        expect(second).toBe(0);
+        expect(first.created).toBe(1);
+        expect(second.created).toBe(0);
         expect((await db.tasks.toArray()).length).toBe(1);
     });
 
@@ -100,9 +105,37 @@ describe('runGenerators', () => {
             active: false,
         });
 
-        const created = await runGenerators('2026-05-23');
+        const { created } = await runGenerators('2026-05-23');
         expect(created).toBe(0);
         expect(await db.tasks.count()).toBe(0);
+    });
+
+    it('does not duplicate after pull from other device', async () => {
+        await seedGenerator({
+            id: 'daily',
+            name: 'Daily',
+            rrule: dailyRrule('2026-05-23'),
+            lastGeneratedDate: '2026-05-22',
+        });
+        await db.tasks.add({
+            id: 'from-b',
+            summary: 'Task A',
+            description: '',
+            labels: [],
+            date: '2026-05-23',
+            sortOrder: 1,
+            completed: false,
+            completedAt: null,
+            createdAt: 1,
+            updatedAt: 1,
+            generatorId: 'daily',
+            parentTaskId: null,
+        });
+
+        const { created } = await runGenerators('2026-05-23');
+
+        expect(created).toBe(0);
+        expect((await db.tasks.toArray()).length).toBe(1);
     });
 
     it('creates weekly tasks only on selected weekdays', async () => {
@@ -113,7 +146,7 @@ describe('runGenerators', () => {
             lastGeneratedDate: null,
         });
 
-        const created = await runGenerators('2026-05-23');
+        const { created } = await runGenerators('2026-05-23');
         expect(created).toBe(3);
 
         const tasks = await db.tasks.toArray();

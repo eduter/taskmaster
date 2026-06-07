@@ -1,5 +1,6 @@
 import { Navigate } from '@solidjs/router';
 import { onMount, type JSX } from 'solid-js';
+import { onAppResume, setupResumeListeners } from './app/resume.ts';
 import { AddTask } from './components/AddTask.tsx';
 import { AppTabs } from './components/AppTabs.tsx';
 import { GeneratorEditorModal } from './components/GeneratorEditorModal.tsx';
@@ -10,12 +11,9 @@ import { SyncSettings } from './components/SyncSettings.tsx';
 import { SyncStatusBar } from './components/SyncStatusBar.tsx';
 import { TaskDetail } from './components/TaskDetail.tsx';
 import { TaskList } from './components/TaskList.tsx';
-import { runGenerators } from './scheduling/generate.ts';
-import { invalidateGenerators } from './stores/generatorStore.ts';
 import { markConnected, refreshAuthState } from './stores/syncStore.ts';
-import { invalidateTasks } from './stores/taskStore.ts';
 import { handleAuthRedirect } from './sync/dropboxAuth.ts';
-import { loadSyncMetaIntoStore, pushToDropbox, sync } from './sync/syncEngine.ts';
+import { loadSyncMetaIntoStore } from './sync/syncEngine.ts';
 import './App.css';
 
 interface AppProps {
@@ -30,21 +28,8 @@ function App(props: AppProps) {
         }
         refreshAuthState();
         await loadSyncMetaIntoStore();
-
-        const outcome = await sync();
-        if (!outcome.ok) {
-            return;
-        }
-        if (outcome.dataChanged) {
-            invalidateTasks({ push: false });
-            invalidateGenerators({ push: false });
-        }
-
-        const created = await runGenerators();
-        if (created > 0) {
-            invalidateTasks({ push: false });
-            await pushToDropbox();
-        }
+        setupResumeListeners();
+        await onAppResume();
     });
 
     return (

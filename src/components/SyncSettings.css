@@ -16,6 +16,20 @@
     color: var(--warning);
 }
 
+.sync-trigger--active svg {
+    animation: sync-pulse 1.2s ease-in-out infinite;
+}
+
+@keyframes sync-pulse {
+    0%,
+    100% {
+        opacity: 1;
+    }
+    50% {
+        opacity: 0.35;
+    }
+}
+
 .sync-trigger__badge {
     position: absolute;
     top: 2px;

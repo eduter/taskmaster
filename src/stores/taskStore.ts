@@ -4,8 +4,16 @@ import type { Task } from '../db/types.ts';
 import { schedulePush } from '../sync/syncEngine.ts';
 import { getLogicalDay } from '../utils/logicalDay.ts';
 
-const [today] = createSignal(getLogicalDay());
+const [today, setToday] = createSignal(getLogicalDay());
 const [taskVersion, setTaskVersion] = createSignal(0);
+
+function refreshTodayIfNeeded(): void {
+    const current = getLogicalDay();
+    if (current !== today()) {
+        setToday(current);
+        setTaskVersion((v) => v + 1);
+    }
+}
 
 function invalidateTasks(options?: { push?: boolean }) {
     setTaskVersion((v) => v + 1);
@@ -47,4 +55,15 @@ async function reorder(orderedIds: string[]): Promise<void> {
     invalidateTasks();
 }
 
-export { addTask, editTask, invalidateTasks, refetchTasks, removeTask, reorder, tasks, today, toggleComplete };
+export {
+    addTask,
+    editTask,
+    invalidateTasks,
+    refetchTasks,
+    refreshTodayIfNeeded,
+    removeTask,
+    reorder,
+    tasks,
+    today,
+    toggleComplete,
+};
