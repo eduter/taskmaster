@@ -23,9 +23,17 @@ vi.mock('./dropboxAuth.ts', async (importOriginal) => {
     };
 });
 
-const { pullFromDropbox, pushToDropbox, getSyncMeta, isPushPending, schedulePush, setPushPending, sync } = await import(
-    './syncEngine.ts'
-);
+const {
+    isSyncRunning,
+    onSyncIdle,
+    pullFromDropbox,
+    pushToDropbox,
+    getSyncMeta,
+    isPushPending,
+    schedulePush,
+    setPushPending,
+    sync,
+} = await import('./syncEngine.ts');
 
 function makePayload(overrides: Partial<SyncPayload> = {}): SyncPayload {
     return {
@@ -199,6 +207,106 @@ describe('syncEngine', () => {
                 await vi.runAllTimersAsync();
 
                 expect(mockFilesUpload).toHaveBeenCalledOnce();
+            } finally {
+                vi.useRealTimers();
+            }
+        });
+    });
+
+    describe('sync serialization', () => {
+        it('debounced push waits for active sync', async () => {
+            vi.useFakeTimers({ shouldAdvanceTime: true });
+            try {
+                await seedTask({ id: 'stale', summary: 'Stale local', updatedAt: 500 });
+                await db.syncMeta.put({ key: 'primary', lastSyncedAt: 0, lastModifiedAt: 1000 });
+
+                const remoteTask = {
+                    id: 'remote',
+                    summary: 'Remote newer',
+                    description: '',
+                    labels: [],
+                    date: '2026-05-23',
+                    sortOrder: 1,
+                    completed: false,
+                    completedAt: null,
+                    createdAt: 1,
+                    updatedAt: 5000,
+                    generatorId: null,
+                    parentTaskId: null,
+                };
+                const newerRemote = makePayload({ lastModifiedAt: 5000, tasks: [remoteTask] });
+                const staleRemote = makePayload({ lastModifiedAt: 1000, tasks: [] });
+
+                let releaseDownload!: () => void;
+                const downloadGate = new Promise<void>((resolve) => {
+                    releaseDownload = resolve;
+                });
+                let downloadCalls = 0;
+                mockFilesDownload.mockImplementation(async () => {
+                    downloadCalls++;
+                    if (downloadCalls === 1) {
+                        await downloadGate;
+                        return { result: { fileBlob: blobFromPayload(newerRemote) } };
+                    }
+                    return { result: { fileBlob: blobFromPayload(staleRemote) } };
+                });
+
+                const syncPromise = sync();
+                schedulePush();
+                await vi.advanceTimersByTimeAsync(2000);
+
+                expect(mockFilesUpload).not.toHaveBeenCalled();
+
+                releaseDownload();
+                await syncPromise;
+                await vi.runAllTimersAsync();
+
+                const tasks = await db.tasks.toArray();
+                expect(tasks).toHaveLength(1);
+                expect(tasks[0].summary).toBe('Remote newer');
+
+                const dataUploads = mockFilesUpload.mock.calls.filter((c) => c[0].path === '/taskmaster/data.json');
+                for (const call of dataUploads) {
+                    const uploaded = JSON.parse(call[0].contents as string) as SyncPayload;
+                    expect(uploaded.tasks.some((t) => t.summary === 'Stale local')).toBe(false);
+                }
+            } finally {
+                vi.useRealTimers();
+            }
+        });
+
+        it('queued operations do not clear busy state early', async () => {
+            vi.useFakeTimers({ shouldAdvanceTime: true });
+            try {
+                await db.syncMeta.put({ key: 'primary', lastSyncedAt: 0, lastModifiedAt: 5000 });
+
+                const remote = makePayload({ lastModifiedAt: 5000 });
+                let releaseDownload!: () => void;
+                const downloadGate = new Promise<void>((resolve) => {
+                    releaseDownload = resolve;
+                });
+                mockFilesDownload.mockImplementation(async () => {
+                    await downloadGate;
+                    return { result: { fileBlob: blobFromPayload(remote) } };
+                });
+
+                const idleSpy = vi.fn();
+                onSyncIdle(idleSpy);
+
+                const syncPromise = sync();
+                expect(isSyncRunning()).toBe(true);
+
+                schedulePush();
+                await vi.advanceTimersByTimeAsync(2000);
+                expect(isSyncRunning()).toBe(true);
+
+                releaseDownload();
+                await syncPromise;
+                expect(isSyncRunning()).toBe(true);
+
+                await vi.runAllTimersAsync();
+                expect(isSyncRunning()).toBe(false);
+                expect(idleSpy).toHaveBeenCalledOnce();
             } finally {
                 vi.useRealTimers();
             }
