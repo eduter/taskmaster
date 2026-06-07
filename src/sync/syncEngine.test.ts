@@ -5,6 +5,8 @@ import type { SyncPayload } from './syncEngine.ts';
 
 const mockFilesUpload = vi.fn();
 const mockFilesDownload = vi.fn();
+const mockFilesGetMetadata = vi.fn();
+const mockFilesCopyV2 = vi.fn();
 
 vi.mock('./dropboxAuth.ts', async (importOriginal) => {
     const actual = await importOriginal<typeof import('./dropboxAuth.ts')>();
@@ -14,12 +16,16 @@ vi.mock('./dropboxAuth.ts', async (importOriginal) => {
         getDropboxClient: () => ({
             filesUpload: mockFilesUpload,
             filesDownload: mockFilesDownload,
+            filesGetMetadata: mockFilesGetMetadata,
+            filesCopyV2: mockFilesCopyV2,
             auth: { getAccessToken: () => 'test-token' },
         }),
     };
 });
 
-const { pullFromDropbox, pushToDropbox, getSyncMeta } = await import('./syncEngine.ts');
+const { pullFromDropbox, pushToDropbox, getSyncMeta, isPushPending, schedulePush, setPushPending, sync } = await import(
+    './syncEngine.ts'
+);
 
 function makePayload(overrides: Partial<SyncPayload> = {}): SyncPayload {
     return {
@@ -40,6 +46,10 @@ describe('syncEngine', () => {
         mockFilesUpload.mockReset();
         mockFilesDownload.mockReset();
         mockFilesUpload.mockResolvedValue({});
+        mockFilesGetMetadata.mockReset();
+        mockFilesCopyV2.mockReset();
+        mockFilesGetMetadata.mockRejectedValue({ status: 409 });
+        mockFilesCopyV2.mockResolvedValue({});
     });
 
     afterEach(() => resetDb());
@@ -132,5 +142,412 @@ describe('syncEngine', () => {
         const uploaded = JSON.parse(mockFilesUpload.mock.calls[0][0].contents as string) as SyncPayload;
         expect(uploaded.generators).toHaveLength(1);
         expect(uploaded.generators[0].name).toBe('Gen');
+    });
+
+    describe('pushPending', () => {
+        it('setPushPending(true) persists across reads', async () => {
+            await setPushPending(true);
+            expect(await isPushPending()).toBe(true);
+            expect((await getSyncMeta()).pushPending).toBe(true);
+        });
+
+        it('setPushPending(false) clears the flag', async () => {
+            await db.syncMeta.put({ key: 'primary', lastSyncedAt: 0, lastModifiedAt: 0, pushPending: true });
+            await setPushPending(false);
+            expect(await isPushPending()).toBe(false);
+            expect((await getSyncMeta()).pushPending).toBeUndefined();
+        });
+    });
+
+    describe('schedulePush()', () => {
+        it('retries upload once on transient failure', async () => {
+            vi.useFakeTimers({ shouldAdvanceTime: true });
+            try {
+                await seedTask({ id: 'local', summary: 'Local', updatedAt: 8000 });
+                await db.syncMeta.put({ key: 'primary', lastSyncedAt: 0, lastModifiedAt: 1000 });
+
+                const remote = makePayload({ lastModifiedAt: 1000 });
+                mockFilesDownload.mockResolvedValue({
+                    result: { fileBlob: blobFromPayload(remote) },
+                });
+                mockFilesUpload.mockRejectedValueOnce(new Error('upload blip'));
+                mockFilesUpload.mockResolvedValueOnce({});
+
+                schedulePush();
+                await vi.runAllTimersAsync();
+
+                expect(mockFilesUpload).toHaveBeenCalledTimes(2);
+            } finally {
+                vi.useRealTimers();
+            }
+        });
+
+        it('uploads when meta matches remote but a task updatedAt is newer', async () => {
+            vi.useFakeTimers({ shouldAdvanceTime: true });
+            try {
+                const sharedTs = 1000;
+                const editTs = 8000;
+                await seedTask({ id: 'edited', summary: 'Edited', updatedAt: editTs });
+                await db.syncMeta.put({ key: 'primary', lastSyncedAt: 0, lastModifiedAt: sharedTs });
+
+                const remote = makePayload({ lastModifiedAt: sharedTs });
+                mockFilesDownload.mockResolvedValue({
+                    result: { fileBlob: blobFromPayload(remote) },
+                });
+
+                schedulePush();
+                await vi.runAllTimersAsync();
+
+                expect(mockFilesUpload).toHaveBeenCalledOnce();
+            } finally {
+                vi.useRealTimers();
+            }
+        });
+    });
+
+    describe('sync()', () => {
+        it('does not upload when download fails', async () => {
+            await seedTask({ id: 'local', summary: 'Local' });
+            mockFilesDownload.mockRejectedValue(new Error('network error'));
+
+            const outcome = await sync();
+
+            expect(outcome.ok).toBe(false);
+            expect(outcome.pushed).toBe(false);
+            expect(mockFilesUpload).not.toHaveBeenCalled();
+        });
+
+        it('applies remote when newer', async () => {
+            await seedTask({ id: 'old', summary: 'Old', updatedAt: 100 });
+            await db.syncMeta.put({ key: 'primary', lastSyncedAt: 0, lastModifiedAt: 500 });
+
+            const remote = makePayload({
+                lastModifiedAt: 3000,
+                tasks: [
+                    {
+                        id: 'remote',
+                        summary: 'Remote',
+                        description: '',
+                        labels: [],
+                        date: '2026-05-23',
+                        sortOrder: 1,
+                        completed: false,
+                        completedAt: null,
+                        createdAt: 1,
+                        updatedAt: 1,
+                        generatorId: null,
+                        parentTaskId: null,
+                    },
+                ],
+            });
+            mockFilesDownload.mockResolvedValue({
+                result: { fileBlob: blobFromPayload(remote) },
+            });
+
+            const outcome = await sync();
+
+            expect(outcome.ok).toBe(true);
+            expect(outcome.pushed).toBe(false);
+            expect((await db.tasks.toArray())[0].summary).toBe('Remote');
+        });
+
+        it('uploads when local is newer', async () => {
+            await seedTask({ id: 'local', summary: 'Local' });
+            await db.syncMeta.put({ key: 'primary', lastSyncedAt: 0, lastModifiedAt: 8000 });
+
+            const remote = makePayload({ lastModifiedAt: 1000 });
+            mockFilesDownload.mockResolvedValue({
+                result: { fileBlob: blobFromPayload(remote) },
+            });
+
+            const outcome = await sync();
+
+            expect(outcome.ok).toBe(true);
+            expect(outcome.pushed).toBe(true);
+            expect(mockFilesUpload).toHaveBeenCalledOnce();
+        });
+
+        it('is up to date when timestamps match', async () => {
+            await db.syncMeta.put({ key: 'primary', lastSyncedAt: 0, lastModifiedAt: 5000 });
+
+            const remote = makePayload({ lastModifiedAt: 5000 });
+            mockFilesDownload.mockResolvedValue({
+                result: { fileBlob: blobFromPayload(remote) },
+            });
+
+            const outcome = await sync();
+
+            expect(outcome.ok).toBe(true);
+            expect(outcome.pulled).toBe(false);
+            expect(outcome.pushed).toBe(false);
+            expect(mockFilesUpload).not.toHaveBeenCalled();
+        });
+
+        it('fails closed when remote sync file is invalid JSON', async () => {
+            mockFilesDownload.mockResolvedValue({
+                result: { fileBlob: new Blob(['not-json'], { type: 'application/json' }) },
+            });
+
+            const outcome = await sync();
+
+            expect(outcome.ok).toBe(false);
+            expect(mockFilesUpload).not.toHaveBeenCalled();
+        });
+
+        it('retries download on transient failure', async () => {
+            mockFilesDownload.mockRejectedValueOnce(new Error('network blip'));
+            const remote = makePayload({ lastModifiedAt: 5000 });
+            mockFilesDownload.mockResolvedValueOnce({
+                result: { fileBlob: blobFromPayload(remote) },
+            });
+            await db.syncMeta.put({ key: 'primary', lastSyncedAt: 0, lastModifiedAt: 5000 });
+
+            const outcome = await sync();
+
+            expect(outcome.ok).toBe(true);
+            expect(mockFilesDownload).toHaveBeenCalledTimes(2);
+        });
+
+        it('blocks applying remote when lastModifiedAt invariant is violated', async () => {
+            await seedTask({ id: 'local', summary: 'Local', updatedAt: 100 });
+            await db.syncMeta.put({ key: 'primary', lastSyncedAt: 0, lastModifiedAt: 500 });
+
+            const remote = makePayload({
+                lastModifiedAt: 3000,
+                tasks: [
+                    {
+                        id: 'remote',
+                        summary: 'Remote',
+                        description: '',
+                        labels: [],
+                        date: '2026-05-23',
+                        sortOrder: 1,
+                        completed: false,
+                        completedAt: null,
+                        createdAt: 1,
+                        updatedAt: 9000,
+                        generatorId: null,
+                        parentTaskId: null,
+                    },
+                ],
+            });
+            mockFilesDownload.mockResolvedValue({
+                result: { fileBlob: blobFromPayload(remote) },
+            });
+
+            const outcome = await sync();
+
+            expect(outcome.ok).toBe(false);
+            expect((await db.tasks.toArray())[0].summary).toBe('Local');
+            const dataUploads = mockFilesUpload.mock.calls.filter((c) => c[0].path === '/taskmaster/data.json');
+            expect(dataUploads).toHaveLength(0);
+        });
+
+        it('creates backup before overwriting remote from prior day', async () => {
+            const priorDayTs = new Date('2026-05-22T12:00:00').getTime();
+            await seedTask({ id: 'local', summary: 'Local', updatedAt: priorDayTs + 1000 });
+            await db.syncMeta.put({ key: 'primary', lastSyncedAt: 0, lastModifiedAt: priorDayTs + 5000 });
+
+            const remote = makePayload({ lastModifiedAt: priorDayTs });
+            mockFilesDownload.mockResolvedValue({
+                result: { fileBlob: blobFromPayload(remote) },
+            });
+
+            const outcome = await sync();
+
+            expect(outcome.ok).toBe(true);
+            expect(outcome.pushed).toBe(true);
+            expect(mockFilesCopyV2).toHaveBeenCalledWith({
+                from_path: '/taskmaster/data.json',
+                to_path: '/taskmaster/backups/data-2026-05-22.json',
+            });
+        });
+
+        it('skips backup when remote is from today', async () => {
+            const todayTs = Date.now();
+            await seedTask({ id: 'local', summary: 'Local', updatedAt: todayTs });
+            await db.syncMeta.put({ key: 'primary', lastSyncedAt: 0, lastModifiedAt: todayTs + 1000 });
+
+            const remote = makePayload({ lastModifiedAt: todayTs });
+            mockFilesDownload.mockResolvedValue({
+                result: { fileBlob: blobFromPayload(remote) },
+            });
+
+            const outcome = await sync();
+
+            expect(outcome.ok).toBe(true);
+            expect(mockFilesCopyV2).not.toHaveBeenCalled();
+        });
+
+        it('pushPending triggers push when remote is not newer', async () => {
+            const sharedTs = 5000;
+            await seedTask({ id: 'gen-task', summary: 'Generated', updatedAt: sharedTs });
+            await db.syncMeta.put({
+                key: 'primary',
+                lastSyncedAt: 0,
+                lastModifiedAt: sharedTs,
+                pushPending: true,
+            });
+
+            const remote = makePayload({ lastModifiedAt: sharedTs, tasks: [], generators: [] });
+            mockFilesDownload.mockResolvedValue({
+                result: { fileBlob: blobFromPayload(remote) },
+            });
+
+            const outcome = await sync();
+
+            expect(outcome.ok).toBe(true);
+            expect(outcome.pushed).toBe(true);
+            expect(mockFilesUpload).toHaveBeenCalledOnce();
+            expect(await isPushPending()).toBe(false);
+        });
+
+        it('pushPending cleared when remote is newer (other device fixed it)', async () => {
+            await seedTask({ id: 'orphan', summary: 'Orphaned local', updatedAt: 6000 });
+            await db.syncMeta.put({
+                key: 'primary',
+                lastSyncedAt: 0,
+                lastModifiedAt: 5000,
+                pushPending: true,
+            });
+
+            const remoteTask = {
+                id: 'remote-gen',
+                summary: 'From device B',
+                description: '',
+                labels: [],
+                date: '2026-05-23',
+                sortOrder: 1,
+                completed: false,
+                completedAt: null,
+                createdAt: 1,
+                updatedAt: 8000,
+                generatorId: 'daily',
+                parentTaskId: null,
+            };
+            const remote = makePayload({
+                lastModifiedAt: 9000,
+                tasks: [remoteTask],
+                generators: [],
+            });
+            mockFilesDownload.mockResolvedValue({
+                result: { fileBlob: blobFromPayload(remote) },
+            });
+
+            const outcome = await sync();
+
+            expect(outcome.ok).toBe(true);
+            expect(outcome.pulled).toBe(true);
+            expect(outcome.pushed).toBe(false);
+            expect(mockFilesUpload).not.toHaveBeenCalled();
+            expect((await db.tasks.toArray())[0].summary).toBe('From device B');
+            expect(await isPushPending()).toBe(false);
+        });
+
+        it('pushes when records are newer than meta and remote', async () => {
+            const remoteTs = 1000;
+            const editTs = 8000;
+            await seedTask({ id: 'edited', summary: 'Edited', updatedAt: editTs });
+            await db.syncMeta.put({ key: 'primary', lastSyncedAt: 0, lastModifiedAt: remoteTs });
+
+            const remote = makePayload({ lastModifiedAt: remoteTs });
+            mockFilesDownload.mockResolvedValue({
+                result: { fileBlob: blobFromPayload(remote) },
+            });
+
+            const outcome = await sync();
+
+            expect(outcome.ok).toBe(true);
+            expect(outcome.pushed).toBe(true);
+            expect(mockFilesUpload).toHaveBeenCalledOnce();
+        });
+
+        it('pulls when remote is newer than effective local', async () => {
+            await seedTask({ id: 'local', summary: 'Local', updatedAt: 2000 });
+            await db.syncMeta.put({ key: 'primary', lastSyncedAt: 0, lastModifiedAt: 2000 });
+
+            const remoteTask = {
+                id: 'remote',
+                summary: 'Remote edit',
+                description: '',
+                labels: [],
+                date: '2026-05-23',
+                sortOrder: 1,
+                completed: false,
+                completedAt: null,
+                createdAt: 1,
+                updatedAt: 5000,
+                generatorId: null,
+                parentTaskId: null,
+            };
+            const remote = makePayload({ lastModifiedAt: 5000, tasks: [remoteTask] });
+            mockFilesDownload.mockResolvedValue({
+                result: { fileBlob: blobFromPayload(remote) },
+            });
+
+            const outcome = await sync();
+
+            expect(outcome.ok).toBe(true);
+            expect(outcome.pulled).toBe(true);
+            expect((await db.tasks.toArray())[0].summary).toBe('Remote edit');
+        });
+
+        it('is up to date when remote matches effective local', async () => {
+            const ts = 5000;
+            await seedTask({ id: 'task', summary: 'Task', updatedAt: ts });
+            await db.syncMeta.put({ key: 'primary', lastSyncedAt: 0, lastModifiedAt: ts });
+
+            const remote = makePayload({
+                lastModifiedAt: ts,
+                tasks: [
+                    {
+                        id: 'task',
+                        summary: 'Task',
+                        description: '',
+                        labels: [],
+                        date: '2026-01-01',
+                        sortOrder: 1,
+                        completed: false,
+                        completedAt: null,
+                        createdAt: 1,
+                        updatedAt: ts,
+                        generatorId: null,
+                        parentTaskId: null,
+                    },
+                ],
+            });
+            mockFilesDownload.mockResolvedValue({
+                result: { fileBlob: blobFromPayload(remote) },
+            });
+
+            const outcome = await sync();
+
+            expect(outcome.ok).toBe(true);
+            expect(outcome.pulled).toBe(false);
+            expect(outcome.pushed).toBe(false);
+            expect(mockFilesUpload).not.toHaveBeenCalled();
+        });
+
+        it('pushPending survives failed upload', async () => {
+            await seedTask({ id: 'local', summary: 'Local', updatedAt: 8000 });
+            await db.syncMeta.put({
+                key: 'primary',
+                lastSyncedAt: 0,
+                lastModifiedAt: 5000,
+                pushPending: true,
+            });
+
+            const remote = makePayload({ lastModifiedAt: 1000 });
+            mockFilesDownload.mockResolvedValue({
+                result: { fileBlob: blobFromPayload(remote) },
+            });
+            mockFilesUpload.mockRejectedValue(new Error('upload failed'));
+
+            const outcome = await sync();
+
+            expect(outcome.ok).toBe(false);
+            expect(outcome.pushed).toBe(false);
+            expect(await isPushPending()).toBe(true);
+        });
     });
 });

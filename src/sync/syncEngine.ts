@@ -4,6 +4,7 @@ import {
     beginPush,
     beginSync,
     endOperation,
+    hydrateLastBackupDay,
     hydrateLastSyncedAt,
     lastResult,
     markNeedsReauth,
@@ -12,6 +13,7 @@ import {
     refreshAuthState,
     setPendingPushScheduled,
 } from '../stores/syncStore.ts';
+import { ensureBackupBeforeOverwrite } from './backups.ts';
 import {
     clearTokens,
     getDropboxClient,
@@ -23,6 +25,7 @@ import {
 } from './dropboxAuth.ts';
 
 const SYNC_FILE = '/taskmaster/data.json';
+const DEBUG_PATH_PREFIX = '/taskmaster/debug/sync-anomaly-';
 const DEBOUNCE_MS = 2000;
 
 interface SyncPayload {
@@ -33,12 +36,37 @@ interface SyncPayload {
 }
 
 type SyncOutcome = {
+    ok: boolean;
     pulled: boolean;
     pushed: boolean;
     dataChanged: boolean;
 };
 
+type DownloadResult = { ok: true; payload: SyncPayload | null } | { ok: false };
+
 let debounceTimer: ReturnType<typeof setTimeout> | null = null;
+let localDirty = false;
+let syncInProgress = false;
+const syncIdleListeners = new Set<() => void>();
+
+function onSyncIdle(listener: () => void): () => void {
+    syncIdleListeners.add(listener);
+    return () => syncIdleListeners.delete(listener);
+}
+
+function notifySyncIdle(): void {
+    for (const listener of syncIdleListeners) {
+        listener();
+    }
+}
+
+function isSyncRunning(): boolean {
+    return syncInProgress;
+}
+
+function markLocalDirty(): void {
+    localDirty = true;
+}
 
 async function getSyncMeta(): Promise<SyncMeta> {
     const meta = await db.syncMeta.get('primary');
@@ -50,16 +78,40 @@ async function updateSyncMeta(changes: Partial<SyncMeta>): Promise<void> {
     await db.syncMeta.put({ ...existing, ...changes });
 }
 
-async function markLocalChange(): Promise<void> {
-    await updateSyncMeta({ lastModifiedAt: Date.now() });
+async function isPushPending(): Promise<boolean> {
+    const meta = await getSyncMeta();
+    return meta.pushPending === true;
+}
+
+async function setPushPending(pending: boolean): Promise<void> {
+    await updateSyncMeta({ pushPending: pending ? true : undefined });
+}
+
+async function getEffectiveLocalModifiedAt(): Promise<number> {
+    const [tasks, generators, meta] = await Promise.all([db.tasks.toArray(), db.generators.toArray(), getSyncMeta()]);
+    return Math.max(meta.lastModifiedAt, maxRecordUpdatedAt({ tasks, generators }));
+}
+
+function maxRecordUpdatedAt(payload: Pick<SyncPayload, 'tasks' | 'generators'>): number {
+    const taskTimes = payload.tasks.map((t) => t.updatedAt);
+    const genTimes = payload.generators.map((g) => g.updatedAt);
+    return Math.max(0, ...taskTimes, ...genTimes);
 }
 
 async function buildPayload(): Promise<SyncPayload> {
     const [tasks, generators, meta] = await Promise.all([db.tasks.toArray(), db.generators.toArray(), getSyncMeta()]);
-    return { version: 1, lastModifiedAt: meta.lastModifiedAt, tasks, generators };
+    const recordMax = maxRecordUpdatedAt({ tasks, generators });
+    const lastModifiedAt = Math.max(meta.lastModifiedAt, recordMax, Date.now());
+    return { version: 1, lastModifiedAt, tasks, generators };
 }
 
 async function applyPayload(payload: SyncPayload): Promise<void> {
+    if (maxRecordUpdatedAt(payload) > payload.lastModifiedAt) {
+        await logSyncAnomaly('corrupt remote payload', await buildPayload(), payload);
+        recordError('Remote sync data has an invalid timestamp — sync blocked');
+        throw new Error('corrupt remote payload');
+    }
+
     await db.transaction('rw', [db.tasks, db.generators, db.syncMeta], async () => {
         await db.tasks.clear();
         await db.generators.clear();
@@ -68,8 +120,33 @@ async function applyPayload(payload: SyncPayload): Promise<void> {
         await updateSyncMeta({
             lastSyncedAt: Date.now(),
             lastModifiedAt: payload.lastModifiedAt,
+            pushPending: undefined,
         });
     });
+    localDirty = false;
+}
+
+async function logSyncAnomaly(reason: string, local: SyncPayload, remote: SyncPayload | null): Promise<void> {
+    const dbx = getDropboxClient();
+    if (!dbx) {
+        return;
+    }
+
+    const meta = await getSyncMeta();
+    const debug = { reason, local, remote, syncMeta: meta, at: Date.now() };
+    const path = `${DEBUG_PATH_PREFIX}${new Date().toISOString().replace(/[:.]/g, '-')}.json`;
+
+    try {
+        await dbx.filesUpload({
+            path,
+            contents: JSON.stringify(debug),
+            mode: { '.tag': 'add' },
+            mute: true,
+        });
+        persistTokensFromClient(dbx);
+    } catch (err: unknown) {
+        console.error('Failed to upload sync anomaly log:', err);
+    }
 }
 
 async function handleAuthFailure(err: unknown, context: string): Promise<never> {
@@ -91,13 +168,72 @@ async function handleAuthFailure(err: unknown, context: string): Promise<never> 
     throw err instanceof Error ? err : new Error(detail);
 }
 
-async function pushToDropbox(): Promise<boolean> {
+async function downloadRemote(): Promise<DownloadResult> {
+    const dbx = getDropboxClient();
+    if (!dbx) {
+        return { ok: false };
+    }
+
+    try {
+        const response = await dbx.filesDownload({ path: SYNC_FILE });
+        persistTokensFromClient(dbx);
+        const blob = (response.result as unknown as { fileBlob: Blob }).fileBlob;
+        const text = await blob.text();
+        let remote: SyncPayload;
+        try {
+            remote = JSON.parse(text) as SyncPayload;
+        } catch {
+            recordError('Download failed: remote sync file is not valid JSON');
+            return { ok: false };
+        }
+        return { ok: true, payload: remote };
+    } catch (err: unknown) {
+        const status = getDropboxErrorStatus(err);
+        if (status === 409) {
+            return { ok: true, payload: null };
+        }
+        if (status === 401) {
+            try {
+                await handleAuthFailure(err, 'Download failed');
+            } catch (retryErr) {
+                if (retryErr instanceof Error && retryErr.message.includes('retry')) {
+                    return downloadRemote();
+                }
+                return { ok: false };
+            }
+        }
+        console.error('Dropbox download failed:', err);
+        recordError(`Download failed: ${getDropboxErrorMessage(err)}`);
+        return { ok: false };
+    }
+}
+
+async function uploadLocal(remoteForBackup: SyncPayload | null): Promise<boolean> {
     const dbx = getDropboxClient();
     if (!dbx) {
         return false;
     }
 
     const payload = await buildPayload();
+
+    if (maxRecordUpdatedAt(payload) > payload.lastModifiedAt) {
+        await logSyncAnomaly('lastModifiedAt invariant violation', payload, remoteForBackup);
+        recordError('Local sync data has an invalid timestamp — upload blocked');
+        return false;
+    }
+
+    if (remoteForBackup) {
+        const backup = await ensureBackupBeforeOverwrite(remoteForBackup);
+        if (!backup.ok) {
+            recordError('Daily backup failed — upload blocked to prevent data loss');
+            return false;
+        }
+        if (backup.day) {
+            await updateSyncMeta({ lastBackupDay: backup.day });
+            hydrateLastBackupDay(backup.day);
+        }
+    }
+
     const contents = JSON.stringify(payload);
 
     try {
@@ -109,7 +245,12 @@ async function pushToDropbox(): Promise<boolean> {
         });
         persistTokensFromClient(dbx);
         const syncedAt = Date.now();
-        await updateSyncMeta({ lastSyncedAt: syncedAt });
+        await updateSyncMeta({
+            lastSyncedAt: syncedAt,
+            lastModifiedAt: payload.lastModifiedAt,
+            pushPending: undefined,
+        });
+        localDirty = false;
         recordSuccess('pushed', 'Uploaded local changes to Dropbox', syncedAt);
         return true;
     } catch (err: unknown) {
@@ -119,83 +260,87 @@ async function pushToDropbox(): Promise<boolean> {
                 await handleAuthFailure(err, 'Upload failed');
             } catch (retryErr) {
                 if (retryErr instanceof Error && retryErr.message.includes('retry')) {
-                    return pushToDropbox();
+                    return uploadLocal(remoteForBackup);
                 }
                 return false;
             }
         }
-        console.error('Dropbox push failed:', err);
+        console.error('Dropbox upload failed:', err);
         recordError(`Upload failed: ${getDropboxErrorMessage(err)}`);
         return false;
     }
 }
 
-async function pullFromDropbox(): Promise<boolean> {
-    const dbx = getDropboxClient();
-    if (!dbx) {
-        return false;
+async function attemptWithRetry<T>(fn: () => Promise<T>, shouldRetry: (result: T) => boolean): Promise<T> {
+    const first = await fn();
+    if (!shouldRetry(first)) {
+        return first;
     }
-
-    try {
-        const response = await dbx.filesDownload({ path: SYNC_FILE });
-        persistTokensFromClient(dbx);
-        const blob = (response.result as unknown as { fileBlob: Blob }).fileBlob;
-        const text = await blob.text();
-        const remote: SyncPayload = JSON.parse(text);
-
-        const meta = await getSyncMeta();
-        if (remote.lastModifiedAt > meta.lastModifiedAt) {
-            await applyPayload(remote);
-            const syncedAt = Date.now();
-            recordSuccess('pulled', 'Downloaded newer data from Dropbox', syncedAt);
-            return true;
-        }
-        return false;
-    } catch (err: unknown) {
-        const status = getDropboxErrorStatus(err);
-        if (status === 409) {
-            return false;
-        }
-        if (status === 401) {
-            try {
-                await handleAuthFailure(err, 'Download failed');
-            } catch (retryErr) {
-                if (retryErr instanceof Error && retryErr.message.includes('retry')) {
-                    return pullFromDropbox();
-                }
-                return false;
-            }
-        }
-        console.error('Dropbox pull failed:', err);
-        recordError(`Download failed: ${getDropboxErrorMessage(err)}`);
-        return false;
-    }
+    return fn();
 }
 
 async function sync(): Promise<SyncOutcome> {
     if (!isAuthenticated()) {
         recordError('Not connected to Dropbox');
-        return { pulled: false, pushed: false, dataChanged: false };
+        return { ok: false, pulled: false, pushed: false, dataChanged: false };
     }
 
+    syncInProgress = true;
     beginSync();
     try {
-        const pulled = await pullFromDropbox();
-        if (pulled) {
-            return { pulled: true, pushed: false, dataChanged: true };
+        const download = await attemptWithRetry(downloadRemote, (r) => !r.ok);
+        if (!download.ok) {
+            return { ok: false, pulled: false, pushed: false, dataChanged: false };
         }
 
-        const pushed = await pushToDropbox();
-        if (pushed) {
-            return { pulled: false, pushed: true, dataChanged: true };
+        const effectiveLocal = await getEffectiveLocalModifiedAt();
+        const pending = await isPushPending();
+        const remote = download.payload;
+
+        if (remote === null) {
+            const pushed = await attemptWithRetry(
+                () => uploadLocal(null),
+                (ok) => !ok
+            );
+            if (pushed) {
+                await setPushPending(false);
+            }
+            return { ok: pushed, pulled: false, pushed, dataChanged: pushed };
+        }
+
+        if (remote.lastModifiedAt > effectiveLocal) {
+            try {
+                await applyPayload(remote);
+            } catch {
+                return { ok: false, pulled: false, pushed: false, dataChanged: false };
+            }
+            await setPushPending(false);
+            const syncedAt = Date.now();
+            recordSuccess('pulled', 'Downloaded newer data from Dropbox', syncedAt);
+            return { ok: true, pulled: true, pushed: false, dataChanged: true };
+        }
+
+        const needsPush = pending || localDirty || remote.lastModifiedAt < effectiveLocal;
+
+        if (needsPush) {
+            const pushed = await attemptWithRetry(
+                () => uploadLocal(remote),
+                (ok) => !ok
+            );
+            if (pushed) {
+                await setPushPending(false);
+            }
+            return { ok: pushed, pulled: false, pushed, dataChanged: pushed };
         }
 
         if (lastResult() !== 'error') {
             recordSuccess('up_to_date', 'Already up to date with Dropbox');
         }
-        return { pulled: false, pushed: false, dataChanged: false };
+        return { ok: true, pulled: false, pushed: false, dataChanged: false };
     } finally {
+        syncInProgress = false;
         endOperation();
+        notifySyncIdle();
     }
 }
 
@@ -203,6 +348,7 @@ function schedulePush(): void {
     if (!isAuthenticated()) {
         return;
     }
+    markLocalDirty();
     if (debounceTimer) {
         clearTimeout(debounceTimer);
     }
@@ -210,20 +356,80 @@ function schedulePush(): void {
     debounceTimer = setTimeout(async () => {
         debounceTimer = null;
         beginPush();
+        syncInProgress = true;
         try {
-            await markLocalChange();
-            await pushToDropbox();
+            const download = await attemptWithRetry(downloadRemote, (r) => !r.ok);
+            if (!download.ok) {
+                recordError('Upload skipped — could not verify remote state');
+                return;
+            }
+
+            const effectiveLocal = await getEffectiveLocalModifiedAt();
+            const remote = download.payload;
+            if (remote !== null && remote.lastModifiedAt > effectiveLocal) {
+                recordError('Upload skipped — newer data exists on Dropbox. Sync to merge.');
+                return;
+            }
+
+            await attemptWithRetry(
+                () => uploadLocal(remote),
+                (ok) => !ok
+            );
         } finally {
+            syncInProgress = false;
             endOperation();
             setPendingPushScheduled(false);
+            notifySyncIdle();
         }
     }, DEBOUNCE_MS);
+}
+
+/** @deprecated Use sync() — kept for tests that exercise pull in isolation */
+async function pullFromDropbox(): Promise<boolean> {
+    const download = await downloadRemote();
+    if (!download.ok || download.payload === null) {
+        return false;
+    }
+    const meta = await getSyncMeta();
+    if (download.payload.lastModifiedAt > meta.lastModifiedAt) {
+        try {
+            await applyPayload(download.payload);
+            recordSuccess('pulled', 'Downloaded newer data from Dropbox', Date.now());
+            return true;
+        } catch {
+            return false;
+        }
+    }
+    return false;
+}
+
+/** @deprecated Use sync() — kept for tests that exercise push in isolation */
+async function pushToDropbox(): Promise<boolean> {
+    const download = await downloadRemote();
+    const remote = download.ok ? download.payload : null;
+    return uploadLocal(remote);
 }
 
 async function loadSyncMetaIntoStore(): Promise<void> {
     const meta = await getSyncMeta();
     hydrateLastSyncedAt(meta.lastSyncedAt);
+    if (meta.lastBackupDay) {
+        hydrateLastBackupDay(meta.lastBackupDay);
+    }
 }
 
 export type { SyncOutcome, SyncPayload };
-export { getSyncMeta, loadSyncMetaIntoStore, markLocalChange, pullFromDropbox, pushToDropbox, schedulePush, sync };
+export {
+    getSyncMeta,
+    isPushPending,
+    isSyncRunning,
+    loadSyncMetaIntoStore,
+    markLocalDirty,
+    maxRecordUpdatedAt,
+    onSyncIdle,
+    pullFromDropbox,
+    pushToDropbox,
+    schedulePush,
+    setPushPending,
+    sync,
+};

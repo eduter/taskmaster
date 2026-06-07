@@ -37,6 +37,9 @@ function SyncSettings() {
 
     async function handleSync() {
         const outcome = await sync();
+        if (!outcome.ok) {
+            return;
+        }
         if (outcome.dataChanged) {
             invalidateTasks({ push: false });
             invalidateGenerators({ push: false });

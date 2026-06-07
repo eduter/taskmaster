@@ -13,6 +13,7 @@ const [lastMessage, setLastMessage] = createSignal<string | null>(null);
 const [lastSyncedAt, setLastSyncedAt] = createSignal<number | null>(null);
 const [lastErrorAt, setLastErrorAt] = createSignal<number | null>(null);
 const [pendingPush, setPendingPush] = createSignal(false);
+const [lastBackupDay, setLastBackupDay] = createSignal<string | null>(null);
 
 function refreshAuthState(): void {
     if (connection() === 'needs_reauth') {
@@ -91,6 +92,10 @@ function hydrateLastSyncedAt(timestamp: number): void {
     }
 }
 
+function hydrateLastBackupDay(day: string): void {
+    setLastBackupDay(day);
+}
+
 function formatRelativeTime(timestamp: number | null): string {
     if (timestamp == null || timestamp === 0) {
         return 'Never';
@@ -127,7 +132,9 @@ export {
     endOperation,
     formatRelativeTime,
     hasSyncIssue,
+    hydrateLastBackupDay,
     hydrateLastSyncedAt,
+    lastBackupDay,
     lastErrorAt,
     lastMessage,
     lastResult,

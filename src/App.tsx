@@ -15,7 +15,7 @@ import { invalidateGenerators } from './stores/generatorStore.ts';
 import { markConnected, refreshAuthState } from './stores/syncStore.ts';
 import { invalidateTasks } from './stores/taskStore.ts';
 import { handleAuthRedirect } from './sync/dropboxAuth.ts';
-import { loadSyncMetaIntoStore, markLocalChange, pushToDropbox, sync } from './sync/syncEngine.ts';
+import { loadSyncMetaIntoStore, pushToDropbox, sync } from './sync/syncEngine.ts';
 import './App.css';
 
 interface AppProps {
@@ -32,6 +32,9 @@ function App(props: AppProps) {
         await loadSyncMetaIntoStore();
 
         const outcome = await sync();
+        if (!outcome.ok) {
+            return;
+        }
         if (outcome.dataChanged) {
             invalidateTasks({ push: false });
             invalidateGenerators({ push: false });
@@ -39,7 +42,6 @@ function App(props: AppProps) {
 
         const created = await runGenerators();
         if (created > 0) {
-            await markLocalChange();
             invalidateTasks({ push: false });
             await pushToDropbox();
         }
