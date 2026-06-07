@@ -48,6 +48,18 @@ function blobFromPayload(payload: SyncPayload): Blob {
     return new Blob([JSON.stringify(payload)], { type: 'application/json' });
 }
 
+function waitForSyncIdle(): Promise<void> {
+    if (!isSyncRunning()) {
+        return Promise.resolve();
+    }
+    return new Promise((resolve) => {
+        const unsubscribe = onSyncIdle(() => {
+            unsubscribe();
+            resolve();
+        });
+    });
+}
+
 describe('syncEngine', () => {
     beforeEach(async () => {
         await resetDb();
@@ -60,7 +72,10 @@ describe('syncEngine', () => {
         mockFilesCopyV2.mockResolvedValue({});
     });
 
-    afterEach(() => resetDb());
+    afterEach(async () => {
+        await waitForSyncIdle();
+        await resetDb();
+    });
 
     it('applyPayload clears local data when remote has empty tasks', async () => {
         await seedTask({ id: 'local-task', summary: 'Local' });
@@ -169,7 +184,7 @@ describe('syncEngine', () => {
 
     describe('schedulePush()', () => {
         it('retries upload once on transient failure', async () => {
-            vi.useFakeTimers({ shouldAdvanceTime: true });
+            vi.useFakeTimers({ toFake: ['setTimeout', 'clearTimeout'] });
             try {
                 await seedTask({ id: 'local', summary: 'Local', updatedAt: 8000 });
                 await db.syncMeta.put({ key: 'primary', lastSyncedAt: 0, lastModifiedAt: 1000 });
@@ -183,6 +198,7 @@ describe('syncEngine', () => {
 
                 schedulePush();
                 await vi.runAllTimersAsync();
+                await waitForSyncIdle();
 
                 expect(mockFilesUpload).toHaveBeenCalledTimes(2);
             } finally {
@@ -191,7 +207,7 @@ describe('syncEngine', () => {
         });
 
         it('uploads when meta matches remote but a task updatedAt is newer', async () => {
-            vi.useFakeTimers({ shouldAdvanceTime: true });
+            vi.useFakeTimers({ toFake: ['setTimeout', 'clearTimeout'] });
             try {
                 const sharedTs = 1000;
                 const editTs = 8000;
@@ -205,6 +221,7 @@ describe('syncEngine', () => {
 
                 schedulePush();
                 await vi.runAllTimersAsync();
+                await waitForSyncIdle();
 
                 expect(mockFilesUpload).toHaveBeenCalledOnce();
             } finally {
@@ -215,7 +232,7 @@ describe('syncEngine', () => {
 
     describe('sync serialization', () => {
         it('debounced push waits for active sync', async () => {
-            vi.useFakeTimers({ shouldAdvanceTime: true });
+            vi.useFakeTimers({ toFake: ['setTimeout', 'clearTimeout'] });
             try {
                 await seedTask({ id: 'stale', summary: 'Stale local', updatedAt: 500 });
                 await db.syncMeta.put({ key: 'primary', lastSyncedAt: 0, lastModifiedAt: 1000 });
@@ -258,8 +275,11 @@ describe('syncEngine', () => {
                 expect(mockFilesUpload).not.toHaveBeenCalled();
 
                 releaseDownload();
-                await syncPromise;
+                const syncOutcome = await syncPromise;
                 await vi.runAllTimersAsync();
+                await waitForSyncIdle();
+
+                expect(syncOutcome.pulled).toBe(true);
 
                 const tasks = await db.tasks.toArray();
                 expect(tasks).toHaveLength(1);
@@ -276,7 +296,7 @@ describe('syncEngine', () => {
         });
 
         it('queued operations do not clear busy state early', async () => {
-            vi.useFakeTimers({ shouldAdvanceTime: true });
+            vi.useFakeTimers({ toFake: ['setTimeout', 'clearTimeout'] });
             try {
                 await db.syncMeta.put({ key: 'primary', lastSyncedAt: 0, lastModifiedAt: 5000 });
 
@@ -305,6 +325,7 @@ describe('syncEngine', () => {
                 expect(isSyncRunning()).toBe(true);
 
                 await vi.runAllTimersAsync();
+                await waitForSyncIdle();
                 expect(isSyncRunning()).toBe(false);
                 expect(idleSpy).toHaveBeenCalledOnce();
             } finally {

@@ -46,7 +46,9 @@ type DownloadResult = { ok: true; payload: SyncPayload | null } | { ok: false };
 
 let debounceTimer: ReturnType<typeof setTimeout> | null = null;
 let localDirty = false;
-let syncInProgress = false;
+let syncQueue: Promise<unknown> = Promise.resolve();
+let activeSyncOperations = 0;
+let queuedSyncOperations = 0;
 const syncIdleListeners = new Set<() => void>();
 
 function onSyncIdle(listener: () => void): () => void {
@@ -61,7 +63,36 @@ function notifySyncIdle(): void {
 }
 
 function isSyncRunning(): boolean {
-    return syncInProgress;
+    return activeSyncOperations + queuedSyncOperations > 0;
+}
+
+async function runSerializedSync<T>(operation: 'syncing' | 'pushing', work: () => Promise<T>): Promise<T> {
+    queuedSyncOperations++;
+
+    const run = async (): Promise<T> => {
+        queuedSyncOperations--;
+        activeSyncOperations++;
+        if (operation === 'syncing') {
+            beginSync();
+        } else {
+            beginPush();
+        }
+
+        try {
+            return await work();
+        } finally {
+            activeSyncOperations--;
+            if (!isSyncRunning()) {
+                endOperation();
+                notifySyncIdle();
+            }
+        }
+    };
+
+    const previous = syncQueue.catch(() => undefined);
+    const current = previous.then(run);
+    syncQueue = current.catch(() => undefined);
+    return current;
 }
 
 function markLocalDirty(): void {
@@ -285,63 +316,59 @@ async function sync(): Promise<SyncOutcome> {
         return { ok: false, pulled: false, pushed: false, dataChanged: false };
     }
 
-    syncInProgress = true;
-    beginSync();
-    try {
-        const download = await attemptWithRetry(downloadRemote, (r) => !r.ok);
-        if (!download.ok) {
+    return runSerializedSync('syncing', syncNow);
+}
+
+async function syncNow(): Promise<SyncOutcome> {
+    const download = await attemptWithRetry(downloadRemote, (r) => !r.ok);
+    if (!download.ok) {
+        return { ok: false, pulled: false, pushed: false, dataChanged: false };
+    }
+
+    const effectiveLocal = await getEffectiveLocalModifiedAt();
+    const pending = await isPushPending();
+    const remote = download.payload;
+
+    if (remote === null) {
+        const pushed = await attemptWithRetry(
+            () => uploadLocal(null),
+            (ok) => !ok
+        );
+        if (pushed) {
+            await setPushPending(false);
+        }
+        return { ok: pushed, pulled: false, pushed, dataChanged: pushed };
+    }
+
+    if (remote.lastModifiedAt > effectiveLocal) {
+        try {
+            await applyPayload(remote);
+        } catch {
             return { ok: false, pulled: false, pushed: false, dataChanged: false };
         }
-
-        const effectiveLocal = await getEffectiveLocalModifiedAt();
-        const pending = await isPushPending();
-        const remote = download.payload;
-
-        if (remote === null) {
-            const pushed = await attemptWithRetry(
-                () => uploadLocal(null),
-                (ok) => !ok
-            );
-            if (pushed) {
-                await setPushPending(false);
-            }
-            return { ok: pushed, pulled: false, pushed, dataChanged: pushed };
-        }
-
-        if (remote.lastModifiedAt > effectiveLocal) {
-            try {
-                await applyPayload(remote);
-            } catch {
-                return { ok: false, pulled: false, pushed: false, dataChanged: false };
-            }
-            await setPushPending(false);
-            const syncedAt = Date.now();
-            recordSuccess('pulled', 'Downloaded newer data from Dropbox', syncedAt);
-            return { ok: true, pulled: true, pushed: false, dataChanged: true };
-        }
-
-        const needsPush = pending || localDirty || remote.lastModifiedAt < effectiveLocal;
-
-        if (needsPush) {
-            const pushed = await attemptWithRetry(
-                () => uploadLocal(remote),
-                (ok) => !ok
-            );
-            if (pushed) {
-                await setPushPending(false);
-            }
-            return { ok: pushed, pulled: false, pushed, dataChanged: pushed };
-        }
-
-        if (lastResult() !== 'error') {
-            recordSuccess('up_to_date', 'Already up to date with Dropbox');
-        }
-        return { ok: true, pulled: false, pushed: false, dataChanged: false };
-    } finally {
-        syncInProgress = false;
-        endOperation();
-        notifySyncIdle();
+        await setPushPending(false);
+        const syncedAt = Date.now();
+        recordSuccess('pulled', 'Downloaded newer data from Dropbox', syncedAt);
+        return { ok: true, pulled: true, pushed: false, dataChanged: true };
     }
+
+    const needsPush = pending || localDirty || remote.lastModifiedAt < effectiveLocal;
+
+    if (needsPush) {
+        const pushed = await attemptWithRetry(
+            () => uploadLocal(remote),
+            (ok) => !ok
+        );
+        if (pushed) {
+            await setPushPending(false);
+        }
+        return { ok: pushed, pulled: false, pushed, dataChanged: pushed };
+    }
+
+    if (lastResult() !== 'error') {
+        recordSuccess('up_to_date', 'Already up to date with Dropbox');
+    }
+    return { ok: true, pulled: false, pushed: false, dataChanged: false };
 }
 
 function schedulePush(): void {
@@ -353,35 +380,34 @@ function schedulePush(): void {
         clearTimeout(debounceTimer);
     }
     setPendingPushScheduled(true);
-    debounceTimer = setTimeout(async () => {
+    debounceTimer = setTimeout(() => {
         debounceTimer = null;
-        beginPush();
-        syncInProgress = true;
-        try {
-            const download = await attemptWithRetry(downloadRemote, (r) => !r.ok);
-            if (!download.ok) {
-                recordError('Upload skipped — could not verify remote state');
-                return;
-            }
-
-            const effectiveLocal = await getEffectiveLocalModifiedAt();
-            const remote = download.payload;
-            if (remote !== null && remote.lastModifiedAt > effectiveLocal) {
-                recordError('Upload skipped — newer data exists on Dropbox. Sync to merge.');
-                return;
-            }
-
-            await attemptWithRetry(
-                () => uploadLocal(remote),
-                (ok) => !ok
-            );
-        } finally {
-            syncInProgress = false;
-            endOperation();
-            setPendingPushScheduled(false);
-            notifySyncIdle();
-        }
+        void runSerializedSync('pushing', pushScheduledNow);
     }, DEBOUNCE_MS);
+}
+
+async function pushScheduledNow(): Promise<void> {
+    try {
+        const download = await attemptWithRetry(downloadRemote, (r) => !r.ok);
+        if (!download.ok) {
+            recordError('Upload skipped — could not verify remote state');
+            return;
+        }
+
+        const effectiveLocal = await getEffectiveLocalModifiedAt();
+        const remote = download.payload;
+        if (remote !== null && remote.lastModifiedAt > effectiveLocal) {
+            recordError('Upload skipped — newer data exists on Dropbox. Sync to merge.');
+            return;
+        }
+
+        await attemptWithRetry(
+            () => uploadLocal(remote),
+            (ok) => !ok
+        );
+    } finally {
+        setPendingPushScheduled(false);
+    }
 }
 
 /** @deprecated Use sync() — kept for tests that exercise pull in isolation */
