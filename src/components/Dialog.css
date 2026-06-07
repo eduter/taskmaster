@@ -1,6 +1,14 @@
-.gen-editor-overlay {
+.dialog {
     position: fixed;
     inset: 0;
+    margin: 0;
+    padding: 0;
+    border: none;
+    width: 100%;
+    max-width: none;
+    height: 100%;
+    max-height: none;
+    background: transparent;
     display: grid;
     grid-template: 1fr / 1fr;
     align-items: flex-end;
@@ -8,18 +16,26 @@
     z-index: 100;
 }
 
-.gen-editor-overlay__backdrop {
+.dialog:not([open]) {
+    display: none;
+}
+
+.dialog::backdrop {
+    background: rgba(0, 0, 0, 0.6);
+}
+
+.dialog__backdrop {
     grid-area: 1 / 1;
     align-self: stretch;
     justify-self: stretch;
     margin: 0;
     padding: 0;
     border: none;
-    background: rgba(0, 0, 0, 0.6);
+    background: transparent;
     cursor: default;
 }
 
-.gen-editor-panel {
+.dialog__panel {
     grid-area: 1 / 1;
     z-index: 1;
     width: 100%;
@@ -34,20 +50,20 @@
     gap: var(--space-md);
 }
 
-.gen-editor-panel__header {
+.dialog__header {
     display: flex;
     justify-content: space-between;
     align-items: center;
 }
 
-.gen-editor-panel__title {
+.dialog__title {
     margin: 0;
     font-size: 18px;
     font-weight: 600;
     color: var(--text-heading);
 }
 
-.gen-editor-panel__close {
+.dialog__close {
     background: none;
     border: none;
     color: var(--text-muted);
@@ -55,4 +71,8 @@
     line-height: 1;
     padding: 0 var(--space-xs);
     cursor: pointer;
+}
+
+.dialog__close:hover {
+    color: var(--text-primary);
 }

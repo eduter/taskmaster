@@ -16,6 +16,7 @@ import {
 import { invalidateTasks } from '../stores/taskStore.ts';
 import { clearTokens, startAuthFlow } from '../sync/dropboxAuth.ts';
 import { loadSyncMetaIntoStore, sync } from '../sync/syncEngine.ts';
+import { Dialog } from './Dialog.tsx';
 import './SyncSettings.css';
 
 function SyncSettings() {
@@ -132,101 +133,73 @@ function SyncSettings() {
                     />
                 </Show>
             </button>
-            <Show when={showPanel()}>
-                <div class="sync-overlay">
-                    <button
-                        type="button"
-                        class="sync-overlay__backdrop"
-                        aria-label="Close sync settings"
-                        onClick={() => setShowPanel(false)}
-                    />
-                    <div class="sync-panel">
-                        <div class="sync-panel__header">
-                            <h2 class="sync-panel__title">Dropbox Sync</h2>
-                            <button
-                                type="button"
-                                class="sync-panel__close"
-                                onClick={() => setShowPanel(false)}
-                                aria-label="Close"
-                            >
-                                &times;
+            <Dialog open={showPanel()} onClose={() => setShowPanel(false)} title="Dropbox Sync">
+                <div class="sync-panel__info">
+                    <p class={`sync-panel__status ${statusClass()}`}>{connectionLabel()}</p>
+                    <Show when={isConnected()}>
+                        <p class="sync-panel__meta">Last synced: {formatRelativeTime(lastSyncedAt())}</p>
+                    </Show>
+                    <Show when={operationLabel()}>
+                        <p class="sync-panel__activity">{operationLabel()}</p>
+                    </Show>
+                    <Show when={resultLabel()}>
+                        <p
+                            class="sync-panel__result"
+                            classList={{
+                                'sync-panel__result--error': lastResult() === 'error',
+                                'sync-panel__result--ok': lastResult() !== 'error' && lastResult() != null,
+                            }}
+                        >
+                            {resultLabel()}
+                        </p>
+                    </Show>
+                    <Show when={lastErrorAt()}>
+                        <p class="sync-panel__meta">Last error: {formatRelativeTime(lastErrorAt())}</p>
+                    </Show>
+                </div>
+
+                <Show
+                    when={isConnected()}
+                    fallback={
+                        <div class="sync-panel__connect">
+                            <p class="sync-panel__text">Connect to Dropbox to sync tasks across your devices.</p>
+                            <button type="button" class="sync-panel__btn-primary" onClick={handleConnect}>
+                                Connect to Dropbox
                             </button>
                         </div>
-
-                        <div class="sync-panel__info">
-                            <p class={`sync-panel__status ${statusClass()}`}>{connectionLabel()}</p>
-                            <Show when={isConnected()}>
-                                <p class="sync-panel__meta">Last synced: {formatRelativeTime(lastSyncedAt())}</p>
-                            </Show>
-                            <Show when={operationLabel()}>
-                                <p class="sync-panel__activity">{operationLabel()}</p>
-                            </Show>
-                            <Show when={resultLabel()}>
-                                <p
-                                    class="sync-panel__result"
-                                    classList={{
-                                        'sync-panel__result--error': lastResult() === 'error',
-                                        'sync-panel__result--ok': lastResult() !== 'error' && lastResult() != null,
-                                    }}
-                                >
-                                    {resultLabel()}
-                                </p>
-                            </Show>
-                            <Show when={lastErrorAt()}>
-                                <p class="sync-panel__meta">Last error: {formatRelativeTime(lastErrorAt())}</p>
-                            </Show>
-                        </div>
-
-                        <Show
-                            when={isConnected()}
-                            fallback={
-                                <div class="sync-panel__connect">
-                                    <p class="sync-panel__text">
-                                        Connect to Dropbox to sync tasks across your devices.
-                                    </p>
-                                    <button type="button" class="sync-panel__btn-primary" onClick={handleConnect}>
-                                        Connect to Dropbox
-                                    </button>
-                                </div>
-                            }
-                        >
-                            <div class="sync-panel__connected">
-                                <div class="sync-panel__actions">
-                                    <button
-                                        type="button"
-                                        class="sync-panel__btn-primary"
-                                        onClick={handleSync}
-                                        disabled={operation() !== 'idle'}
-                                    >
-                                        {operation() === 'syncing' ? 'Syncing…' : 'Sync Now'}
-                                    </button>
-                                    <Show
-                                        when={connection() === 'needs_reauth'}
-                                        fallback={
-                                            <button
-                                                type="button"
-                                                class="sync-panel__btn-danger"
-                                                onClick={handleDisconnect}
-                                            >
-                                                Disconnect
-                                            </button>
-                                        }
-                                    >
-                                        <button type="button" class="sync-panel__btn-primary" onClick={handleConnect}>
-                                            Reconnect
-                                        </button>
-                                    </Show>
-                                </div>
-                                <Show when={connection() === 'connected'}>
-                                    <button type="button" class="sync-panel__btn-text" onClick={handleDisconnect}>
+                    }
+                >
+                    <div class="sync-panel__connected">
+                        <div class="sync-panel__actions">
+                            <button
+                                type="button"
+                                class="sync-panel__btn-primary"
+                                onClick={handleSync}
+                                disabled={operation() !== 'idle'}
+                            >
+                                {operation() === 'syncing' ? 'Syncing…' : 'Sync Now'}
+                            </button>
+                            <Show
+                                when={connection() === 'needs_reauth'}
+                                fallback={
+                                    <button type="button" class="sync-panel__btn-danger" onClick={handleDisconnect}>
                                         Disconnect
                                     </button>
-                                </Show>
-                            </div>
+                                }
+                            >
+                                <button type="button" class="sync-panel__btn-primary" onClick={handleConnect}>
+                                    Reconnect
+                                </button>
+                            </Show>
+                        </div>
+                        <Show when={connection() === 'connected'}>
+                            <button type="button" class="sync-panel__btn-text" onClick={handleDisconnect}>
+                                Disconnect
+                            </button>
                         </Show>
                     </div>
-                </div>
-            </Show>
+                </Show>
+            </Dialog>
         </>
     );
 }
