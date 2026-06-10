@@ -60,19 +60,6 @@
     margin: 0;
 }
 
-.sync-panel__input {
-    padding: var(--space-sm) var(--space-md);
-    border-radius: var(--radius-md);
-    border: 1px solid var(--border);
-    background: var(--bg-input);
-    color: var(--text-primary);
-    outline: none;
-}
-
-.sync-panel__input:focus {
-    border-color: var(--accent);
-}
-
 .sync-panel__connected {
     display: flex;
     flex-direction: column;

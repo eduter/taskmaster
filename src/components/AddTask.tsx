@@ -18,7 +18,7 @@ function AddTask() {
     return (
         <form class="add-task" onSubmit={handleSubmit}>
             <input
-                class="add-task__input"
+                class="form-input add-task__input"
                 type="text"
                 placeholder="Add a task…"
                 value={value()}

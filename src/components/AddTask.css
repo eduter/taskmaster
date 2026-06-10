@@ -6,19 +6,4 @@
 
 .add-task__input {
     flex: 1;
-    padding: var(--space-sm) var(--space-md);
-    border-radius: var(--radius-md);
-    border: 1px solid var(--border);
-    background: var(--bg-input);
-    color: var(--text-primary);
-    outline: none;
-    transition: border-color var(--transition-fast);
-}
-
-.add-task__input::placeholder {
-    color: var(--text-muted);
-}
-
-.add-task__input:focus {
-    border-color: var(--accent);
 }

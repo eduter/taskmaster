@@ -112,34 +112,34 @@ function TaskDetail() {
         <Show when={selectedTask()}>
             {(task) => (
                 <Dialog open={true} onClose={tryDismiss} canClose={canClose} title="Edit Task">
-                    <div class="task-detail__field">
-                        <label class="task-detail__label" for="task-detail-summary">
+                    <div class="form-field">
+                        <label class="form-label" for="task-detail-summary">
                             Summary
                         </label>
                         <input
                             id="task-detail-summary"
-                            class="task-detail__input"
+                            class="form-input"
                             type="text"
                             value={summary()}
                             onInput={(e) => setSummary(e.currentTarget.value)}
                         />
                     </div>
 
-                    <div class="task-detail__field">
-                        <label class="task-detail__label" for="task-detail-description">
+                    <div class="form-field">
+                        <label class="form-label" for="task-detail-description">
                             Description
                         </label>
                         <textarea
                             id="task-detail-description"
-                            class="task-detail__textarea"
+                            class="form-textarea"
                             value={description()}
                             onInput={(e) => setDescription(e.currentTarget.value)}
                             rows={4}
                         />
                     </div>
 
-                    <div class="task-detail__field">
-                        <span class="task-detail__label">Labels</span>
+                    <div class="form-field">
+                        <span class="form-label">Labels</span>
                         <div class="task-detail__labels">
                             {labels().map((label) => (
                                 <span class="task-detail__label-tag">
@@ -157,7 +157,7 @@ function TaskDetail() {
                         <div class="task-detail__label-add">
                             <input
                                 id="task-detail-label-input"
-                                class="task-detail__input"
+                                class="form-input"
                                 type="text"
                                 placeholder="Add label…"
                                 value={labelInput()}

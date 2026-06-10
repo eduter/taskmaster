@@ -4,42 +4,6 @@
     gap: var(--space-md);
 }
 
-.gen-editor__field {
-    display: flex;
-    flex-direction: column;
-    gap: var(--space-xs);
-}
-
-.gen-editor__label {
-    font-size: 13px;
-    font-weight: 600;
-    color: var(--text-secondary);
-    text-transform: uppercase;
-    letter-spacing: 0.5px;
-}
-
-.gen-editor__input {
-    padding: var(--space-sm) var(--space-md);
-    border-radius: var(--radius-md);
-    border: 1px solid var(--border);
-    background: var(--bg-input);
-    color: var(--text-primary);
-    outline: none;
-}
-
-.gen-editor__input:focus {
-    border-color: var(--accent);
-}
-
-.gen-editor__select {
-    padding: var(--space-sm) var(--space-md);
-    border-radius: var(--radius-md);
-    border: 1px solid var(--border);
-    background: var(--bg-input);
-    color: var(--text-primary);
-    outline: none;
-}
-
 .gen-editor__template {
     display: flex;
     align-items: center;
@@ -70,7 +34,7 @@
     min-width: 0;
 }
 
-.gen-editor__template-add .gen-editor__input {
+.gen-editor__template-add .form-input {
     flex: 1;
     min-width: 0;
 }

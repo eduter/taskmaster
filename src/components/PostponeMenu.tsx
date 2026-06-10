@@ -27,7 +27,7 @@ function PostponeMenu(props: PostponeMenuProps) {
 
     return (
         <div class="postpone-menu">
-            <span class="postpone-menu__title">Postpone to</span>
+            <span class="form-label">Postpone to</span>
             <div class="postpone-menu__options">
                 <button type="button" class="postpone-menu__btn" onClick={() => postponeTo(addDays(today(), 1))}>
                     Tomorrow
@@ -45,7 +45,7 @@ function PostponeMenu(props: PostponeMenuProps) {
             <Show when={showDatePicker()}>
                 <form class="postpone-menu__picker" onSubmit={handleCustomSubmit}>
                     <input
-                        class="postpone-menu__date-input"
+                        class="form-input form-input--sm postpone-menu__date-input"
                         type="date"
                         min={addDays(today(), 1)}
                         value={customDate()}

@@ -172,13 +172,13 @@ function GeneratorEditor(props: GeneratorEditorProps) {
 
     return (
         <div class="gen-editor">
-            <div class="gen-editor__field">
-                <label class="gen-editor__label" for="gen-editor-name">
+            <div class="form-field">
+                <label class="form-label" for="gen-editor-name">
                     Generator name
                 </label>
                 <input
                     id="gen-editor-name"
-                    class="gen-editor__input"
+                    class="form-input"
                     type="text"
                     placeholder="e.g. Daily language practice"
                     value={name()}
@@ -186,33 +186,33 @@ function GeneratorEditor(props: GeneratorEditorProps) {
                 />
             </div>
 
-            <div class="gen-editor__field">
-                <label class="gen-editor__label" for="gen-editor-dtstart">
+            <div class="form-field">
+                <label class="form-label" for="gen-editor-dtstart">
                     Next Occurrence (Anchor)
                 </label>
                 <input
                     id="gen-editor-dtstart"
-                    class="gen-editor__input"
+                    class="form-input"
                     type="date"
                     value={dtstart()}
                     onInput={(e) => setDtstart(e.currentTarget.value)}
                 />
             </div>
 
-            <div class="gen-editor__field gen-editor__recurrence-group">
-                <label class="gen-editor__label" for="gen-editor-interval">
+            <div class="form-field gen-editor__recurrence-group">
+                <label class="form-label" for="gen-editor-interval">
                     Repeat Every
                 </label>
                 <div class="gen-editor__recurrence-row">
                     <input
                         id="gen-editor-interval"
-                        class="gen-editor__input gen-editor__interval-input"
+                        class="form-input gen-editor__interval-input"
                         type="number"
                         min="1"
                         value={interval()}
                         onInput={(e) => setIntervalVal(parseInt(e.currentTarget.value, 10) || 1)}
                     />
-                    <select class="gen-editor__select" value={freq()} onChange={(e) => setFreq(e.currentTarget.value)}>
+                    <select class="form-select" value={freq()} onChange={(e) => setFreq(e.currentTarget.value)}>
                         <option value="DAILY">Days</option>
                         <option value="WEEKLY">Weeks</option>
                         <option value="MONTHLY">Months</option>
@@ -222,8 +222,8 @@ function GeneratorEditor(props: GeneratorEditorProps) {
             </div>
 
             <Show when={freq() === 'WEEKLY'}>
-                <fieldset class="gen-editor__field">
-                    <legend class="gen-editor__label">On Days</legend>
+                <fieldset class="form-field">
+                    <legend class="form-label">On Days</legend>
                     <div class="gen-editor__day-toggles">
                         <For each={DAY_MAP}>
                             {(day) => (
@@ -247,8 +247,8 @@ function GeneratorEditor(props: GeneratorEditorProps) {
                 </fieldset>
             </Show>
 
-            <div class="gen-editor__field">
-                <span class="gen-editor__label">Task templates</span>
+            <div class="form-field">
+                <span class="form-label">Task templates</span>
                 <For each={templates()}>
                     {(tmpl, i) => (
                         <div class="gen-editor__template">
@@ -265,7 +265,7 @@ function GeneratorEditor(props: GeneratorEditorProps) {
                 </For>
                 <div class="gen-editor__template-add">
                     <input
-                        class="gen-editor__input"
+                        class="form-input"
                         type="text"
                         placeholder="Task summary…"
                         value={newTemplateSummary()}
@@ -279,7 +279,7 @@ function GeneratorEditor(props: GeneratorEditorProps) {
             </div>
 
             <Show when={isEditing()}>
-                <div class="gen-editor__field gen-editor__active-toggle">
+                <div class="form-field gen-editor__active-toggle">
                     <label>
                         <input
                             type="checkbox"
