@@ -22,23 +22,3 @@
 .add-task__input:focus {
     border-color: var(--accent);
 }
-
-.add-task__btn {
-    padding: var(--space-sm) var(--space-md);
-    border-radius: var(--radius-md);
-    border: none;
-    background: var(--accent);
-    color: #fff;
-    font-weight: 600;
-    font-size: 14px;
-    transition: background var(--transition-fast);
-}
-
-.add-task__btn:hover:not(:disabled) {
-    background: var(--accent-hover);
-}
-
-.add-task__btn:disabled {
-    opacity: 0.4;
-    cursor: default;
-}

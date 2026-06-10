@@ -90,47 +90,6 @@
     padding-top: var(--space-sm);
 }
 
-.gen-editor__btn-primary {
-    flex: 1;
-    padding: var(--space-sm) var(--space-md);
-    border-radius: var(--radius-md);
-    border: none;
-    background: var(--accent);
-    color: #fff;
-    font-weight: 600;
-    font-size: 14px;
-}
-
-.gen-editor__btn-primary:hover {
-    background: var(--accent-hover);
-}
-
-.gen-editor__btn-secondary {
-    padding: var(--space-sm) var(--space-md);
-    border-radius: var(--radius-md);
-    border: 1px solid var(--border);
-    background: transparent;
-    color: var(--text-secondary);
-    font-size: 14px;
-}
-
-.gen-editor__btn-secondary:hover {
-    background: var(--bg-surface-hover);
-}
-
-.gen-editor__btn-danger {
-    padding: var(--space-sm) var(--space-md);
-    border-radius: var(--radius-md);
-    border: 1px solid var(--danger-subtle);
-    background: transparent;
-    color: var(--danger);
-    font-size: 14px;
-}
-
-.gen-editor__btn-danger:hover {
-    background: var(--danger-subtle);
-}
-
 .gen-editor__recurrence-row {
     display: flex;
     gap: var(--space-sm);

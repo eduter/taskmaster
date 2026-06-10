@@ -23,20 +23,6 @@
     gap: var(--space-sm);
 }
 
-.install-banner__btn {
-    padding: var(--space-xs) var(--space-md);
-    border-radius: var(--radius-md);
-    border: none;
-    background: var(--accent);
-    color: #fff;
-    font-weight: 600;
-    font-size: 13px;
-}
-
-.install-banner__btn:hover {
-    background: var(--accent-hover);
-}
-
 .install-banner__dismiss {
     background: none;
     border: none;

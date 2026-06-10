@@ -38,7 +38,7 @@ function InstallPrompt() {
             <div class="install-banner">
                 <span class="install-banner__text">Install TaskMaster for offline use</span>
                 <div class="install-banner__actions">
-                    <button type="button" class="install-banner__btn" onClick={handleInstall}>
+                    <button type="button" class="btn btn--primary btn--sm" onClick={handleInstall}>
                         Install
                     </button>
                     <button type="button" class="install-banner__dismiss" onClick={handleDismiss}>

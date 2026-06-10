@@ -272,7 +272,7 @@ function GeneratorEditor(props: GeneratorEditorProps) {
                         onInput={(e) => setNewTemplateSummary(e.currentTarget.value)}
                         onKeyDown={handleTemplateKeyDown}
                     />
-                    <button class="gen-editor__btn-secondary" type="button" onClick={addTemplate}>
+                    <button class="btn btn--secondary" type="button" onClick={addTemplate}>
                         Add
                     </button>
                 </div>
@@ -292,15 +292,15 @@ function GeneratorEditor(props: GeneratorEditorProps) {
             </Show>
 
             <div class="gen-editor__actions">
-                <button type="button" class="gen-editor__btn-primary" onClick={handleSave}>
+                <button type="button" class="btn btn--primary btn--grow" onClick={handleSave}>
                     {isEditing() ? 'Update' : 'Create'}
                 </button>
                 <Show when={isEditing()}>
-                    <button type="button" class="gen-editor__btn-danger" onClick={handleDelete}>
+                    <button type="button" class="btn btn--danger" onClick={handleDelete}>
                         Delete
                     </button>
                 </Show>
-                <button type="button" class="gen-editor__btn-secondary" onClick={resetForm}>
+                <button type="button" class="btn btn--secondary" onClick={resetForm}>
                     Cancel
                 </button>
             </div>

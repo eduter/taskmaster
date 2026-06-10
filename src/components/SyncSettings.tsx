@@ -165,7 +165,7 @@ function SyncSettings() {
                     fallback={
                         <div class="sync-panel__connect">
                             <p class="sync-panel__text">Connect to Dropbox to sync tasks across your devices.</p>
-                            <button type="button" class="sync-panel__btn-primary" onClick={handleConnect}>
+                            <button type="button" class="btn btn--primary btn--grow" onClick={handleConnect}>
                                 Connect to Dropbox
                             </button>
                         </div>
@@ -175,7 +175,7 @@ function SyncSettings() {
                         <div class="sync-panel__actions">
                             <button
                                 type="button"
-                                class="sync-panel__btn-primary"
+                                class="btn btn--primary btn--grow"
                                 onClick={handleSync}
                                 disabled={operation() !== 'idle'}
                             >
@@ -184,18 +184,22 @@ function SyncSettings() {
                             <Show
                                 when={connection() === 'needs_reauth'}
                                 fallback={
-                                    <button type="button" class="sync-panel__btn-danger" onClick={handleDisconnect}>
+                                    <button type="button" class="btn btn--danger" onClick={handleDisconnect}>
                                         Disconnect
                                     </button>
                                 }
                             >
-                                <button type="button" class="sync-panel__btn-primary" onClick={handleConnect}>
+                                <button type="button" class="btn btn--primary btn--grow" onClick={handleConnect}>
                                     Reconnect
                                 </button>
                             </Show>
                         </div>
                         <Show when={connection() === 'connected'}>
-                            <button type="button" class="sync-panel__btn-text" onClick={handleDisconnect}>
+                            <button
+                                type="button"
+                                class="btn btn--text sync-panel__disconnect"
+                                onClick={handleDisconnect}
+                            >
                                 Disconnect
                             </button>
                         </Show>

@@ -164,7 +164,7 @@ function TaskDetail() {
                                 onInput={(e) => setLabelInput(e.currentTarget.value)}
                                 onKeyDown={handleLabelKeyDown}
                             />
-                            <button class="task-detail__btn-secondary" type="button" onClick={addLabel}>
+                            <button class="btn btn--secondary" type="button" onClick={addLabel}>
                                 Add
                             </button>
                         </div>
@@ -173,10 +173,10 @@ function TaskDetail() {
                     <PostponeMenu taskId={task().id} onDone={closeTaskDetail} />
 
                     <div class="task-detail__actions">
-                        <button type="button" class="task-detail__btn-primary" onClick={save}>
+                        <button type="button" class="btn btn--primary btn--grow" onClick={save}>
                             Save
                         </button>
-                        <button type="button" class="task-detail__btn-danger" onClick={handleDelete}>
+                        <button type="button" class="btn btn--danger" onClick={handleDelete}>
                             Delete
                         </button>
                     </div>

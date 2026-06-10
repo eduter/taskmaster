@@ -51,7 +51,7 @@ function PostponeMenu(props: PostponeMenuProps) {
                         value={customDate()}
                         onInput={(e) => setCustomDate(e.currentTarget.value)}
                     />
-                    <button class="postpone-menu__go" type="submit" disabled={!customDate()}>
+                    <button class="btn btn--primary btn--sm" type="submit" disabled={!customDate()}>
                         Go
                     </button>
                 </form>

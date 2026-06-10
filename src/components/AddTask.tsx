@@ -24,7 +24,7 @@ function AddTask() {
                 value={value()}
                 onInput={(e) => setValue(e.currentTarget.value)}
             />
-            <button class="add-task__btn" type="submit" disabled={!value().trim()}>
+            <button class="btn btn--primary" type="submit" disabled={!value().trim()}>
                 Add
             </button>
         </form>

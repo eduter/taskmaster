@@ -55,22 +55,3 @@
 .postpone-menu__date-input:focus {
     border-color: var(--accent);
 }
-
-.postpone-menu__go {
-    padding: var(--space-xs) var(--space-md);
-    border-radius: var(--radius-md);
-    border: none;
-    background: var(--accent);
-    color: #fff;
-    font-size: 13px;
-    font-weight: 600;
-}
-
-.postpone-menu__go:disabled {
-    opacity: 0.4;
-    cursor: default;
-}
-
-.postpone-menu__go:hover:not(:disabled) {
-    background: var(--accent-hover);
-}
