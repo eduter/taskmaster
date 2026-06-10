@@ -17,7 +17,9 @@ import {
 } from '../stores/syncStore.ts';
 import { clearTokens, startAuthFlow } from '../sync/dropboxAuth.ts';
 import { loadSyncMetaIntoStore } from '../sync/syncEngine.ts';
+import syncIcon from '../icons/sync.svg?raw';
 import { Dialog } from './Dialog.tsx';
+import { Icon } from './Icon.tsx';
 import './SyncSettings.css';
 
 function SyncSettings() {
@@ -115,15 +117,7 @@ function SyncSettings() {
                 onClick={openPanel}
                 aria-label="Sync settings"
             >
-                <svg viewBox="0 0 20 20" width="20" height="20" fill="none" aria-hidden="true">
-                    <path
-                        d="M14 3l3 3-3 3M6 17l-3-3 3-3M17 6H7M3 14h10"
-                        stroke="currentColor"
-                        stroke-width="1.5"
-                        stroke-linecap="round"
-                        stroke-linejoin="round"
-                    />
-                </svg>
+                <Icon src={syncIcon} />
                 <Show when={hasSyncIssue() || pendingPush()}>
                     <span
                         class="sync-trigger__badge"

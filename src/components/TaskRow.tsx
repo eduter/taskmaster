@@ -25,6 +25,8 @@ import { lockGestureScroll, unlockGestureScroll } from '../gestures/scrollLock.t
 import { useTouchDrag } from '../gestures/touchDragContext.tsx';
 import { useAppNavigate } from '../routing/navigation.ts';
 import { removeTask, toggleComplete } from '../stores/taskStore.ts';
+import trashIcon from '../icons/trash.svg?raw';
+import { Icon } from './Icon.tsx';
 import { TaskCard } from './TaskCard.tsx';
 import './TaskRow.css';
 
@@ -427,15 +429,7 @@ function TaskRow(props: TaskRowProps) {
             <div class="task-row">
                 <div class="task-row__delete-slot" classList={{ 'task-row__delete-slot--hidden': isDraggingThis() }}>
                     <button type="button" class="task-row__delete" aria-label="Delete task" onClick={handleDeleteClick}>
-                        <svg viewBox="0 0 20 20" width="20" height="20" fill="none" aria-hidden="true">
-                            <path
-                                d="M5 6h10M8 6V4.5A1.5 1.5 0 0 1 9.5 3h1A1.5 1.5 0 0 1 12 4.5V6m2 0v9.5a1.5 1.5 0 0 1-1.5 1.5h-5A1.5 1.5 0 0 1 6 15.5V6"
-                                stroke="currentColor"
-                                stroke-width="1.5"
-                                stroke-linecap="round"
-                                stroke-linejoin="round"
-                            />
-                        </svg>
+                        <Icon src={trashIcon} />
                     </button>
                 </div>
                 {/* Gesture surface: div required (nested controls in TaskCard); pointer + click open detail on desktop */}

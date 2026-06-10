@@ -1,6 +1,8 @@
 import { createMemo } from 'solid-js';
 import type { Task } from '../db/types.ts';
+import checkIcon from '../icons/check.svg?raw';
 import { today } from '../stores/taskStore.ts';
+import { Icon } from './Icon.tsx';
 import './TaskCard.css';
 
 interface TaskCardProps {
@@ -31,17 +33,7 @@ function TaskCard(props: TaskCardProps) {
                 onClick={props.onCheckClick}
                 onPointerDown={(event) => event.stopPropagation()}
             >
-                {showCompleted() && (
-                    <svg viewBox="0 0 16 16" fill="none" width="14" height="14" aria-hidden="true">
-                        <path
-                            d="M3 8.5l3.5 3.5 6.5-7"
-                            stroke="currentColor"
-                            stroke-width="2"
-                            stroke-linecap="round"
-                            stroke-linejoin="round"
-                        />
-                    </svg>
-                )}
+                {showCompleted() && <Icon src={checkIcon} width={14} height={14} />}
             </button>
             <div class="task-card__content">
                 <span class="task-card__summary">{props.task.summary}</span>

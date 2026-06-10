@@ -1,8 +1,10 @@
 import { createMemo, For, Show } from 'solid-js';
 import type { Generator } from '../db/types.ts';
+import plusIcon from '../icons/plus.svg?raw';
 import { parseGeneratorRule } from '../scheduling/rruleHelpers.ts';
 import { useAppNavigate } from '../routing/navigation.ts';
 import { generators } from '../stores/generatorStore.ts';
+import { Icon } from './Icon.tsx';
 import './GeneratorsTab.css';
 
 function scheduleLabel(gen: Generator): string {
@@ -26,9 +28,7 @@ function GeneratorsTab() {
                     onClick={() => toGenerator('new')}
                     aria-label="New generator"
                 >
-                    <svg viewBox="0 0 20 20" width="20" height="20" fill="none" aria-hidden="true">
-                        <path d="M10 3v14M3 10h14" stroke="currentColor" stroke-width="2" stroke-linecap="round" />
-                    </svg>
+                    <Icon src={plusIcon} />
                 </button>
             </div>
 
