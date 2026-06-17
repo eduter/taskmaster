@@ -57,7 +57,7 @@
 
 .task-card__check--inert {
     border-color: var(--text-secondary);
-    border-style: dashed;
+    border-style: dotted;
     cursor: default;
 }
 

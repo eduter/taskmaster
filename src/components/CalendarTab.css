@@ -147,7 +147,6 @@
     min-width: 0;
     padding: 1px 3px;
     overflow: hidden;
-    border-left: 2px solid var(--accent);
     border-radius: 2px;
     color: var(--text-primary);
     background: var(--bg-surface);
@@ -307,15 +306,6 @@
 .calendar-projected-card__open:focus-visible {
     border-radius: var(--radius-md);
     box-shadow: 0 0 0 2px var(--accent);
-}
-
-.calendar-projected-card .task-card {
-    min-height: 44px;
-    padding: 6px;
-}
-
-.calendar-projected-card .task-card__summary {
-    font-size: 0.75rem;
 }
 
 .calendar-day-dialog {
