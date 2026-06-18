@@ -17,6 +17,9 @@
   in the same working tree get split into separate commits, even
   when it'd be faster to mash them together. If you find yourself
   writing a commit message with "and" in it, that's two commits.
+- **Commit as you go.** Unless the user says otherwise, land work
+  in commits as each logical unit is finished — do not leave the
+  full diff uncommitted at the end of a session.
 - **Never push.** Agents commit; the human pushes.
 - **Solve problems in code, not in docs.** A problem detected and
   explained at the moment of failure beats the same problem
