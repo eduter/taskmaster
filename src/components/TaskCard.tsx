@@ -37,13 +37,6 @@ function TaskCard(props: TaskCardProps) {
             </button>
             <div class="task-card__content">
                 <span class="task-card__summary">{props.task.summary}</span>
-                {props.task.labels.length > 0 && (
-                    <div class="task-card__labels">
-                        {props.task.labels.map((label) => (
-                            <span class="task-card__label">{label}</span>
-                        ))}
-                    </div>
-                )}
             </div>
             {isCarriedOver() && <span class="task-card__carried-badge">carried</span>}
         </div>

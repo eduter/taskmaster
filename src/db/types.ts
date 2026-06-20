@@ -1,8 +1,14 @@
+interface Label {
+    id: string;
+    name: string;
+    color: string;
+}
+
 interface Task {
     id: string;
     summary: string;
     description: string;
-    labels: string[];
+    labelIds: string[];
     date: string;
     sortOrder: number;
     completed: boolean;
@@ -16,7 +22,7 @@ interface Task {
 interface TaskTemplate {
     summary: string;
     description: string;
-    labels: string[];
+    labelIds: string[];
 }
 
 interface Generator {
@@ -39,4 +45,4 @@ interface SyncMeta {
     localChangedAt?: number;
 }
 
-export type { Generator, SyncMeta, Task, TaskTemplate };
+export type { Generator, Label, SyncMeta, Task, TaskTemplate };

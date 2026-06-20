@@ -39,7 +39,7 @@ async function runGenerators(today: string = getLogicalDay()): Promise<Generator
                 await createTask({
                     summary: tmpl.summary,
                     description: tmpl.description,
-                    labels: tmpl.labels,
+                    labelIds: tmpl.labelIds,
                     date: dateStr,
                     generatorId: gen.id,
                 });

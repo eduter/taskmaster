@@ -12,8 +12,6 @@ function TaskDetail() {
     const { closeTaskDetail, toTasksList } = useAppNavigate();
     const [summary, setSummary] = createSignal('');
     const [description, setDescription] = createSignal('');
-    const [labelInput, setLabelInput] = createSignal('');
-    const [labels, setLabels] = createSignal<string[]>([]);
     let dismissGuardUntil = 0;
 
     const taskId = () => params.id;
@@ -61,8 +59,6 @@ function TaskDetail() {
             if (task) {
                 setSummary(task.summary);
                 setDescription(task.description);
-                setLabels([...task.labels]);
-                setLabelInput('');
             }
         })
     );
@@ -75,28 +71,7 @@ function TaskDetail() {
         await editTask(id, {
             summary: summary(),
             description: description(),
-            labels: labels(),
         });
-    }
-
-    function addLabel() {
-        const val = labelInput().trim();
-        if (!val || labels().includes(val)) {
-            return;
-        }
-        setLabels([...labels(), val]);
-        setLabelInput('');
-    }
-
-    function removeLabel(label: string) {
-        setLabels(labels().filter((l) => l !== label));
-    }
-
-    function handleLabelKeyDown(e: KeyboardEvent) {
-        if (e.key === 'Enter') {
-            e.preventDefault();
-            addLabel();
-        }
     }
 
     async function handleDelete() {
@@ -136,38 +111,6 @@ function TaskDetail() {
                             onInput={(e) => setDescription(e.currentTarget.value)}
                             rows={4}
                         />
-                    </div>
-
-                    <div class="form-field">
-                        <span class="form-label">Labels</span>
-                        <div class="task-detail__labels">
-                            {labels().map((label) => (
-                                <span class="task-detail__label-tag">
-                                    {label}
-                                    <button
-                                        type="button"
-                                        class="task-detail__label-remove"
-                                        onClick={() => removeLabel(label)}
-                                    >
-                                        &times;
-                                    </button>
-                                </span>
-                            ))}
-                        </div>
-                        <div class="task-detail__label-add">
-                            <input
-                                id="task-detail-label-input"
-                                class="form-input"
-                                type="text"
-                                placeholder="Add label…"
-                                value={labelInput()}
-                                onInput={(e) => setLabelInput(e.currentTarget.value)}
-                                onKeyDown={handleLabelKeyDown}
-                            />
-                            <button class="btn btn--secondary" type="button" onClick={addLabel}>
-                                Add
-                            </button>
-                        </div>
                     </div>
 
                     <PostponeMenu taskId={task().id} onDone={closeTaskDetail} />

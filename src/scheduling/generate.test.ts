@@ -121,7 +121,7 @@ describe('runGenerators', () => {
             id: 'from-b',
             summary: 'Task A',
             description: '',
-            labels: [],
+            labelIds: [],
             date: '2026-05-23',
             sortOrder: 1,
             completed: false,

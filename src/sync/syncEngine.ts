@@ -1,5 +1,5 @@
 import { db } from '../db/database.ts';
-import type { Generator, SyncMeta, Task } from '../db/types.ts';
+import type { Generator, Label, SyncMeta, Task } from '../db/types.ts';
 import {
     beginSync,
     endOperation,
@@ -28,8 +28,9 @@ const DEBUG_PATH_PREFIX = '/taskmaster/debug/sync-anomaly-';
 const DEBOUNCE_MS = 2000;
 
 interface SyncPayload {
-    version: 1;
+    version: 2;
     lastModifiedAt: number;
+    labels: Label[];
     tasks: Task[];
     generators: Generator[];
 }
@@ -126,10 +127,15 @@ function maxRecordUpdatedAt(payload: Pick<SyncPayload, 'tasks' | 'generators'>):
 }
 
 async function buildPayload(): Promise<SyncPayload> {
-    const [tasks, generators, meta] = await Promise.all([db.tasks.toArray(), db.generators.toArray(), getSyncMeta()]);
+    const [tasks, generators, labels, meta] = await Promise.all([
+        db.tasks.toArray(),
+        db.generators.toArray(),
+        db.labels.toArray(),
+        getSyncMeta(),
+    ]);
     const recordMax = maxRecordUpdatedAt({ tasks, generators });
     const lastModifiedAt = Math.max(meta.lastModifiedAt, recordMax, Date.now());
-    return { version: 1, lastModifiedAt, tasks, generators };
+    return { version: 2, lastModifiedAt, labels, tasks, generators };
 }
 
 async function applyPayload(payload: SyncPayload): Promise<void> {
@@ -139,11 +145,13 @@ async function applyPayload(payload: SyncPayload): Promise<void> {
         throw new Error('corrupt remote payload');
     }
 
-    await db.transaction('rw', [db.tasks, db.generators, db.syncMeta], async () => {
+    await db.transaction('rw', [db.tasks, db.generators, db.labels, db.syncMeta], async () => {
         await db.tasks.clear();
         await db.generators.clear();
+        await db.labels.clear();
         await db.tasks.bulkAdd(payload.tasks);
         await db.generators.bulkAdd(payload.generators);
+        await db.labels.bulkAdd(payload.labels);
         await updateSyncMeta({
             lastSyncedAt: Date.now(),
             lastModifiedAt: payload.lastModifiedAt,

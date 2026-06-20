@@ -4,6 +4,7 @@ import type { Generator, Task } from '../db/types.ts';
 async function resetDb(): Promise<void> {
     await db.tasks.clear();
     await db.generators.clear();
+    await db.labels.clear();
     await db.syncMeta.clear();
 }
 
@@ -13,7 +14,7 @@ async function seedGenerator(overrides: Partial<Generator> & Pick<Generator, 'na
         id: overrides.id ?? `gen-${now}`,
         name: overrides.name,
         rrule: overrides.rrule,
-        templates: overrides.templates ?? [{ summary: 'Task A', description: '', labels: [] }],
+        templates: overrides.templates ?? [{ summary: 'Task A', description: '', labelIds: [] }],
         active: overrides.active ?? true,
         lastGeneratedDate: overrides.lastGeneratedDate ?? null,
         createdAt: overrides.createdAt ?? now,
@@ -29,7 +30,7 @@ async function seedTask(overrides: Partial<Task> & Pick<Task, 'summary'>): Promi
         id: overrides.id ?? `task-${now}`,
         summary: overrides.summary,
         description: overrides.description ?? '',
-        labels: overrides.labels ?? [],
+        labelIds: overrides.labelIds ?? [],
         date: overrides.date ?? '2026-01-01',
         sortOrder: overrides.sortOrder ?? now,
         completed: overrides.completed ?? false,

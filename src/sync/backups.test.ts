@@ -19,7 +19,7 @@ vi.mock('./dropboxAuth.ts', async (importOriginal) => {
 const { backupPathForDay, ensureBackupBeforeOverwrite } = await import('./backups.ts');
 
 function makePayload(lastModifiedAt: number): SyncPayload {
-    return { version: 1, lastModifiedAt, tasks: [], generators: [] };
+    return { version: 2, lastModifiedAt, labels: [], tasks: [], generators: [] };
 }
 
 describe('backups', () => {

@@ -114,7 +114,7 @@ function GeneratorEditor(props: GeneratorEditorProps) {
         if (!summary) {
             return;
         }
-        setTemplates([...templates(), { summary, description: '', labels: [] }]);
+        setTemplates([...templates(), { summary, description: '', labelIds: [] }]);
         setNewTemplateSummary('');
     }
 

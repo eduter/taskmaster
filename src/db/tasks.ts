@@ -11,7 +11,7 @@ async function createTask(
         id: generateId(),
         summary: fields.summary,
         description: fields.description ?? '',
-        labels: fields.labels ?? [],
+        labelIds: fields.labelIds ?? [],
         date: fields.date ?? getLogicalDay(),
         sortOrder: fields.sortOrder ?? now,
         completed: false,
