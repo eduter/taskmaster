@@ -1,0 +1,94 @@
+.labels-dialog__empty {
+    margin: 0 0 var(--space-sm);
+    font-size: 14px;
+    color: var(--text-muted);
+}
+
+.labels-dialog__select-list,
+.labels-dialog__edit-list {
+    list-style: none;
+    margin: 0;
+    padding: 0;
+    display: flex;
+    flex-direction: column;
+    gap: var(--space-xs);
+}
+
+.labels-dialog__select-item {
+    display: flex;
+    align-items: stretch;
+    gap: var(--space-sm);
+    cursor: pointer;
+}
+
+.labels-dialog__select-item input {
+    flex-shrink: 0;
+    align-self: center;
+}
+
+.labels-dialog__select-chip {
+    flex: 1;
+    display: flex;
+    align-items: center;
+    min-height: 36px;
+    padding: var(--space-sm) var(--space-md);
+    border-radius: var(--radius-sm);
+    font-size: 14px;
+    line-height: 1.3;
+}
+
+.labels-dialog__select-chip--unnamed {
+    min-width: 32px;
+}
+
+.labels-dialog__manage {
+    width: 100%;
+    margin-top: var(--space-md);
+}
+
+.labels-dialog__edit-row {
+    display: flex;
+    align-items: center;
+    gap: var(--space-sm);
+}
+
+.labels-dialog__name-input {
+    flex: 1;
+    min-width: 0;
+}
+
+.labels-dialog__delete {
+    flex-shrink: 0;
+    background: none;
+    border: none;
+    color: var(--text-muted);
+    padding: var(--space-xs);
+    cursor: pointer;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+}
+
+.labels-dialog__delete:hover {
+    color: var(--danger);
+}
+
+.labels-dialog__add {
+    width: 100%;
+    margin-top: var(--space-sm);
+    font-size: 18px;
+    line-height: 1;
+    padding: var(--space-sm);
+}
+
+.labels-dialog__error {
+    margin: var(--space-sm) 0 0;
+    font-size: 13px;
+    color: var(--danger);
+}
+
+.labels-dialog__actions {
+    display: flex;
+    gap: var(--space-sm);
+    margin-top: var(--space-md);
+}

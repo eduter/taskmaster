@@ -10,6 +10,7 @@ import { OfflineIndicator } from './components/OfflineIndicator.tsx';
 import { SyncSettings } from './components/SyncSettings.tsx';
 import { SyncStatusBar } from './components/SyncStatusBar.tsx';
 import { TaskDetail } from './components/TaskDetail.tsx';
+import { LabelsPicker } from './components/labels';
 import { TaskList } from './components/TaskList.tsx';
 import { markConnected, refreshAuthState } from './stores/syncStore.ts';
 import { handleAuthRedirect } from './sync/dropboxAuth.ts';
@@ -56,6 +57,7 @@ function TasksSection() {
             <AddTask />
             <TaskList />
             <TaskDetail />
+            <LabelsPicker />
         </>
     );
 }

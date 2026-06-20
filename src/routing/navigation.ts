@@ -1,10 +1,11 @@
 import { createEffect, createMemo } from 'solid-js';
 import { useLocation, useNavigate, useResolvedPath, useSearchParams } from '@solidjs/router';
-import { hasSyncModal, MODAL_PARAM, SYNC_MODAL } from './modalParams.ts';
+import { hasLabelsModal, hasSyncModal, LABELS_MODAL, MODAL_PARAM, SYNC_MODAL } from './modalParams.ts';
 
 type AppTab = 'today' | 'calendar' | 'generators';
 
 let syncModalPushed = false;
+let labelsModalPushed = false;
 
 const TAB_ROUTES: Record<AppTab, string> = {
     today: '/tasks',
@@ -73,7 +74,34 @@ function useAppNavigate() {
             }
             setSearchParams({ [MODAL_PARAM]: null }, { replace: true });
         },
+        openLabelsPicker() {
+            setSearchParams({ [MODAL_PARAM]: LABELS_MODAL });
+            labelsModalPushed = true;
+        },
+        closeLabelsPicker() {
+            if (labelsModalPushed) {
+                labelsModalPushed = false;
+                navigate(-1);
+                return;
+            }
+            setSearchParams({ [MODAL_PARAM]: null }, { replace: true });
+        },
     };
+}
+
+/** Whether the labels picker overlay is open for the current location. */
+function useLabelsPanelOpen() {
+    const location = useLocation();
+
+    const open = createMemo(() => hasLabelsModal(location.search));
+
+    createEffect(() => {
+        if (!open()) {
+            labelsModalPushed = false;
+        }
+    });
+
+    return open;
 }
 
 /** Whether the sync settings overlay is open for the current location. */
@@ -110,5 +138,13 @@ function useActiveTab() {
 }
 
 export type { AppTab };
-export { generatorDetailPath, TAB_ROUTES, taskDetailPath, useActiveTab, useAppNavigate, useSyncPanelOpen };
-export { hasSyncModal, MODAL_PARAM, SYNC_MODAL } from './modalParams.ts';
+export {
+    generatorDetailPath,
+    TAB_ROUTES,
+    taskDetailPath,
+    useActiveTab,
+    useAppNavigate,
+    useLabelsPanelOpen,
+    useSyncPanelOpen,
+};
+export { hasLabelsModal, hasSyncModal, LABELS_MODAL, MODAL_PARAM, SYNC_MODAL } from './modalParams.ts';
