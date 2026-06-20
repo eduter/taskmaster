@@ -1,9 +1,11 @@
 import { useParams } from '@solidjs/router';
-import { createEffect, createSignal, on, Show } from 'solid-js';
+import { createEffect, createMemo, createSignal, For, on, Show } from 'solid-js';
 import type { Task } from '../db/types.ts';
 import { useAppNavigate } from '../routing/navigation.ts';
+import { labels } from '../stores/labelStore.ts';
 import { editTask, removeTask, tasks } from '../stores/taskStore.ts';
 import { Dialog } from './Dialog.tsx';
+import { LabelChip } from './labels';
 import { PostponeMenu } from './PostponeMenu.tsx';
 import './TaskDetail.css';
 
@@ -42,6 +44,27 @@ function TaskDetail() {
         }
         return (tasks() ?? []).find((t) => t.id === id);
     };
+
+    const labelById = createMemo(() => {
+        const map = new Map<string, { name: string; color: string }>();
+        for (const label of labels() ?? []) {
+            map.set(label.id, { name: label.name, color: label.color });
+        }
+        return map;
+    });
+
+    const taskLabels = createMemo(() => {
+        const task = selectedTask();
+        if (!task) {
+            return [];
+        }
+        return task.labelIds
+            .map((id) => {
+                const label = labelById().get(id);
+                return label ? { id, ...label } : null;
+            })
+            .filter((entry): entry is { id: string; name: string; color: string } => entry !== null);
+    });
 
     createEffect(() => {
         const id = taskId();
@@ -112,6 +135,17 @@ function TaskDetail() {
                             rows={4}
                         />
                     </div>
+
+                    <Show when={taskLabels().length > 0}>
+                        <div class="form-field">
+                            <span class="form-label">Labels</span>
+                            <div class="task-detail__labels">
+                                <For each={taskLabels()}>
+                                    {(label) => <LabelChip name={label.name} color={label.color} />}
+                                </For>
+                            </div>
+                        </div>
+                    </Show>
 
                     <PostponeMenu taskId={task().id} onDone={closeTaskDetail} />
 

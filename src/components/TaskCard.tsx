@@ -1,8 +1,10 @@
-import { createMemo } from 'solid-js';
+import { createMemo, For, Show } from 'solid-js';
 import type { Task } from '../db/types.ts';
 import checkIcon from '../icons/check.svg?raw';
+import { labels } from '../stores/labelStore.ts';
 import { today } from '../stores/taskStore.ts';
 import { Icon } from './Icon.tsx';
+import { LabelChip } from './labels';
 import './TaskCard.css';
 
 interface TaskCardProps {
@@ -16,6 +18,13 @@ function TaskCard(props: TaskCardProps) {
     const isCarriedOver = createMemo(() => props.task.date < today());
 
     const showCompleted = createMemo(() => props.visualCompleted ?? props.task.completed);
+
+    const taskLabels = createMemo(() => {
+        const byId = new Map((labels() ?? []).map((l) => [l.id, l]));
+        return props.task.labelIds
+            .map((id) => byId.get(id))
+            .filter((label): label is NonNullable<typeof label> => label !== undefined);
+    });
 
     return (
         <div
@@ -37,6 +46,11 @@ function TaskCard(props: TaskCardProps) {
             </button>
             <div class="task-card__content">
                 <span class="task-card__summary">{props.task.summary}</span>
+                <Show when={taskLabels().length > 0}>
+                    <div class="task-card__labels">
+                        <For each={taskLabels()}>{(label) => <LabelChip name={label.name} color={label.color} />}</For>
+                    </div>
+                </Show>
             </div>
             {isCarriedOver() && <span class="task-card__carried-badge">carried</span>}
         </div>

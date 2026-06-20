@@ -1,0 +1,17 @@
+/* contrast-color() needs a typed custom property when --label-color is set inline */
+@property --label-color {
+    syntax: "<color>";
+    inherits: false;
+    initial-value: transparent;
+}
+
+.label-surface {
+    background-color: var(--label-color);
+    color: oklch(from var(--label-color) round(1.21 - l) 0 0);
+}
+
+@supports (color: contrast-color(red)) {
+    .label-surface {
+        color: contrast-color(var(--label-color));
+    }
+}

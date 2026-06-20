@@ -74,14 +74,6 @@
     margin-top: var(--space-xs);
 }
 
-.task-card__label {
-    font-size: 11px;
-    padding: 1px 6px;
-    border-radius: var(--radius-sm);
-    background: var(--accent-subtle);
-    color: var(--accent);
-}
-
 .task-card__carried-badge {
     font-size: 11px;
     padding: 1px 6px;

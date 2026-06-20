@@ -37,7 +37,12 @@
             },
             "correctness": {
                 "noUnusedVariables": "error",
-                "noUnusedImports": "error"
+                "noUnusedImports": "error",
+                "noUnknownFunction": {
+                    "options": {
+                        "ignore": ["contrast-color"]
+                    }
+                }
             }
         },
         "domains": {
