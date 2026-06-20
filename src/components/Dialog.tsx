@@ -2,6 +2,25 @@ import { createEffect, onCleanup, type JSX } from 'solid-js';
 import './Dialog.css';
 
 const DIALOG_SCROLL_LOCK_CLASS = 'dialog-scroll-lock';
+const DIALOG_BASE_Z_INDEX = 100;
+
+let scrollLockCount = 0;
+
+function acquireScrollLock(): void {
+    scrollLockCount++;
+    if (scrollLockCount === 1) {
+        document.documentElement.classList.add(DIALOG_SCROLL_LOCK_CLASS);
+        document.body.classList.add(DIALOG_SCROLL_LOCK_CLASS);
+    }
+}
+
+function releaseScrollLock(): void {
+    scrollLockCount = Math.max(0, scrollLockCount - 1);
+    if (scrollLockCount === 0) {
+        document.documentElement.classList.remove(DIALOG_SCROLL_LOCK_CLASS);
+        document.body.classList.remove(DIALOG_SCROLL_LOCK_CLASS);
+    }
+}
 
 interface DialogProps {
     open: boolean;
@@ -12,6 +31,8 @@ interface DialogProps {
     /** Optional extra class on the inner panel (e.g. max-height tweaks). */
     panelClass?: string;
     closeLabel?: string;
+    /** Stacking order when multiple dialogs are open; higher values render on top. */
+    stackLevel?: number;
     children: JSX.Element;
 }
 
@@ -38,12 +59,8 @@ function Dialog(props: DialogProps) {
         if (!props.open) {
             return;
         }
-        document.documentElement.classList.add(DIALOG_SCROLL_LOCK_CLASS);
-        document.body.classList.add(DIALOG_SCROLL_LOCK_CLASS);
-        onCleanup(() => {
-            document.documentElement.classList.remove(DIALOG_SCROLL_LOCK_CLASS);
-            document.body.classList.remove(DIALOG_SCROLL_LOCK_CLASS);
-        });
+        acquireScrollLock();
+        onCleanup(releaseScrollLock);
     });
 
     function requestClose() {
@@ -58,8 +75,16 @@ function Dialog(props: DialogProps) {
         requestClose();
     }
 
+    const stackLevel = () => props.stackLevel ?? 0;
+
     return (
-        <dialog ref={dialogRef} class="dialog" aria-labelledby={titleId} onCancel={handleCancel}>
+        <dialog
+            ref={dialogRef}
+            class="dialog"
+            style={{ 'z-index': `${DIALOG_BASE_Z_INDEX + stackLevel()}` }}
+            aria-labelledby={titleId}
+            onCancel={handleCancel}
+        >
             <button
                 type="button"
                 class="dialog__backdrop"
