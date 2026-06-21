@@ -1,6 +1,6 @@
 import { createEffect, createMemo } from 'solid-js';
 import { useLocation, useNavigate, useResolvedPath, useSearchParams } from '@solidjs/router';
-import { hasLabelsModal, hasSyncModal, LABELS_MODAL, MODAL_PARAM, SYNC_MODAL } from './modalParams.ts';
+import { hasLabelsModal, hasOverlayModal, hasSyncModal, LABELS_MODAL, MODAL_PARAM, SYNC_MODAL } from './modalParams.ts';
 
 type AppTab = 'today' | 'calendar' | 'generators';
 
@@ -37,7 +37,7 @@ function useAppNavigate() {
     const [, setSearchParams] = useSearchParams();
 
     function pathKeepingOverlays(pathname: string): string {
-        return hasSyncModal(location.search) ? `${pathname}${location.search}` : pathname;
+        return hasOverlayModal(location.search) ? `${pathname}${location.search}` : pathname;
     }
 
     return {
@@ -147,4 +147,4 @@ export {
     useLabelsPanelOpen,
     useSyncPanelOpen,
 };
-export { hasLabelsModal, hasSyncModal, LABELS_MODAL, MODAL_PARAM, SYNC_MODAL } from './modalParams.ts';
+export { hasLabelsModal, hasOverlayModal, hasSyncModal, LABELS_MODAL, MODAL_PARAM, SYNC_MODAL } from './modalParams.ts';

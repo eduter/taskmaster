@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import { hasLabelsModal, hasSyncModal } from './modalParams.ts';
+import { hasLabelsModal, hasOverlayModal, hasSyncModal } from './modalParams.ts';
 
 describe('hasSyncModal', () => {
     it('is false without modal=sync', () => {
@@ -23,5 +23,17 @@ describe('hasLabelsModal', () => {
     it('is true when modal=labels', () => {
         expect(hasLabelsModal('?modal=labels')).toBe(true);
         expect(hasLabelsModal('?foo=1&modal=labels')).toBe(true);
+    });
+});
+
+describe('hasOverlayModal', () => {
+    it('is true for route-preserved overlays', () => {
+        expect(hasOverlayModal('?modal=sync')).toBe(true);
+        expect(hasOverlayModal('?modal=labels')).toBe(true);
+    });
+
+    it('is false without a route-preserved overlay', () => {
+        expect(hasOverlayModal('')).toBe(false);
+        expect(hasOverlayModal('?modal=about')).toBe(false);
     });
 });
