@@ -44,6 +44,10 @@ function TaskTemplateDetail(props: TaskTemplateDetailProps): JSX.Element {
         setLabelIds((ids) => (ids.includes(labelId) ? ids.filter((id) => id !== labelId) : [...ids, labelId]));
     }
 
+    function pruneDeletedLabel(labelId: string) {
+        setLabelIds((ids) => ids.filter((id) => id !== labelId));
+    }
+
     function save() {
         const template = props.template;
         const nextSummary = summary().trim();
@@ -96,6 +100,7 @@ function TaskTemplateDetail(props: TaskTemplateDetailProps): JSX.Element {
                     onClose={() => setLabelsOpen(false)}
                     selectedLabelIds={labelIds()}
                     onToggleLabel={toggleLabel}
+                    onDeleteLabel={pruneDeletedLabel}
                     stackLevel={2}
                 />
             </Dialog>

@@ -18,6 +18,7 @@ interface LabelsDialogProps {
     onClose: () => void;
     selectedLabelIds: string[];
     onToggleLabel: (labelId: string) => void | Promise<void>;
+    onDeleteLabel?: (labelId: string) => void | Promise<void>;
     stackLevel?: number;
 }
 
@@ -118,6 +119,7 @@ function LabelsDialog(props: LabelsDialogProps) {
         for (const label of snapshot) {
             if (!keptExistingIds.has(label.id)) {
                 await removeLabel(label.id);
+                await props.onDeleteLabel?.(label.id);
             }
         }
 
