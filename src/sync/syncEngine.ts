@@ -35,6 +35,18 @@ interface SyncPayload {
     generators: Generator[];
 }
 
+type LegacyTask = Task & { labelIds?: string[] };
+type LegacyTaskTemplate = Generator['templates'][number] & { labelIds?: string[] };
+type LegacyGenerator = Omit<Generator, 'templates'> & { templates: LegacyTaskTemplate[] };
+
+interface LegacySyncPayload {
+    version?: number;
+    lastModifiedAt: number;
+    labels?: Label[];
+    tasks: LegacyTask[];
+    generators: LegacyGenerator[];
+}
+
 type SyncOutcome = {
     ok: boolean;
     pulled: boolean;
@@ -124,6 +136,25 @@ function maxRecordUpdatedAt(payload: Pick<SyncPayload, 'tasks' | 'generators'>):
     const taskTimes = payload.tasks.map((t) => t.updatedAt);
     const genTimes = payload.generators.map((g) => g.updatedAt);
     return Math.max(0, ...taskTimes, ...genTimes);
+}
+
+function normalizeSyncPayload(payload: LegacySyncPayload): SyncPayload {
+    return {
+        version: 2,
+        lastModifiedAt: payload.lastModifiedAt,
+        labels: payload.labels ?? [],
+        tasks: payload.tasks.map((task) => ({
+            ...task,
+            labelIds: task.labelIds ?? [],
+        })),
+        generators: payload.generators.map((generator) => ({
+            ...generator,
+            templates: generator.templates.map((template) => ({
+                ...template,
+                labelIds: template.labelIds ?? [],
+            })),
+        })),
+    };
 }
 
 async function buildPayload(): Promise<SyncPayload> {
@@ -217,7 +248,7 @@ async function downloadRemote(): Promise<DownloadResult> {
         const text = await blob.text();
         let remote: SyncPayload;
         try {
-            remote = JSON.parse(text) as SyncPayload;
+            remote = normalizeSyncPayload(JSON.parse(text) as LegacySyncPayload);
         } catch {
             recordError('Download failed: remote sync file is not valid JSON');
             return { ok: false };

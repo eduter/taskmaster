@@ -46,7 +46,7 @@ function makePayload(overrides: Partial<SyncPayload> = {}): SyncPayload {
     };
 }
 
-function blobFromPayload(payload: SyncPayload): Blob {
+function blobFromPayload(payload: unknown): Blob {
     return new Blob([JSON.stringify(payload)], { type: 'application/json' });
 }
 
@@ -133,6 +133,53 @@ describe('syncEngine', () => {
         expect(meta.lastModifiedAt).toBe(3000);
     });
 
+    it('pull normalizes v1 payloads without label fields', async () => {
+        await seedTask({ id: 'old', summary: 'Old' });
+        await db.syncMeta.put({ key: 'primary', lastSyncedAt: 0, lastModifiedAt: 500 });
+
+        const remote = {
+            version: 1,
+            lastModifiedAt: 3000,
+            tasks: [
+                {
+                    id: 'remote',
+                    summary: 'Remote',
+                    description: '',
+                    date: '2026-05-23',
+                    sortOrder: 1,
+                    completed: false,
+                    completedAt: null,
+                    createdAt: 1,
+                    updatedAt: 1,
+                    generatorId: null,
+                    parentTaskId: null,
+                },
+            ],
+            generators: [
+                {
+                    id: 'gen-1',
+                    name: 'Generator',
+                    rrule: 'FREQ=DAILY',
+                    templates: [{ summary: 'Template', description: '' }],
+                    active: true,
+                    lastGeneratedDate: null,
+                    createdAt: 1,
+                    updatedAt: 1,
+                },
+            ],
+        };
+        mockFilesDownload.mockResolvedValue({
+            result: { fileBlob: blobFromPayload(remote) },
+        });
+
+        const pulled = await pullFromDropbox();
+
+        expect(pulled).toBe(true);
+        expect((await db.tasks.get('remote'))?.labelIds).toEqual([]);
+        expect((await db.generators.get('gen-1'))?.templates[0].labelIds).toEqual([]);
+        expect(await db.labels.toArray()).toEqual([]);
+    });
+
     it('push uploads local payload when remote is not newer', async () => {
         await seedTask({ id: 'local', summary: 'Local' });
         await db.syncMeta.put({ key: 'primary', lastSyncedAt: 0, lastModifiedAt: 5000 });
@@ -167,6 +214,17 @@ describe('syncEngine', () => {
         const uploaded = JSON.parse(mockFilesUpload.mock.calls[0][0].contents as string) as SyncPayload;
         expect(uploaded.generators).toHaveLength(1);
         expect(uploaded.generators[0].name).toBe('Gen');
+    });
+
+    it('push includes labels from local db', async () => {
+        await db.labels.add({ id: 'label-1', name: 'Home', color: '#f97316' });
+        await db.syncMeta.put({ key: 'primary', lastSyncedAt: 0, lastModifiedAt: 5000 });
+        mockFilesDownload.mockRejectedValue({ status: 409 });
+
+        await pushToDropbox();
+
+        const uploaded = JSON.parse(mockFilesUpload.mock.calls[0][0].contents as string) as SyncPayload;
+        expect(uploaded.labels).toEqual([{ id: 'label-1', name: 'Home', color: '#f97316' }]);
     });
 
     describe('pushPending', () => {
