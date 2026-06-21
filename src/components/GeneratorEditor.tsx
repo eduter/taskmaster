@@ -3,6 +3,9 @@ import { RRule } from 'rrule';
 import { createEffect, createSignal, For, on, Show } from 'solid-js';
 import type { Generator, TaskTemplate } from '../db/types.ts';
 import { addGenerator, editGenerator, generators, removeGenerator } from '../stores/generatorStore.ts';
+import { generateId } from '../utils/id.ts';
+import { TaskTemplateDetail, type TaskTemplateDraft } from './TaskTemplateDetail.tsx';
+import { TaskTemplateList } from './TaskTemplateList.tsx';
 import './GeneratorEditor.css';
 
 const DAY_MAP = [
@@ -33,8 +36,9 @@ function GeneratorEditor(props: GeneratorEditorProps) {
     const [interval, setIntervalVal] = createSignal<number>(1);
     const [byday, setByday] = createSignal<string[]>([]);
     const [dtstart, setDtstart] = createSignal<string>(formatDate(new Date()));
-    const [templates, setTemplates] = createSignal<TaskTemplate[]>([]);
+    const [templates, setTemplates] = createSignal<TaskTemplateDraft[]>([]);
     const [newTemplateSummary, setNewTemplateSummary] = createSignal('');
+    const [editingTemplateId, setEditingTemplateId] = createSignal<string | null>(null);
     const [active, setActive] = createSignal(true);
 
     const generatorId = () => params.id;
@@ -48,13 +52,22 @@ function GeneratorEditor(props: GeneratorEditorProps) {
         return (generators() ?? []).find((g) => g.id === id);
     };
 
+    const editingTemplate = (): TaskTemplateDraft | undefined => {
+        const id = editingTemplateId();
+        if (!id) {
+            return undefined;
+        }
+        return templates().find((template) => template.id === id);
+    };
+
     createEffect(
         on(generatorId, () => {
             const gen = editingGen();
             if (gen) {
                 setName(gen.name);
                 setActive(gen.active);
-                setTemplates([...gen.templates]);
+                setTemplates(gen.templates.map(templateToDraft));
+                setEditingTemplateId(null);
 
                 try {
                     const freqMatch = gen.rrule.match(/FREQ=(DAILY|WEEKLY|MONTHLY|YEARLY)/);
@@ -101,6 +114,7 @@ function GeneratorEditor(props: GeneratorEditorProps) {
         setDtstart(formatDate(new Date()));
         setTemplates([]);
         setNewTemplateSummary('');
+        setEditingTemplateId(null);
         setActive(true);
     }
 
@@ -114,12 +128,40 @@ function GeneratorEditor(props: GeneratorEditorProps) {
         if (!summary) {
             return;
         }
-        setTemplates([...templates(), { summary, description: '', labelIds: [] }]);
+        setTemplates([...templates(), templateToDraft({ summary, description: '', labelIds: [] })]);
         setNewTemplateSummary('');
     }
 
-    function removeTemplate(index: number) {
-        setTemplates(templates().filter((_, i) => i !== index));
+    function removeTemplate(id: string) {
+        setTemplates(templates().filter((template) => template.id !== id));
+        if (editingTemplateId() === id) {
+            setEditingTemplateId(null);
+        }
+    }
+
+    function updateTemplate(id: string, template: TaskTemplate) {
+        setTemplates((drafts) =>
+            drafts.map((draft) => {
+                if (draft.id !== id) {
+                    return draft;
+                }
+                return {
+                    ...draft,
+                    summary: template.summary,
+                    description: template.description,
+                    labelIds: template.labelIds,
+                };
+            })
+        );
+    }
+
+    function reorderTemplates(orderedIds: string[]) {
+        const byId = new Map(templates().map((template) => [template.id, template]));
+        setTemplates(
+            orderedIds
+                .map((id) => byId.get(id))
+                .filter((template): template is TaskTemplateDraft => template !== undefined)
+        );
     }
 
     function handleTemplateKeyDown(e: KeyboardEvent) {
@@ -152,11 +194,11 @@ function GeneratorEditor(props: GeneratorEditorProps) {
             await editGenerator(id, {
                 name: n,
                 rrule: rule,
-                templates: templates(),
+                templates: templates().map(draftToTemplate),
                 active: active(),
             });
         } else {
-            await addGenerator(n, rule, templates());
+            await addGenerator(n, rule, templates().map(draftToTemplate));
         }
         resetForm();
     }
@@ -249,20 +291,14 @@ function GeneratorEditor(props: GeneratorEditorProps) {
 
             <div class="form-field">
                 <span class="form-label">Task templates</span>
-                <For each={templates()}>
-                    {(tmpl, i) => (
-                        <div class="gen-editor__template">
-                            <span>{tmpl.summary}</span>
-                            <button
-                                type="button"
-                                class="gen-editor__template-remove"
-                                onClick={() => removeTemplate(i())}
-                            >
-                                &times;
-                            </button>
-                        </div>
-                    )}
-                </For>
+                <Show when={templates().length > 0}>
+                    <TaskTemplateList
+                        templates={templates()}
+                        onReorder={reorderTemplates}
+                        onOpen={setEditingTemplateId}
+                        onDelete={removeTemplate}
+                    />
+                </Show>
                 <div class="gen-editor__template-add">
                     <input
                         class="form-input"
@@ -304,8 +340,33 @@ function GeneratorEditor(props: GeneratorEditorProps) {
                     Cancel
                 </button>
             </div>
+
+            <TaskTemplateDetail
+                open={editingTemplateId() !== null}
+                template={editingTemplate()}
+                onClose={() => setEditingTemplateId(null)}
+                onSave={updateTemplate}
+                onDelete={removeTemplate}
+            />
         </div>
     );
+}
+
+function templateToDraft(template: TaskTemplate): TaskTemplateDraft {
+    return {
+        id: generateId(),
+        summary: template.summary,
+        description: template.description,
+        labelIds: [...template.labelIds],
+    };
+}
+
+function draftToTemplate(draft: TaskTemplateDraft): TaskTemplate {
+    return {
+        summary: draft.summary,
+        description: draft.description,
+        labelIds: draft.labelIds,
+    };
 }
 
 export { GeneratorEditor };

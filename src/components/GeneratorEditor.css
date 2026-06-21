@@ -4,30 +4,6 @@
     gap: var(--space-md);
 }
 
-.gen-editor__template {
-    display: flex;
-    align-items: center;
-    justify-content: space-between;
-    padding: var(--space-xs) var(--space-sm);
-    border-radius: var(--radius-sm);
-    background: var(--bg-surface);
-    font-size: 14px;
-    color: var(--text-primary);
-}
-
-.gen-editor__template-remove {
-    background: none;
-    border: none;
-    color: var(--text-muted);
-    font-size: 16px;
-    padding: 0 4px;
-    cursor: pointer;
-}
-
-.gen-editor__template-remove:hover {
-    color: var(--danger);
-}
-
 .gen-editor__template-add {
     display: flex;
     gap: var(--space-sm);
