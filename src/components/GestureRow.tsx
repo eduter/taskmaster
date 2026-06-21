@@ -1,4 +1,4 @@
-import { createSortable, transformStyle, useDragDropContext } from '@thisbeyond/solid-dnd';
+import { useDragDropContext } from '@thisbeyond/solid-dnd';
 import { createEffect, createMemo, createSignal, onCleanup, type JSX } from 'solid-js';
 import { resolveAxis } from '../gestures/axisLock.ts';
 import {
@@ -23,6 +23,7 @@ import {
 import { lockGestureScroll, unlockGestureScroll } from '../gestures/scrollLock.ts';
 import { useTouchDrag } from '../gestures/touchDragContext.tsx';
 import trashIcon from '../icons/trash.svg?raw';
+import { transformStyle, useVariableHeightSortable } from './VariableHeightSortable.tsx';
 import { Icon } from './Icon.tsx';
 import './TaskRow.css';
 
@@ -38,6 +39,7 @@ interface GestureRowProps {
     deleteLabel: string;
     completed?: boolean;
     allowCheckSwipe?: boolean;
+    hideDuringDrag?: boolean;
     onRevealChange: (id: string, open: boolean) => void;
     onRowTouchStart?: (id: string) => void;
     onDragEnd?: () => void;
@@ -58,7 +60,7 @@ function nowMs(): number {
 
 /** Sortable row surface with shared tap, swipe, delete reveal, and long-press drag gestures. */
 function GestureRow(props: GestureRowProps): JSX.Element {
-    const sortable = createSortable(props.id);
+    const sortable = useVariableHeightSortable(props.id);
     const touchDrag = useTouchDrag();
     const dndContext = useDragDropContext();
     if (!dndContext) {
@@ -94,6 +96,7 @@ function GestureRow(props: GestureRowProps): JSX.Element {
 
     const itemStyle = createMemo(() => transformStyle(sortable.transform));
     const isDraggingThis = () => dndState.active.draggableId === props.id;
+    const hideDuringDrag = () => props.hideDuringDrag ?? true;
     const completed = () => props.completed ?? false;
     const allowCheckSwipe = () => props.allowCheckSwipe ?? !!props.onComplete;
 
@@ -450,7 +453,7 @@ function GestureRow(props: GestureRowProps): JSX.Element {
                     ref={surfaceEl}
                     class="task-row__surface"
                     classList={{
-                        'task-row__surface--placeholder': isDraggingThis(),
+                        'task-row__surface--placeholder': hideDuringDrag() && isDraggingThis(),
                         'task-row__surface--interacting': gesture().phase !== 'idle',
                         'task-row__surface--drag-pending':
                             gesture().phase === 'pending' || gesture().phase === 'dragging',

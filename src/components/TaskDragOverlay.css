@@ -1,4 +1,7 @@
 .task-drag-overlay {
+    position: fixed;
+    top: 0;
+    left: 0;
     z-index: 150;
     box-shadow: var(--shadow-lg);
     border-radius: var(--radius-md);

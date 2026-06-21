@@ -2,8 +2,8 @@ import { createEffect, createSignal, on, Show, type JSX } from 'solid-js';
 import type { TaskTemplate } from '../db/types.ts';
 import { Dialog } from './Dialog.tsx';
 import { LabelsDialog } from './labels/LabelsDialog.tsx';
+import { TaskDetailActions } from './TaskDetailActions.tsx';
 import { TaskFields } from './TaskFields.tsx';
-import './TaskTemplateDetail.css';
 
 interface TaskTemplateDraft extends TaskTemplate {
     id: string;
@@ -89,14 +89,7 @@ function TaskTemplateDetail(props: TaskTemplateDetailProps): JSX.Element {
                     onOpenLabelsPicker={() => setLabelsOpen(true)}
                 />
 
-                <div class="task-template-detail__actions">
-                    <button type="button" class="btn btn--primary btn--grow" onClick={save}>
-                        Save
-                    </button>
-                    <button type="button" class="btn btn--danger" onClick={deleteTemplate}>
-                        Delete
-                    </button>
-                </div>
+                <TaskDetailActions onSave={save} onDelete={deleteTemplate} />
 
                 <LabelsDialog
                     open={labelsOpen()}

@@ -5,8 +5,8 @@ import { useAppNavigate } from '../routing/navigation.ts';
 import { editTask, removeTask, tasks } from '../stores/taskStore.ts';
 import { Dialog } from './Dialog.tsx';
 import { PostponeMenu } from './PostponeMenu.tsx';
+import { TaskDetailActions } from './TaskDetailActions.tsx';
 import { TaskFields } from './TaskFields.tsx';
-import './TaskDetail.css';
 
 function TaskDetail() {
     const params = useParams();
@@ -73,6 +73,7 @@ function TaskDetail() {
             summary: summary(),
             description: description(),
         });
+        closeTaskDetail();
     }
 
     async function handleDelete() {
@@ -101,14 +102,7 @@ function TaskDetail() {
 
                     <PostponeMenu taskId={task().id} onDone={closeTaskDetail} />
 
-                    <div class="task-detail__actions">
-                        <button type="button" class="btn btn--primary btn--grow" onClick={save}>
-                            Save
-                        </button>
-                        <button type="button" class="btn btn--danger" onClick={handleDelete}>
-                            Delete
-                        </button>
-                    </div>
+                    <TaskDetailActions onSave={save} onDelete={handleDelete} />
                 </Dialog>
             )}
         </Show>

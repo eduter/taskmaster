@@ -1,4 +1,4 @@
-.task-template-detail__actions {
+.task-detail-actions {
     display: flex;
     gap: var(--space-sm);
     padding-top: var(--space-sm);
