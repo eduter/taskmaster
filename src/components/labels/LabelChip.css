@@ -1,12 +1,11 @@
 .label-chip {
-    display: inline-block;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    height: 16px;
+    min-width: 30px;
     font-size: 11px;
-    line-height: 1.3;
-    padding: 1px 6px;
+    padding: 0 6px;
     border-radius: var(--radius-sm);
-}
-
-.label-chip--unnamed {
-    min-width: 20px;
-    min-height: 14px;
+    box-sizing: border-box;
 }

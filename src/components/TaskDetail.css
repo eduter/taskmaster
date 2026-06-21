@@ -30,7 +30,6 @@
     gap: var(--space-xs);
     align-items: center;
     min-height: 32px;
-    padding-top: 6px;
 }
 
 .task-detail__actions {
