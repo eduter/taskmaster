@@ -7,6 +7,7 @@ const runGenerators = vi.fn();
 const commitGeneratorRuns = vi.fn();
 const setPushPending = vi.fn();
 const isSyncRunning = vi.fn(() => false);
+const invalidateLabels = vi.fn();
 let syncIdleCallback: (() => void) | null = null;
 
 vi.mock('../sync/syncEngine.ts', () => ({
@@ -36,6 +37,10 @@ vi.mock('../stores/generatorStore.ts', () => ({
     invalidateGenerators: vi.fn(),
 }));
 
+vi.mock('../stores/labelStore.ts', () => ({
+    invalidateLabels,
+}));
+
 describe('onAppResume', () => {
     beforeEach(async () => {
         await resetDb();
@@ -43,6 +48,7 @@ describe('onAppResume', () => {
         runGenerators.mockReset();
         commitGeneratorRuns.mockReset();
         setPushPending.mockReset();
+        invalidateLabels.mockReset();
         setPushPending.mockResolvedValue(undefined);
         isSyncRunning.mockReset();
         isSyncRunning.mockReturnValue(false);
@@ -59,6 +65,15 @@ describe('onAppResume', () => {
         await onAppResume();
 
         expect(runGenerators).not.toHaveBeenCalled();
+    });
+
+    it('refreshes labels after sync changes data', async () => {
+        sync.mockResolvedValue({ ok: true, pulled: true, pushed: false, dataChanged: true });
+
+        const { onAppResume } = await import('./resume.ts');
+        await onAppResume();
+
+        expect(invalidateLabels).toHaveBeenCalledWith({ push: false });
     });
 
     it('commits lastGeneratedDate before push; keeps pushPending when push fails', async () => {

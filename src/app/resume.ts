@@ -1,5 +1,6 @@
 import { commitGeneratorRuns, runGenerators } from '../scheduling/generate.ts';
 import { invalidateGenerators } from '../stores/generatorStore.ts';
+import { invalidateLabels } from '../stores/labelStore.ts';
 import { invalidateTasks, refreshTodayIfNeeded, today } from '../stores/taskStore.ts';
 import { isSyncRunning, onSyncIdle, setPushPending, sync } from '../sync/syncEngine.ts';
 
@@ -21,6 +22,7 @@ async function onAppResume(): Promise<void> {
     if (outcome.dataChanged) {
         invalidateTasks({ push: false });
         invalidateGenerators({ push: false });
+        invalidateLabels({ push: false });
     }
 
     const { created, generatorIds } = await runGenerators();
