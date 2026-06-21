@@ -1,10 +1,10 @@
-.task-detail__labels-row {
+.task-fields__labels-row {
     display: flex;
     align-items: flex-start;
     gap: var(--space-sm);
 }
 
-.task-detail__labels-btn {
+.task-fields__labels-btn {
     flex-shrink: 0;
     display: flex;
     align-items: center;
@@ -19,21 +19,15 @@
     cursor: pointer;
 }
 
-.task-detail__labels-btn:hover {
+.task-fields__labels-btn:hover {
     background: var(--bg-surface-hover);
     color: var(--text-primary);
 }
 
-.task-detail__labels {
+.task-fields__labels {
     display: flex;
     flex-wrap: wrap;
     gap: var(--space-xs);
     align-items: center;
     min-height: 32px;
-}
-
-.task-detail__actions {
-    display: flex;
-    gap: var(--space-sm);
-    padding-top: var(--space-sm);
 }

@@ -1,4 +1,4 @@
-import { createMemo, For, Show } from 'solid-js';
+import { createMemo, For, Show, type JSX } from 'solid-js';
 import type { Task } from '../db/types.ts';
 import checkIcon from '../icons/check.svg?raw';
 import { labels } from '../stores/labelStore.ts';
@@ -14,14 +14,24 @@ interface TaskCardProps {
     onCheckClick?: (event: MouseEvent) => void;
 }
 
-function TaskCard(props: TaskCardProps) {
-    const isCarriedOver = createMemo(() => props.task.date < today());
+interface TaskCardViewProps {
+    summary: string;
+    labelIds: string[];
+    completed?: boolean;
+    visualCompleted?: boolean;
+    carried?: boolean;
+    showCheck?: boolean;
+    onCheckClick?: (event: MouseEvent) => void;
+}
 
-    const showCompleted = createMemo(() => props.visualCompleted ?? props.task.completed);
+/** Shared task-like card display for persisted tasks and generator templates. */
+function TaskCardView(props: TaskCardViewProps): JSX.Element {
+    const showCheck = () => props.showCheck ?? false;
+    const showCompleted = createMemo(() => props.visualCompleted ?? props.completed ?? false);
 
-    const taskLabels = createMemo(() => {
+    const cardLabels = createMemo(() => {
         const byId = new Map((labels() ?? []).map((l) => [l.id, l]));
-        return props.task.labelIds
+        return props.labelIds
             .map((id) => byId.get(id))
             .filter((label): label is NonNullable<typeof label> => label !== undefined);
     });
@@ -31,31 +41,49 @@ function TaskCard(props: TaskCardProps) {
             class="task-card"
             classList={{
                 'task-card--completed': showCompleted(),
-                'task-card--carried': isCarriedOver(),
+                'task-card--carried': props.carried,
             }}
         >
-            <button
-                type="button"
-                class="task-card__check"
-                classList={{ 'task-card__check--done': showCompleted() }}
-                aria-label={showCompleted() ? 'Mark incomplete' : 'Mark complete'}
-                onClick={props.onCheckClick}
-                onPointerDown={(event) => event.stopPropagation()}
-            >
-                {showCompleted() && <Icon src={checkIcon} width={14} height={14} />}
-            </button>
+            <Show when={showCheck()}>
+                <button
+                    type="button"
+                    class="task-card__check"
+                    classList={{ 'task-card__check--done': showCompleted() }}
+                    aria-label={showCompleted() ? 'Mark incomplete' : 'Mark complete'}
+                    onClick={props.onCheckClick}
+                    onPointerDown={(event) => event.stopPropagation()}
+                >
+                    {showCompleted() && <Icon src={checkIcon} width={14} height={14} />}
+                </button>
+            </Show>
             <div class="task-card__content">
-                <span class="task-card__summary">{props.task.summary}</span>
-                <Show when={taskLabels().length > 0}>
+                <span class="task-card__summary">{props.summary}</span>
+                <Show when={cardLabels().length > 0}>
                     <div class="task-card__labels">
-                        <For each={taskLabels()}>{(label) => <LabelChip name={label.name} color={label.color} />}</For>
+                        <For each={cardLabels()}>{(label) => <LabelChip name={label.name} color={label.color} />}</For>
                     </div>
                 </Show>
             </div>
-            {isCarriedOver() && <span class="task-card__carried-badge">carried</span>}
+            {props.carried && <span class="task-card__carried-badge">carried</span>}
         </div>
     );
 }
 
-export type { TaskCardProps };
-export { TaskCard };
+function TaskCard(props: TaskCardProps): JSX.Element {
+    const isCarriedOver = createMemo(() => props.task.date < today());
+
+    return (
+        <TaskCardView
+            summary={props.task.summary}
+            labelIds={props.task.labelIds}
+            completed={props.task.completed}
+            visualCompleted={props.visualCompleted}
+            carried={isCarriedOver()}
+            showCheck={true}
+            onCheckClick={props.onCheckClick}
+        />
+    );
+}
+
+export type { TaskCardProps, TaskCardViewProps };
+export { TaskCard, TaskCardView };
