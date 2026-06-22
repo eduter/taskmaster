@@ -10,6 +10,7 @@ import { OfflineIndicator } from './components/OfflineIndicator.tsx';
 import { SyncSettings } from './components/SyncSettings.tsx';
 import { SyncStatusBar } from './components/SyncStatusBar.tsx';
 import { TaskDetail } from './components/TaskDetail.tsx';
+import { TaskLabelToggle } from './components/TaskLabelToggle.tsx';
 import { LabelsPicker } from './components/labels';
 import { TaskList } from './components/TaskList.tsx';
 import { markConnected, refreshAuthState } from './stores/syncStore.ts';
@@ -37,6 +38,7 @@ function App(props: AppProps) {
         <div class="app">
             <header class="app-header">
                 <AppTabs />
+                <TaskLabelToggle />
                 <SyncSettings />
             </header>
             <main class="app-main">{props.children}</main>
