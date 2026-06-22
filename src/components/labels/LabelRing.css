@@ -7,6 +7,12 @@
     transition: transform 720ms linear;
 }
 
+@property --label-visible-sweep {
+    syntax: "<angle>";
+    inherits: false;
+    initial-value: 0turn;
+}
+
 .label-ring__sector {
     position: absolute;
     inset: 0;
@@ -25,6 +31,21 @@
     mask-composite: intersect;
 }
 
+.label-ring--single .label-ring__sector {
+    --label-visible-sweep: var(--label-sweep);
+    transition:
+        --label-visible-sweep 520ms ease var(--label-reverse-delay),
+        opacity 140ms linear var(--label-reverse-delay);
+    -webkit-mask:
+        conic-gradient(from calc(var(--label-start) + 0.5turn), #000 0 var(--label-visible-sweep), transparent 0 1turn),
+        radial-gradient(farthest-side, transparent calc(100% - 3px), #000 calc(100% - 2px));
+    -webkit-mask-composite: source-in;
+    mask:
+        conic-gradient(from calc(var(--label-start) + 0.5turn), #000 0 var(--label-visible-sweep), transparent 0 1turn),
+        radial-gradient(farthest-side, transparent calc(100% - 3px), #000 calc(100% - 2px));
+    mask-composite: intersect;
+}
+
 .task-card--labels-visible .label-ring {
     transform: rotate(-360deg);
 }
@@ -32,6 +53,13 @@
 .task-card--labels-visible .label-ring__sector {
     opacity: 0;
     transition-delay: var(--label-delay);
+}
+
+.task-card--labels-visible .label-ring--single .label-ring__sector {
+    --label-visible-sweep: 0turn;
+    transition:
+        --label-visible-sweep 520ms ease var(--label-delay),
+        opacity 140ms linear calc(var(--label-delay) + 380ms);
 }
 
 @media (prefers-reduced-motion: reduce) {
