@@ -22,7 +22,6 @@
 }
 
 .task-card__check {
-    flex-shrink: 0;
     width: 22px;
     height: 22px;
     border-radius: 50%;
@@ -33,11 +32,18 @@
     align-items: center;
     justify-content: center;
     padding: 0;
-    margin-top: 1px;
     cursor: pointer;
     transition:
         border-color var(--transition-fast),
         background var(--transition-fast);
+}
+
+.task-card__check-shell {
+    position: relative;
+    flex-shrink: 0;
+    width: 22px;
+    height: 22px;
+    margin-top: 1px;
 }
 
 .task-card__check:hover {
@@ -68,10 +74,66 @@
 }
 
 .task-card__labels {
+    display: grid;
+    grid-template-rows: 0fr;
+    margin-top: 0;
+    opacity: 0;
+    transform: translateY(-2px);
+    transition:
+        grid-template-rows 720ms ease,
+        margin-top 720ms ease,
+        opacity 120ms linear 600ms,
+        transform var(--transition-normal);
+}
+
+.task-card--labels-visible .task-card__labels {
+    grid-template-rows: 1fr;
+    margin-top: var(--space-xs);
+    opacity: 1;
+    transform: translateY(0);
+    transition:
+        grid-template-rows 720ms ease,
+        margin-top 720ms ease,
+        opacity var(--transition-fast),
+        transform var(--transition-normal);
+}
+
+.task-card__labels-inner {
     display: flex;
     flex-wrap: wrap;
     gap: var(--space-xs);
-    margin-top: var(--space-xs);
+    min-height: 0;
+    overflow: hidden;
+}
+
+.task-card__label-item {
+    display: inline-flex;
+    max-width: 0;
+    overflow: hidden;
+    opacity: 0;
+    transform: translate(-30px, -4px) scaleX(0.2);
+    transform-origin: left center;
+    transition:
+        max-width 520ms ease var(--label-reverse-delay),
+        opacity 120ms linear calc(var(--label-reverse-delay) + 400ms),
+        transform 520ms ease var(--label-reverse-delay);
+}
+
+.task-card--labels-visible .task-card__label-item {
+    max-width: 24ch;
+    opacity: 1;
+    transform: translate(0, 0) scaleX(1);
+    transition:
+        max-width 520ms ease var(--label-delay),
+        opacity 120ms linear var(--label-delay),
+        transform 520ms ease var(--label-delay);
+}
+
+@media (prefers-reduced-motion: reduce) {
+    .task-card__labels,
+    .task-card__label-item {
+        transition: none;
+    }
 }
 
 .task-card__carried-badge {

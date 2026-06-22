@@ -3,8 +3,9 @@ import type { Task } from '../db/types.ts';
 import checkIcon from '../icons/check.svg?raw';
 import { labels } from '../stores/labelStore.ts';
 import { today } from '../stores/taskStore.ts';
+import { showTaskLabels } from '../stores/viewPreferencesStore.ts';
 import { Icon } from './Icon.tsx';
-import { LabelChip } from './labels';
+import { LabelChip, LabelRing } from './labels';
 import './TaskCard.css';
 
 interface TaskCardProps {
@@ -28,6 +29,7 @@ interface TaskCardViewProps {
 function TaskCardView(props: TaskCardViewProps): JSX.Element {
     const showCheck = () => props.showCheck ?? false;
     const showCompleted = createMemo(() => props.visualCompleted ?? props.completed ?? false);
+    const labelsVisible = () => showTaskLabels();
 
     const cardLabels = createMemo(() => {
         const byId = new Map((labels() ?? []).map((l) => [l.id, l]));
@@ -42,25 +44,45 @@ function TaskCardView(props: TaskCardViewProps): JSX.Element {
             classList={{
                 'task-card--completed': showCompleted(),
                 'task-card--carried': props.carried,
+                'task-card--labels-visible': labelsVisible(),
             }}
         >
             <Show when={showCheck()}>
-                <button
-                    type="button"
-                    class="task-card__check"
-                    classList={{ 'task-card__check--done': showCompleted() }}
-                    aria-label={showCompleted() ? 'Mark incomplete' : 'Mark complete'}
-                    onClick={props.onCheckClick}
-                    onPointerDown={(event) => event.stopPropagation()}
-                >
-                    {showCompleted() && <Icon src={checkIcon} width={14} height={14} />}
-                </button>
+                <span class="task-card__check-shell">
+                    <Show when={cardLabels().length > 0}>
+                        <LabelRing labels={cardLabels()} />
+                    </Show>
+                    <button
+                        type="button"
+                        class="task-card__check"
+                        classList={{ 'task-card__check--done': showCompleted() }}
+                        aria-label={showCompleted() ? 'Mark incomplete' : 'Mark complete'}
+                        onClick={props.onCheckClick}
+                        onPointerDown={(event) => event.stopPropagation()}
+                    >
+                        {showCompleted() && <Icon src={checkIcon} width={14} height={14} />}
+                    </button>
+                </span>
             </Show>
             <div class="task-card__content">
                 <span class="task-card__summary">{props.summary}</span>
                 <Show when={cardLabels().length > 0}>
                     <div class="task-card__labels">
-                        <For each={cardLabels()}>{(label) => <LabelChip name={label.name} color={label.color} />}</For>
+                        <div class="task-card__labels-inner">
+                            <For each={cardLabels()}>
+                                {(label, index) => (
+                                    <span
+                                        class="task-card__label-item"
+                                        style={{
+                                            '--label-delay': `${(cardLabels().length - index() - 1) * 120}ms`,
+                                            '--label-reverse-delay': `${index() * 120}ms`,
+                                        }}
+                                    >
+                                        <LabelChip name={label.name} color={label.color} />
+                                    </span>
+                                )}
+                            </For>
+                        </div>
                     </div>
                 </Show>
             </div>
