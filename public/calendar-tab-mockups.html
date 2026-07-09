@@ -1,0 +1,1303 @@
+<!doctype html>
+<html lang="en">
+<head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <title>Taskmaster Calendar Tab Mockups</title>
+    <style>
+        :root {
+            --bg-primary: #181818;
+            --bg-secondary: #1f1f1f;
+            --bg-surface: #252526;
+            --bg-surface-hover: #2d2d2d;
+            --bg-surface-active: #333333;
+            --bg-input: #1f1f1f;
+            --text-primary: #cccccc;
+            --text-secondary: #a0a0a0;
+            --text-muted: #6e6e6e;
+            --text-heading: #e8e8e8;
+            --accent: #7630b9;
+            --accent-hover: #9333ea;
+            --accent-subtle: rgba(168, 85, 247, 0.15);
+            --success: #34d399;
+            --success-subtle: rgba(52, 211, 153, 0.15);
+            --warning: #fbbf24;
+            --warning-subtle: rgba(251, 191, 36, 0.15);
+            --danger: #f87171;
+            --danger-subtle: rgba(248, 113, 113, 0.15);
+            --info: #60a5fa;
+            --info-subtle: rgba(96, 165, 250, 0.15);
+            --border: #3c3c3c;
+            --border-light: #4a4a4a;
+            --radius-sm: 4px;
+            --radius-md: 8px;
+            --radius-lg: 12px;
+            --shadow-md: 0 4px 6px rgba(0, 0, 0, 0.4);
+            --font-sans: system-ui, -apple-system, "Segoe UI", Roboto, sans-serif;
+            --space-xs: 4px;
+            --space-sm: 8px;
+            --space-md: 16px;
+            --space-lg: 24px;
+            --space-xl: 32px;
+        }
+
+        * {
+            box-sizing: border-box;
+        }
+
+        body {
+            margin: 0;
+            font-family: var(--font-sans);
+            color: var(--text-primary);
+            background:
+                radial-gradient(circle at top left, rgba(118, 48, 185, 0.18), transparent 360px),
+                var(--bg-primary);
+            -webkit-font-smoothing: antialiased;
+        }
+
+        button,
+        select {
+            font: inherit;
+        }
+
+        button {
+            cursor: pointer;
+        }
+
+        .shell {
+            max-width: 1180px;
+            margin: 0 auto;
+            padding: var(--space-lg);
+        }
+
+        .app-frame {
+            display: grid;
+            grid-template-columns: 64px minmax(0, 1fr);
+            min-height: calc(100dvh - 48px);
+            overflow: hidden;
+            border: 1px solid var(--border);
+            border-radius: var(--radius-lg);
+            background: var(--bg-primary);
+            box-shadow: var(--shadow-md);
+        }
+
+        .rail {
+            display: flex;
+            flex-direction: column;
+            gap: var(--space-sm);
+            align-items: center;
+            padding: var(--space-md) var(--space-xs);
+            border-right: 1px solid var(--border);
+            background: #151515;
+        }
+
+        .rail__tab {
+            display: grid;
+            place-items: center;
+            width: 42px;
+            height: 42px;
+            border: 1px solid transparent;
+            border-radius: var(--radius-md);
+            background: transparent;
+            color: var(--text-muted);
+        }
+
+        .rail__tab--active {
+            border-color: var(--border);
+            background: var(--accent-subtle);
+            color: #c084fc;
+        }
+
+        .calendar-tab {
+            display: flex;
+            min-width: 0;
+            flex-direction: column;
+        }
+
+        .topbar {
+            position: sticky;
+            top: 0;
+            z-index: 5;
+            display: grid;
+            grid-template-columns: minmax(0, 1fr) auto;
+            gap: var(--space-md);
+            align-items: center;
+            padding: var(--space-md) var(--space-lg);
+            border-bottom: 1px solid var(--border);
+            background: rgba(24, 24, 24, 0.96);
+            backdrop-filter: blur(12px);
+        }
+
+        .topbar__title {
+            display: flex;
+            min-width: 0;
+            flex-direction: column;
+            gap: 2px;
+        }
+
+        h1,
+        h2,
+        h3,
+        p {
+            margin: 0;
+        }
+
+        h1 {
+            color: var(--text-heading);
+            font-size: 20px;
+            line-height: 1.2;
+        }
+
+        .subtitle {
+            color: var(--text-muted);
+            font-size: 13px;
+        }
+
+        .controls {
+            display: flex;
+            flex-wrap: wrap;
+            justify-content: flex-end;
+            gap: var(--space-sm);
+        }
+
+        .segmented,
+        .filter-row {
+            display: inline-flex;
+            align-items: center;
+            gap: 2px;
+            padding: 3px;
+            border: 1px solid var(--border);
+            border-radius: var(--radius-md);
+            background: var(--bg-input);
+        }
+
+        .segmented button,
+        .filter-row button,
+        .quiet-button {
+            border: 0;
+            border-radius: var(--radius-sm);
+            background: transparent;
+            color: var(--text-secondary);
+            font-size: 13px;
+            padding: 6px 10px;
+        }
+
+        .segmented button.is-active,
+        .filter-row button.is-active,
+        .quiet-button.is-active {
+            background: var(--bg-surface-active);
+            color: var(--text-heading);
+        }
+
+        .mockup-picker {
+            display: flex;
+            gap: var(--space-sm);
+            overflow-x: auto;
+            padding: var(--space-md) var(--space-lg) 0;
+        }
+
+        .mockup-picker button {
+            flex: 0 0 auto;
+            border: 1px solid var(--border);
+            border-radius: var(--radius-md);
+            background: var(--bg-surface);
+            color: var(--text-secondary);
+            padding: var(--space-sm) var(--space-md);
+            font-size: 13px;
+        }
+
+        .mockup-picker button.is-active {
+            border-color: rgba(147, 51, 234, 0.8);
+            background: var(--accent-subtle);
+            color: #e9d5ff;
+        }
+
+        .legend {
+            display: flex;
+            flex-wrap: wrap;
+            gap: var(--space-sm);
+            padding: var(--space-sm) var(--space-lg) var(--space-md);
+            color: var(--text-muted);
+            font-size: 12px;
+        }
+
+        .legend span {
+            display: inline-flex;
+            align-items: center;
+            gap: 6px;
+        }
+
+        .dot {
+            width: 9px;
+            height: 9px;
+            border-radius: 50%;
+            background: var(--text-muted);
+        }
+
+        .dot--oneoff {
+            background: var(--danger);
+        }
+
+        .dot--postponed {
+            background: var(--warning);
+        }
+
+        .dot--generated {
+            background: var(--info);
+        }
+
+        .dot--today {
+            background: var(--accent-hover);
+        }
+
+        .mockup {
+            display: none;
+            padding: 0 var(--space-lg) var(--space-lg);
+        }
+
+        .mockup.is-active {
+            display: block;
+        }
+
+        .panel {
+            border: 1px solid var(--border);
+            border-radius: var(--radius-lg);
+            background: rgba(31, 31, 31, 0.72);
+            overflow: hidden;
+        }
+
+        .panel__header {
+            display: flex;
+            justify-content: space-between;
+            gap: var(--space-md);
+            align-items: center;
+            padding: var(--space-md);
+            border-bottom: 1px solid var(--border);
+            background: rgba(37, 37, 38, 0.78);
+        }
+
+        .panel__header h2 {
+            color: var(--text-heading);
+            font-size: 16px;
+        }
+
+        .panel__header small {
+            color: var(--text-muted);
+        }
+
+        .calendar-layout {
+            display: grid;
+            grid-template-columns: minmax(0, 1fr) 320px;
+            min-height: 620px;
+        }
+
+        .calendar-grid {
+            display: grid;
+            grid-template-columns: repeat(7, minmax(0, 1fr));
+            border-right: 1px solid var(--border);
+        }
+
+        .weekday,
+        .day-cell {
+            border-right: 1px solid var(--border);
+            border-bottom: 1px solid var(--border);
+        }
+
+        .weekday:nth-child(7n),
+        .day-cell:nth-child(7n) {
+            border-right: 0;
+        }
+
+        .weekday {
+            padding: var(--space-sm);
+            color: var(--text-muted);
+            font-size: 11px;
+            font-weight: 700;
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+            background: #1a1a1a;
+        }
+
+        .day-cell {
+            min-height: 104px;
+            padding: var(--space-xs);
+            background: rgba(24, 24, 24, 0.52);
+        }
+
+        .day-cell--muted {
+            opacity: 0.38;
+        }
+
+        .day-cell--today {
+            box-shadow: inset 0 0 0 1px var(--accent-hover);
+            background: var(--accent-subtle);
+        }
+
+        .day-cell__top {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            min-height: 22px;
+            color: var(--text-secondary);
+            font-size: 12px;
+        }
+
+        .day-cell--today .day-cell__top {
+            color: #e9d5ff;
+            font-weight: 700;
+        }
+
+        .day-cell__count {
+            color: var(--text-muted);
+        }
+
+        .task-pill {
+            display: flex;
+            align-items: center;
+            gap: 5px;
+            width: 100%;
+            min-width: 0;
+            margin-top: 4px;
+            padding: 4px 6px;
+            border: 1px solid transparent;
+            border-radius: var(--radius-sm);
+            color: var(--text-primary);
+            font-size: 11px;
+            line-height: 1.25;
+            text-align: left;
+            background: var(--bg-surface);
+        }
+
+        .task-pill strong {
+            overflow: hidden;
+            text-overflow: ellipsis;
+            white-space: nowrap;
+            font-weight: 500;
+        }
+
+        .task-pill--oneoff {
+            border-left: 3px solid var(--danger);
+        }
+
+        .task-pill--postponed {
+            border-left: 3px solid var(--warning);
+            background: var(--warning-subtle);
+        }
+
+        .task-pill--generated {
+            border-style: dashed;
+            border-color: rgba(96, 165, 250, 0.45);
+            color: #bfdbfe;
+            background: var(--info-subtle);
+        }
+
+        .task-pill--hidden {
+            display: none;
+        }
+
+        .overflow-note {
+            margin-top: 4px;
+            color: var(--text-muted);
+            font-size: 11px;
+        }
+
+        .agenda {
+            display: flex;
+            min-width: 0;
+            flex-direction: column;
+            gap: var(--space-sm);
+            padding: var(--space-md);
+        }
+
+        .agenda h3 {
+            color: var(--text-heading);
+            font-size: 14px;
+        }
+
+        .agenda__day {
+            display: flex;
+            flex-direction: column;
+            gap: var(--space-xs);
+            padding-bottom: var(--space-sm);
+            border-bottom: 1px solid var(--border);
+        }
+
+        .agenda__date {
+            display: flex;
+            justify-content: space-between;
+            color: var(--text-muted);
+            font-size: 12px;
+        }
+
+        .task-card {
+            display: grid;
+            grid-template-columns: auto minmax(0, 1fr) auto;
+            gap: var(--space-sm);
+            align-items: start;
+            padding: var(--space-sm);
+            border-radius: var(--radius-md);
+            background: var(--bg-surface);
+        }
+
+        .task-card--oneoff {
+            border-left: 3px solid var(--danger);
+        }
+
+        .task-card--postponed {
+            border-left: 3px solid var(--warning);
+        }
+
+        .task-card--generated {
+            border: 1px dashed rgba(96, 165, 250, 0.55);
+            background: var(--info-subtle);
+        }
+
+        .task-card--hidden {
+            display: none;
+        }
+
+        .check {
+            width: 20px;
+            height: 20px;
+            margin-top: 1px;
+            border: 2px solid var(--border-light);
+            border-radius: 50%;
+        }
+
+        .task-card__main {
+            min-width: 0;
+        }
+
+        .task-card__title {
+            display: block;
+            overflow: hidden;
+            color: var(--text-primary);
+            font-size: 13px;
+            text-overflow: ellipsis;
+            white-space: nowrap;
+        }
+
+        .task-card__meta {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 6px;
+            margin-top: 4px;
+            color: var(--text-muted);
+            font-size: 11px;
+        }
+
+        .label {
+            display: inline-flex;
+            align-items: center;
+            height: 16px;
+            border-radius: var(--radius-sm);
+            padding: 0 6px;
+            color: #111827;
+            font-size: 10px;
+            font-weight: 700;
+        }
+
+        .label--home {
+            background: #86efac;
+        }
+
+        .label--work {
+            background: #93c5fd;
+        }
+
+        .label--errand {
+            background: #fda4af;
+        }
+
+        .label--health {
+            background: #c4b5fd;
+        }
+
+        .move-button {
+            border: 1px solid var(--border);
+            border-radius: var(--radius-sm);
+            background: transparent;
+            color: var(--text-muted);
+            font-size: 11px;
+            padding: 3px 6px;
+        }
+
+        .split-layout {
+            display: grid;
+            grid-template-columns: 280px minmax(0, 1fr);
+            gap: var(--space-md);
+        }
+
+        .mini-month,
+        .inspector,
+        .forecast-card {
+            border: 1px solid var(--border);
+            border-radius: var(--radius-lg);
+            background: var(--bg-secondary);
+        }
+
+        .mini-month {
+            padding: var(--space-md);
+        }
+
+        .mini-month__grid {
+            display: grid;
+            grid-template-columns: repeat(7, 1fr);
+            gap: 5px;
+            margin-top: var(--space-sm);
+        }
+
+        .mini-month span {
+            display: grid;
+            place-items: center;
+            min-height: 28px;
+            border-radius: var(--radius-sm);
+            color: var(--text-secondary);
+            font-size: 12px;
+        }
+
+        .mini-month .has-tasks {
+            background: var(--bg-surface);
+            color: var(--text-heading);
+        }
+
+        .mini-month .is-today {
+            background: var(--accent);
+            color: white;
+            font-weight: 700;
+        }
+
+        .week-board {
+            display: grid;
+            grid-template-columns: repeat(7, minmax(150px, 1fr));
+            min-height: 540px;
+            overflow-x: auto;
+            border: 1px solid var(--border);
+            border-radius: var(--radius-lg);
+            background: var(--bg-secondary);
+        }
+
+        .week-column {
+            display: flex;
+            flex-direction: column;
+            gap: var(--space-sm);
+            min-width: 150px;
+            padding: var(--space-sm);
+            border-right: 1px solid var(--border);
+        }
+
+        .week-column:last-child {
+            border-right: 0;
+        }
+
+        .week-column__date {
+            position: sticky;
+            top: 0;
+            z-index: 1;
+            padding-bottom: var(--space-sm);
+            background: var(--bg-secondary);
+            color: var(--text-muted);
+            font-size: 12px;
+        }
+
+        .week-column__date strong {
+            display: block;
+            color: var(--text-heading);
+            font-size: 18px;
+        }
+
+        .drop-zone {
+            display: grid;
+            place-items: center;
+            min-height: 54px;
+            border: 1px dashed var(--border-light);
+            border-radius: var(--radius-md);
+            color: var(--text-muted);
+            font-size: 12px;
+        }
+
+        .horizon {
+            display: grid;
+            grid-template-columns: 260px minmax(0, 1fr);
+            gap: var(--space-md);
+        }
+
+        .horizon__summary {
+            display: flex;
+            flex-direction: column;
+            gap: var(--space-sm);
+        }
+
+        .stat-card {
+            padding: var(--space-md);
+            border: 1px solid var(--border);
+            border-radius: var(--radius-lg);
+            background: var(--bg-secondary);
+        }
+
+        .stat-card strong {
+            display: block;
+            color: var(--text-heading);
+            font-size: 24px;
+        }
+
+        .stat-card span {
+            color: var(--text-muted);
+            font-size: 12px;
+        }
+
+        .timeline {
+            display: flex;
+            flex-direction: column;
+            gap: var(--space-md);
+        }
+
+        .timeline-row {
+            display: grid;
+            grid-template-columns: 96px minmax(0, 1fr);
+            gap: var(--space-md);
+            align-items: start;
+        }
+
+        .timeline-row__date {
+            position: sticky;
+            top: 82px;
+            color: var(--text-muted);
+            font-size: 12px;
+        }
+
+        .timeline-row__date strong {
+            display: block;
+            color: var(--text-heading);
+            font-size: 14px;
+        }
+
+        .timeline-row__items {
+            display: grid;
+            gap: var(--space-xs);
+            padding-bottom: var(--space-md);
+            border-bottom: 1px solid var(--border);
+        }
+
+        .mobile-shell {
+            max-width: 420px;
+            margin: 0 auto;
+            border: 1px solid var(--border);
+            border-radius: 28px;
+            background: #111;
+            padding: 12px;
+        }
+
+        .mobile-screen {
+            overflow: hidden;
+            border-radius: 20px;
+            background: var(--bg-primary);
+        }
+
+        .mobile-header {
+            padding: var(--space-md);
+            border-bottom: 1px solid var(--border);
+        }
+
+        .mobile-days {
+            display: flex;
+            gap: var(--space-sm);
+            overflow-x: auto;
+            padding: var(--space-md);
+        }
+
+        .mobile-day {
+            display: grid;
+            place-items: center;
+            flex: 0 0 56px;
+            min-height: 66px;
+            border: 1px solid var(--border);
+            border-radius: var(--radius-lg);
+            background: var(--bg-surface);
+            color: var(--text-secondary);
+            font-size: 12px;
+        }
+
+        .mobile-day strong {
+            color: var(--text-heading);
+            font-size: 18px;
+        }
+
+        .mobile-day.is-active {
+            border-color: rgba(147, 51, 234, 0.9);
+            background: var(--accent-subtle);
+        }
+
+        .mobile-list {
+            display: grid;
+            gap: var(--space-sm);
+            padding: 0 var(--space-md) var(--space-md);
+        }
+
+        .drawer-card {
+            border: 1px solid var(--border);
+            border-radius: var(--radius-lg);
+            background: var(--bg-secondary);
+            overflow: hidden;
+        }
+
+        .drawer-card__calendar {
+            display: grid;
+            grid-template-columns: repeat(7, 1fr);
+            gap: 1px;
+            background: var(--border);
+        }
+
+        .drawer-card__calendar span {
+            min-height: 42px;
+            padding: 4px;
+            background: var(--bg-primary);
+            color: var(--text-muted);
+            font-size: 11px;
+        }
+
+        .drawer-card__calendar .has-dot::after {
+            content: "";
+            display: block;
+            width: 5px;
+            height: 5px;
+            margin-top: 5px;
+            border-radius: 50%;
+            background: var(--warning);
+        }
+
+        .forecast-grid {
+            display: grid;
+            grid-template-columns: repeat(3, minmax(0, 1fr));
+            gap: var(--space-md);
+        }
+
+        .forecast-card {
+            display: flex;
+            flex-direction: column;
+            min-height: 520px;
+            overflow: hidden;
+        }
+
+        .forecast-card__header {
+            padding: var(--space-md);
+            border-bottom: 1px solid var(--border);
+            background: var(--bg-surface);
+        }
+
+        .forecast-card__header h3 {
+            color: var(--text-heading);
+            font-size: 15px;
+        }
+
+        .forecast-card__header p {
+            color: var(--text-muted);
+            font-size: 12px;
+        }
+
+        .forecast-card__body {
+            display: flex;
+            flex-direction: column;
+            gap: var(--space-sm);
+            padding: var(--space-md);
+        }
+
+        .generator-badge {
+            align-self: start;
+            border-radius: 999px;
+            background: var(--info-subtle);
+            color: #bfdbfe;
+            font-size: 11px;
+            padding: 2px 8px;
+        }
+
+        .drag-hint {
+            display: inline-flex;
+            align-items: center;
+            gap: 4px;
+            color: var(--text-muted);
+            font-size: 11px;
+        }
+
+        .empty-state {
+            display: grid;
+            place-items: center;
+            min-height: 120px;
+            border: 1px dashed var(--border);
+            border-radius: var(--radius-md);
+            color: var(--text-muted);
+            font-size: 13px;
+            text-align: center;
+        }
+
+        @media (max-width: 900px) {
+            .shell {
+                padding: 0;
+            }
+
+            .app-frame {
+                grid-template-columns: 1fr;
+                min-height: 100dvh;
+                border: 0;
+                border-radius: 0;
+            }
+
+            .rail {
+                display: none;
+            }
+
+            .topbar,
+            .calendar-layout,
+            .split-layout,
+            .horizon,
+            .forecast-grid {
+                grid-template-columns: 1fr;
+            }
+
+            .controls {
+                justify-content: flex-start;
+            }
+
+            .calendar-layout {
+                min-height: 0;
+            }
+
+            .calendar-grid {
+                border-right: 0;
+            }
+
+            .day-cell {
+                min-height: 82px;
+            }
+        }
+
+        @media (max-width: 620px) {
+            .topbar {
+                padding: var(--space-md);
+            }
+
+            .mockup-picker,
+            .legend,
+            .mockup {
+                padding-right: var(--space-md);
+                padding-left: var(--space-md);
+            }
+
+            .weekday {
+                padding: 5px 2px;
+                text-align: center;
+            }
+
+            .day-cell {
+                min-height: 72px;
+                padding: 3px;
+            }
+
+            .task-pill strong {
+                max-width: 8ch;
+            }
+
+            .agenda {
+                padding: var(--space-sm);
+            }
+        }
+    </style>
+</head>
+<body>
+    <div class="shell">
+        <div class="app-frame">
+            <nav class="rail" aria-label="App tabs">
+                <button class="rail__tab" aria-label="Today's tasks">✓</button>
+                <button class="rail__tab rail__tab--active" aria-label="Calendar">▦</button>
+                <button class="rail__tab" aria-label="Generators">↻</button>
+            </nav>
+
+            <main class="calendar-tab">
+                <header class="topbar">
+                    <div class="topbar__title">
+                        <h1>Calendar</h1>
+                        <p class="subtitle">Explore postponed one-offs, scheduled tasks, and projected generator output.</p>
+                    </div>
+                    <div class="controls" aria-label="Calendar controls">
+                        <div class="segmented" aria-label="View range">
+                            <button class="is-active" type="button" data-view-range="month">Month</button>
+                            <button type="button" data-view-range="week">Week</button>
+                        </div>
+                        <div class="filter-row" aria-label="Task source filters">
+                            <button class="is-active" type="button" data-filter="all">All</button>
+                            <button type="button" data-filter="oneoff">One-offs</button>
+                            <button type="button" data-filter="postponed">Postponed</button>
+                            <button type="button" data-filter="generated">Generated</button>
+                        </div>
+                    </div>
+                </header>
+
+                <div class="mockup-picker" aria-label="Mockup versions">
+                    <button class="is-active" type="button" data-mockup="month-focus">1. Month + agenda</button>
+                    <button type="button" data-mockup="week-planner">2. Week planner</button>
+                    <button type="button" data-mockup="horizon">3. Horizon list</button>
+                    <button type="button" data-mockup="mobile">4. Mobile-first</button>
+                    <button type="button" data-mockup="forecast">5. Forecast board</button>
+                </div>
+
+                <div class="legend" aria-label="Legend">
+                    <span><i class="dot dot--oneoff"></i>One-off with specific date</span>
+                    <span><i class="dot dot--postponed"></i>Postponed existing task</span>
+                    <span><i class="dot dot--generated"></i>Projected from generator</span>
+                    <span><i class="dot dot--today"></i>Today</span>
+                    <span class="drag-hint">⋮⋮ Drag or use Move to reschedule</span>
+                </div>
+
+                <section class="mockup is-active" data-mockup-panel="month-focus">
+                    <div class="panel">
+                        <div class="panel__header">
+                            <div>
+                                <h2>June 2026</h2>
+                                <small>Google Calendar-style grid, with an agenda inspector for selected dates.</small>
+                            </div>
+                            <button class="quiet-button is-active" type="button">Today</button>
+                        </div>
+                        <div class="calendar-layout">
+                            <div class="calendar-grid" aria-label="Month calendar">
+                                <div class="weekday">Mon</div>
+                                <div class="weekday">Tue</div>
+                                <div class="weekday">Wed</div>
+                                <div class="weekday">Thu</div>
+                                <div class="weekday">Fri</div>
+                                <div class="weekday">Sat</div>
+                                <div class="weekday">Sun</div>
+
+                                <div class="day-cell day-cell--muted"><div class="day-cell__top"><span>25</span></div></div>
+                                <div class="day-cell day-cell--muted"><div class="day-cell__top"><span>26</span></div></div>
+                                <div class="day-cell day-cell--muted"><div class="day-cell__top"><span>27</span></div></div>
+                                <div class="day-cell day-cell--muted"><div class="day-cell__top"><span>28</span></div></div>
+                                <div class="day-cell day-cell--muted"><div class="day-cell__top"><span>29</span></div></div>
+                                <div class="day-cell day-cell--muted"><div class="day-cell__top"><span>30</span></div></div>
+                                <div class="day-cell"><div class="day-cell__top"><span>1</span><span class="day-cell__count">1</span></div><button class="task-pill task-pill--generated" data-kind="generated"><strong>Water plants</strong></button></div>
+                                <div class="day-cell"><div class="day-cell__top"><span>2</span></div></div>
+                                <div class="day-cell"><div class="day-cell__top"><span>3</span><span class="day-cell__count">2</span></div><button class="task-pill task-pill--oneoff" data-kind="oneoff"><strong>Book dentist</strong></button><button class="task-pill task-pill--generated" data-kind="generated"><strong>Inbox zero</strong></button></div>
+                                <div class="day-cell"><div class="day-cell__top"><span>4</span></div></div>
+                                <div class="day-cell"><div class="day-cell__top"><span>5</span><span class="day-cell__count">1</span></div><button class="task-pill task-pill--postponed" data-kind="postponed"><strong>Renew parking</strong></button></div>
+                                <div class="day-cell"><div class="day-cell__top"><span>6</span></div></div>
+                                <div class="day-cell"><div class="day-cell__top"><span>7</span><span class="day-cell__count">1</span></div><button class="task-pill task-pill--generated" data-kind="generated"><strong>Meal prep</strong></button></div>
+                                <div class="day-cell"><div class="day-cell__top"><span>8</span></div></div>
+                                <div class="day-cell"><div class="day-cell__top"><span>9</span><span class="day-cell__count">2</span></div><button class="task-pill task-pill--oneoff" data-kind="oneoff"><strong>Send tax docs</strong></button><button class="task-pill task-pill--generated" data-kind="generated"><strong>Pay rent</strong></button></div>
+                                <div class="day-cell"><div class="day-cell__top"><span>10</span></div></div>
+                                <div class="day-cell"><div class="day-cell__top"><span>11</span><span class="day-cell__count">1</span></div><button class="task-pill task-pill--generated" data-kind="generated"><strong>Change towels</strong></button></div>
+                                <div class="day-cell"><div class="day-cell__top"><span>12</span><span class="day-cell__count">1</span></div><button class="task-pill task-pill--oneoff" data-kind="oneoff"><strong>Pick up passport</strong></button></div>
+                                <div class="day-cell"><div class="day-cell__top"><span>13</span></div></div>
+                                <div class="day-cell"><div class="day-cell__top"><span>14</span><span class="day-cell__count">1</span></div><button class="task-pill task-pill--generated" data-kind="generated"><strong>Meal prep</strong></button></div>
+                                <div class="day-cell"><div class="day-cell__top"><span>15</span></div></div>
+                                <div class="day-cell"><div class="day-cell__top"><span>16</span><span class="day-cell__count">1</span></div><button class="task-pill task-pill--postponed" data-kind="postponed"><strong>Call insurance</strong></button></div>
+                                <div class="day-cell day-cell--today"><div class="day-cell__top"><span>17</span><span class="day-cell__count">3</span></div><button class="task-pill task-pill--oneoff" data-kind="oneoff"><strong>Vet appointment</strong></button><button class="task-pill task-pill--generated" data-kind="generated"><strong>Inbox zero</strong></button><button class="task-pill task-pill--postponed" data-kind="postponed"><strong>Return package</strong></button></div>
+                                <div class="day-cell"><div class="day-cell__top"><span>18</span><span class="day-cell__count">2</span></div><button class="task-pill task-pill--generated" data-kind="generated"><strong>Change sheets</strong></button><button class="task-pill task-pill--oneoff" data-kind="oneoff"><strong>Pay card bill</strong></button></div>
+                                <div class="day-cell"><div class="day-cell__top"><span>19</span></div></div>
+                                <div class="day-cell"><div class="day-cell__top"><span>20</span><span class="day-cell__count">2</span></div><button class="task-pill task-pill--postponed" data-kind="postponed"><strong>Buy train tickets</strong></button><button class="task-pill task-pill--generated" data-kind="generated"><strong>Water plants</strong></button></div>
+                                <div class="day-cell"><div class="day-cell__top"><span>21</span><span class="day-cell__count">1</span></div><button class="task-pill task-pill--generated" data-kind="generated"><strong>Meal prep</strong></button></div>
+                                <div class="day-cell"><div class="day-cell__top"><span>22</span><span class="day-cell__count">1</span></div><button class="task-pill task-pill--oneoff" data-kind="oneoff"><strong>Friend's birthday</strong></button></div>
+                                <div class="day-cell"><div class="day-cell__top"><span>23</span><span class="day-cell__count">3</span></div><button class="task-pill task-pill--postponed" data-kind="postponed"><strong>Fix backpack zip</strong></button><button class="task-pill task-pill--generated" data-kind="generated"><strong>Pay rent</strong></button><button class="task-pill task-pill--generated" data-kind="generated"><strong>Inbox zero</strong></button></div>
+                                <div class="day-cell"><div class="day-cell__top"><span>24</span></div></div>
+                                <div class="day-cell"><div class="day-cell__top"><span>25</span><span class="day-cell__count">1</span></div><button class="task-pill task-pill--oneoff" data-kind="oneoff"><strong>Submit receipts</strong></button></div>
+                                <div class="day-cell"><div class="day-cell__top"><span>26</span><span class="day-cell__count">1</span></div><button class="task-pill task-pill--generated" data-kind="generated"><strong>Change towels</strong></button></div>
+                                <div class="day-cell"><div class="day-cell__top"><span>27</span></div></div>
+                                <div class="day-cell"><div class="day-cell__top"><span>28</span><span class="day-cell__count">2</span></div><button class="task-pill task-pill--generated" data-kind="generated"><strong>Meal prep</strong></button><button class="task-pill task-pill--oneoff" data-kind="oneoff"><strong>Pack for trip</strong></button></div>
+                                <div class="day-cell"><div class="day-cell__top"><span>29</span><span class="day-cell__count">1</span></div><button class="task-pill task-pill--postponed" data-kind="postponed"><strong>Cancel old trial</strong></button></div>
+                                <div class="day-cell"><div class="day-cell__top"><span>30</span><span class="day-cell__count">2</span></div><button class="task-pill task-pill--oneoff" data-kind="oneoff"><strong>Renew passport photo</strong></button><button class="task-pill task-pill--generated" data-kind="generated"><strong>Inbox zero</strong></button></div>
+                                <div class="day-cell day-cell--muted"><div class="day-cell__top"><span>1</span></div></div>
+                                <div class="day-cell day-cell--muted"><div class="day-cell__top"><span>2</span></div></div>
+                                <div class="day-cell day-cell--muted"><div class="day-cell__top"><span>3</span></div></div>
+                                <div class="day-cell day-cell--muted"><div class="day-cell__top"><span>4</span></div></div>
+                                <div class="day-cell day-cell--muted"><div class="day-cell__top"><span>5</span></div></div>
+                            </div>
+
+                            <aside class="agenda" aria-label="Selected date task list">
+                                <h3>Selected: Tue Jun 23</h3>
+                                <div class="agenda__day">
+                                    <div class="agenda__date"><strong>Postponed here</strong><span>1 task</span></div>
+                                    <article class="task-card task-card--postponed" data-kind="postponed">
+                                        <span class="check"></span>
+                                        <div class="task-card__main">
+                                            <span class="task-card__title">Fix backpack zip</span>
+                                            <span class="task-card__meta"><span class="label label--errand">Errand</span>Moved from Jun 12</span>
+                                        </div>
+                                        <button class="move-button" type="button">Move</button>
+                                    </article>
+                                </div>
+                                <div class="agenda__day">
+                                    <div class="agenda__date"><strong>Projected generators</strong><span>2 tasks</span></div>
+                                    <article class="task-card task-card--generated" data-kind="generated">
+                                        <span class="check"></span>
+                                        <div class="task-card__main">
+                                            <span class="task-card__title">Pay rent</span>
+                                            <span class="task-card__meta"><span class="label label--home">Home</span>Monthly bills</span>
+                                        </div>
+                                        <button class="move-button" type="button">Skip</button>
+                                    </article>
+                                    <article class="task-card task-card--generated" data-kind="generated">
+                                        <span class="check"></span>
+                                        <div class="task-card__main">
+                                            <span class="task-card__title">Inbox zero</span>
+                                            <span class="task-card__meta"><span class="label label--work">Work</span>Every Tuesday</span>
+                                        </div>
+                                        <button class="move-button" type="button">Edit gen</button>
+                                    </article>
+                                </div>
+                                <div class="empty-state">Tap any day to inspect, then drag a task to another day or use Move.</div>
+                            </aside>
+                        </div>
+                    </div>
+                </section>
+
+                <section class="mockup" data-mockup-panel="week-planner">
+                    <div class="split-layout">
+                        <aside class="mini-month">
+                            <h2>June</h2>
+                            <p class="subtitle">Small month picker stays visible while planning the week.</p>
+                            <div class="mini-month__grid" aria-label="Mini month">
+                                <span>1</span><span>2</span><span class="has-tasks">3</span><span>4</span><span class="has-tasks">5</span><span>6</span><span>7</span>
+                                <span>8</span><span class="has-tasks">9</span><span>10</span><span>11</span><span class="has-tasks">12</span><span>13</span><span>14</span>
+                                <span>15</span><span class="has-tasks">16</span><span class="is-today">17</span><span class="has-tasks">18</span><span>19</span><span class="has-tasks">20</span><span>21</span>
+                                <span class="has-tasks">22</span><span class="has-tasks">23</span><span>24</span><span class="has-tasks">25</span><span class="has-tasks">26</span><span>27</span><span class="has-tasks">28</span>
+                                <span class="has-tasks">29</span><span class="has-tasks">30</span>
+                            </div>
+                            <div class="agenda" style="padding: 16px 0 0;">
+                                <h3>Reschedule queue</h3>
+                                <article class="task-card task-card--postponed" data-kind="postponed">
+                                    <span class="check"></span>
+                                    <div class="task-card__main">
+                                        <span class="task-card__title">Return package</span>
+                                        <span class="task-card__meta">Currently Jun 17</span>
+                                    </div>
+                                    <button class="move-button" type="button">Move</button>
+                                </article>
+                                <article class="task-card task-card--postponed" data-kind="postponed">
+                                    <span class="check"></span>
+                                    <div class="task-card__main">
+                                        <span class="task-card__title">Buy train tickets</span>
+                                        <span class="task-card__meta">Currently Jun 20</span>
+                                    </div>
+                                    <button class="move-button" type="button">Move</button>
+                                </article>
+                            </div>
+                        </aside>
+
+                        <section class="week-board" aria-label="Week planner board">
+                            <div class="week-column">
+                                <div class="week-column__date">Mon <strong>22</strong></div>
+                                <article class="task-card task-card--oneoff" data-kind="oneoff"><span class="check"></span><div class="task-card__main"><span class="task-card__title">Friend's birthday</span><span class="task-card__meta"><span class="label label--home">Home</span>one-off</span></div><button class="move-button" type="button">Move</button></article>
+                                <div class="drop-zone">Drop here</div>
+                            </div>
+                            <div class="week-column">
+                                <div class="week-column__date">Tue <strong>23</strong></div>
+                                <article class="task-card task-card--postponed" data-kind="postponed"><span class="check"></span><div class="task-card__main"><span class="task-card__title">Fix backpack zip</span><span class="task-card__meta">postponed</span></div><button class="move-button" type="button">Move</button></article>
+                                <article class="task-card task-card--generated" data-kind="generated"><span class="check"></span><div class="task-card__main"><span class="task-card__title">Pay rent</span><span class="task-card__meta">projected</span></div><button class="move-button" type="button">Skip</button></article>
+                                <article class="task-card task-card--generated" data-kind="generated"><span class="check"></span><div class="task-card__main"><span class="task-card__title">Inbox zero</span><span class="task-card__meta">projected</span></div><button class="move-button" type="button">Skip</button></article>
+                            </div>
+                            <div class="week-column">
+                                <div class="week-column__date">Wed <strong>24</strong></div>
+                                <div class="drop-zone">Clear</div>
+                            </div>
+                            <div class="week-column">
+                                <div class="week-column__date">Thu <strong>25</strong></div>
+                                <article class="task-card task-card--oneoff" data-kind="oneoff"><span class="check"></span><div class="task-card__main"><span class="task-card__title">Submit receipts</span><span class="task-card__meta"><span class="label label--work">Work</span>one-off</span></div><button class="move-button" type="button">Move</button></article>
+                            </div>
+                            <div class="week-column">
+                                <div class="week-column__date">Fri <strong>26</strong></div>
+                                <article class="task-card task-card--generated" data-kind="generated"><span class="check"></span><div class="task-card__main"><span class="task-card__title">Change towels</span><span class="task-card__meta">projected</span></div><button class="move-button" type="button">Skip</button></article>
+                            </div>
+                            <div class="week-column">
+                                <div class="week-column__date">Sat <strong>27</strong></div>
+                                <div class="drop-zone">Drop here</div>
+                            </div>
+                            <div class="week-column">
+                                <div class="week-column__date">Sun <strong>28</strong></div>
+                                <article class="task-card task-card--oneoff" data-kind="oneoff"><span class="check"></span><div class="task-card__main"><span class="task-card__title">Pack for trip</span><span class="task-card__meta">one-off</span></div><button class="move-button" type="button">Move</button></article>
+                                <article class="task-card task-card--generated" data-kind="generated"><span class="check"></span><div class="task-card__main"><span class="task-card__title">Meal prep</span><span class="task-card__meta">projected</span></div><button class="move-button" type="button">Skip</button></article>
+                            </div>
+                        </section>
+                    </div>
+                </section>
+
+                <section class="mockup" data-mockup-panel="horizon">
+                    <div class="horizon">
+                        <aside class="horizon__summary">
+                            <div class="stat-card"><strong>12</strong><span>one-offs in the next 30 days</span></div>
+                            <div class="stat-card"><strong>6</strong><span>postponed tasks currently hiding in the future</span></div>
+                            <div class="stat-card"><strong>24</strong><span>projected tasks if generators do not change</span></div>
+                            <div class="empty-state">Designed for answering: “What is coming up soon?” before looking at the grid.</div>
+                        </aside>
+                        <section class="timeline" aria-label="Upcoming tasks timeline">
+                            <div class="timeline-row">
+                                <div class="timeline-row__date"><strong>Today</strong>Wed Jun 17</div>
+                                <div class="timeline-row__items">
+                                    <article class="task-card task-card--oneoff" data-kind="oneoff"><span class="check"></span><div class="task-card__main"><span class="task-card__title">Vet appointment</span><span class="task-card__meta"><span class="label label--health">Health</span>specific date</span></div><button class="move-button" type="button">Move</button></article>
+                                    <article class="task-card task-card--postponed" data-kind="postponed"><span class="check"></span><div class="task-card__main"><span class="task-card__title">Return package</span><span class="task-card__meta">postponed from Jun 11</span></div><button class="move-button" type="button">Move</button></article>
+                                    <article class="task-card task-card--generated" data-kind="generated"><span class="check"></span><div class="task-card__main"><span class="task-card__title">Inbox zero</span><span class="task-card__meta">projected by Work reset</span></div><button class="move-button" type="button">Skip</button></article>
+                                </div>
+                            </div>
+                            <div class="timeline-row">
+                                <div class="timeline-row__date"><strong>Tomorrow</strong>Thu Jun 18</div>
+                                <div class="timeline-row__items">
+                                    <article class="task-card task-card--oneoff" data-kind="oneoff"><span class="check"></span><div class="task-card__main"><span class="task-card__title">Pay card bill</span><span class="task-card__meta">specific date</span></div><button class="move-button" type="button">Move</button></article>
+                                    <article class="task-card task-card--generated" data-kind="generated"><span class="check"></span><div class="task-card__main"><span class="task-card__title">Change sheets</span><span class="task-card__meta">projected by Home cleaning</span></div><button class="move-button" type="button">Skip</button></article>
+                                </div>
+                            </div>
+                            <div class="timeline-row">
+                                <div class="timeline-row__date"><strong>Weekend</strong>Sat Jun 20</div>
+                                <div class="timeline-row__items">
+                                    <article class="task-card task-card--postponed" data-kind="postponed"><span class="check"></span><div class="task-card__main"><span class="task-card__title">Buy train tickets</span><span class="task-card__meta">postponed from Jun 14</span></div><button class="move-button" type="button">Move</button></article>
+                                    <article class="task-card task-card--generated" data-kind="generated"><span class="check"></span><div class="task-card__main"><span class="task-card__title">Water plants</span><span class="task-card__meta">projected by Plants</span></div><button class="move-button" type="button">Skip</button></article>
+                                </div>
+                            </div>
+                            <div class="timeline-row">
+                                <div class="timeline-row__date"><strong>Next week</strong>Jun 22-28</div>
+                                <div class="timeline-row__items">
+                                    <article class="task-card task-card--oneoff" data-kind="oneoff"><span class="check"></span><div class="task-card__main"><span class="task-card__title">Friend's birthday</span><span class="task-card__meta">specific date</span></div><button class="move-button" type="button">Move</button></article>
+                                    <article class="task-card task-card--postponed" data-kind="postponed"><span class="check"></span><div class="task-card__main"><span class="task-card__title">Fix backpack zip</span><span class="task-card__meta">postponed from Jun 12</span></div><button class="move-button" type="button">Move</button></article>
+                                    <article class="task-card task-card--oneoff" data-kind="oneoff"><span class="check"></span><div class="task-card__main"><span class="task-card__title">Submit receipts</span><span class="task-card__meta">specific date</span></div><button class="move-button" type="button">Move</button></article>
+                                    <article class="task-card task-card--generated" data-kind="generated"><span class="check"></span><div class="task-card__main"><span class="task-card__title">Meal prep</span><span class="task-card__meta">projected by Sunday routine</span></div><button class="move-button" type="button">Skip</button></article>
+                                </div>
+                            </div>
+                        </section>
+                    </div>
+                </section>
+
+                <section class="mockup" data-mockup-panel="mobile">
+                    <div class="mobile-shell">
+                        <div class="mobile-screen">
+                            <header class="mobile-header">
+                                <h2>Next few days</h2>
+                                <p class="subtitle">Mobile-first calendar: swipe days, then open a month drawer.</p>
+                            </header>
+                            <div class="mobile-days" aria-label="Day strip">
+                                <button class="mobile-day" type="button">Mon<strong>15</strong></button>
+                                <button class="mobile-day" type="button">Tue<strong>16</strong></button>
+                                <button class="mobile-day is-active" type="button">Wed<strong>17</strong></button>
+                                <button class="mobile-day" type="button">Thu<strong>18</strong></button>
+                                <button class="mobile-day" type="button">Fri<strong>19</strong></button>
+                                <button class="mobile-day" type="button">Sat<strong>20</strong></button>
+                                <button class="mobile-day" type="button">Sun<strong>21</strong></button>
+                            </div>
+                            <div class="mobile-list">
+                                <article class="task-card task-card--oneoff" data-kind="oneoff"><span class="check"></span><div class="task-card__main"><span class="task-card__title">Vet appointment</span><span class="task-card__meta"><span class="label label--health">Health</span>specific date</span></div><button class="move-button" type="button">Move</button></article>
+                                <article class="task-card task-card--postponed" data-kind="postponed"><span class="check"></span><div class="task-card__main"><span class="task-card__title">Return package</span><span class="task-card__meta">postponed from last week</span></div><button class="move-button" type="button">Move</button></article>
+                                <article class="task-card task-card--generated" data-kind="generated"><span class="check"></span><div class="task-card__main"><span class="task-card__title">Inbox zero</span><span class="task-card__meta">projected task</span></div><button class="move-button" type="button">Skip</button></article>
+                                <section class="drawer-card">
+                                    <div class="panel__header">
+                                        <div>
+                                            <h2>Month drawer</h2>
+                                            <small>Open when searching for a task postponed far away.</small>
+                                        </div>
+                                    </div>
+                                    <div class="drawer-card__calendar" aria-label="Month drawer calendar">
+                                        <span>1</span><span>2</span><span class="has-dot">3</span><span>4</span><span class="has-dot">5</span><span>6</span><span>7</span>
+                                        <span>8</span><span class="has-dot">9</span><span>10</span><span>11</span><span class="has-dot">12</span><span>13</span><span>14</span>
+                                        <span>15</span><span class="has-dot">16</span><span class="has-dot">17</span><span class="has-dot">18</span><span>19</span><span class="has-dot">20</span><span>21</span>
+                                        <span class="has-dot">22</span><span class="has-dot">23</span><span>24</span><span class="has-dot">25</span><span class="has-dot">26</span><span>27</span><span class="has-dot">28</span>
+                                    </div>
+                                </section>
+                            </div>
+                        </div>
+                    </div>
+                </section>
+
+                <section class="mockup" data-mockup-panel="forecast">
+                    <div class="forecast-grid" aria-label="Forecast board">
+                        <section class="forecast-card">
+                            <div class="forecast-card__header">
+                                <h3>One-offs</h3>
+                                <p>Highest-signal list: tasks with a specific future date.</p>
+                            </div>
+                            <div class="forecast-card__body">
+                                <article class="task-card task-card--oneoff" data-kind="oneoff"><span class="check"></span><div class="task-card__main"><span class="task-card__title">Pay card bill</span><span class="task-card__meta">Jun 18</span></div><button class="move-button" type="button">Move</button></article>
+                                <article class="task-card task-card--oneoff" data-kind="oneoff"><span class="check"></span><div class="task-card__main"><span class="task-card__title">Friend's birthday</span><span class="task-card__meta">Jun 22</span></div><button class="move-button" type="button">Move</button></article>
+                                <article class="task-card task-card--oneoff" data-kind="oneoff"><span class="check"></span><div class="task-card__main"><span class="task-card__title">Submit receipts</span><span class="task-card__meta">Jun 25</span></div><button class="move-button" type="button">Move</button></article>
+                                <article class="task-card task-card--oneoff" data-kind="oneoff"><span class="check"></span><div class="task-card__main"><span class="task-card__title">Pack for trip</span><span class="task-card__meta">Jun 28</span></div><button class="move-button" type="button">Move</button></article>
+                            </div>
+                        </section>
+                        <section class="forecast-card">
+                            <div class="forecast-card__header">
+                                <h3>Postponed</h3>
+                                <p>Find tasks that are hidden until a future day.</p>
+                            </div>
+                            <div class="forecast-card__body">
+                                <article class="task-card task-card--postponed" data-kind="postponed"><span class="check"></span><div class="task-card__main"><span class="task-card__title">Return package</span><span class="task-card__meta">Jun 17 · moved from Jun 11</span></div><button class="move-button" type="button">Move</button></article>
+                                <article class="task-card task-card--postponed" data-kind="postponed"><span class="check"></span><div class="task-card__main"><span class="task-card__title">Buy train tickets</span><span class="task-card__meta">Jun 20 · moved from Jun 14</span></div><button class="move-button" type="button">Move</button></article>
+                                <article class="task-card task-card--postponed" data-kind="postponed"><span class="check"></span><div class="task-card__main"><span class="task-card__title">Fix backpack zip</span><span class="task-card__meta">Jun 23 · moved from Jun 12</span></div><button class="move-button" type="button">Move</button></article>
+                                <article class="task-card task-card--postponed" data-kind="postponed"><span class="check"></span><div class="task-card__main"><span class="task-card__title">Cancel old trial</span><span class="task-card__meta">Jun 29 · moved from Jun 10</span></div><button class="move-button" type="button">Move</button></article>
+                            </div>
+                        </section>
+                        <section class="forecast-card">
+                            <div class="forecast-card__header">
+                                <h3>Projected generators</h3>
+                                <p>Tasks not generated yet, assuming generator rules stay the same.</p>
+                            </div>
+                            <div class="forecast-card__body">
+                                <span class="generator-badge">Home cleaning · 4 upcoming</span>
+                                <article class="task-card task-card--generated" data-kind="generated"><span class="check"></span><div class="task-card__main"><span class="task-card__title">Change sheets</span><span class="task-card__meta">Jun 18</span></div><button class="move-button" type="button">Edit gen</button></article>
+                                <article class="task-card task-card--generated" data-kind="generated"><span class="check"></span><div class="task-card__main"><span class="task-card__title">Change towels</span><span class="task-card__meta">Jun 26</span></div><button class="move-button" type="button">Edit gen</button></article>
+                                <span class="generator-badge">Sunday routine · every week</span>
+                                <article class="task-card task-card--generated" data-kind="generated"><span class="check"></span><div class="task-card__main"><span class="task-card__title">Meal prep</span><span class="task-card__meta">Jun 21, Jun 28, Jul 5</span></div><button class="move-button" type="button">Edit gen</button></article>
+                                <span class="generator-badge">Work reset · Tuesdays</span>
+                                <article class="task-card task-card--generated" data-kind="generated"><span class="check"></span><div class="task-card__main"><span class="task-card__title">Inbox zero</span><span class="task-card__meta">Jun 23, Jun 30, Jul 7</span></div><button class="move-button" type="button">Edit gen</button></article>
+                            </div>
+                        </section>
+                    </div>
+                </section>
+            </main>
+        </div>
+    </div>
+
+    <script>
+        const mockupButtons = document.querySelectorAll('[data-mockup]');
+        const mockupPanels = document.querySelectorAll('[data-mockup-panel]');
+        const filterButtons = document.querySelectorAll('[data-filter]');
+        const rangeButtons = document.querySelectorAll('[data-view-range]');
+        let activeFilter = 'all';
+
+        function setMockup(id) {
+            for (const button of mockupButtons) {
+                button.classList.toggle('is-active', button.dataset.mockup === id);
+            }
+
+            for (const panel of mockupPanels) {
+                panel.classList.toggle('is-active', panel.dataset.mockupPanel === id);
+            }
+        }
+
+        function setFilter(kind) {
+            activeFilter = kind;
+
+            for (const button of filterButtons) {
+                button.classList.toggle('is-active', button.dataset.filter === kind);
+            }
+
+            for (const task of document.querySelectorAll('[data-kind]')) {
+                const hidden = activeFilter !== 'all' && task.dataset.kind !== activeFilter;
+                task.classList.toggle('task-pill--hidden', hidden);
+                task.classList.toggle('task-card--hidden', hidden);
+            }
+        }
+
+        function setRange(range) {
+            for (const button of rangeButtons) {
+                button.classList.toggle('is-active', button.dataset.viewRange === range);
+            }
+
+            setMockup(range === 'week' ? 'week-planner' : 'month-focus');
+        }
+
+        for (const button of mockupButtons) {
+            button.addEventListener('click', () => setMockup(button.dataset.mockup));
+        }
+
+        for (const button of filterButtons) {
+            button.addEventListener('click', () => setFilter(button.dataset.filter));
+        }
+
+        for (const button of rangeButtons) {
+            button.addEventListener('click', () => setRange(button.dataset.viewRange));
+        }
+    </script>
+</body>
+</html>
