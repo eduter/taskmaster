@@ -1,4 +1,5 @@
 import { createResource, createSignal } from 'solid-js';
+import { withDbRead, withDbWrite } from '../db/dbLifecycle.ts';
 import { createGenerator, deleteGenerator, getAllGenerators, updateGenerator } from '../db/generators.ts';
 import type { Generator, TaskTemplate } from '../db/types.ts';
 import { schedulePush } from '../sync/syncEngine.ts';
@@ -12,21 +13,23 @@ function invalidateGenerators(options?: { push?: boolean }) {
     }
 }
 
-const [generators, { refetch: refetchGenerators }] = createResource(genVersion, () => getAllGenerators());
+const [generators, { refetch: refetchGenerators }] = createResource(genVersion, () =>
+    withDbRead(() => getAllGenerators())
+);
 
 async function addGenerator(name: string, rrule: string, templates: TaskTemplate[]): Promise<Generator> {
-    const gen = await createGenerator({ name, rrule, templates });
+    const gen = await withDbWrite(() => createGenerator({ name, rrule, templates }));
     invalidateGenerators();
     return gen;
 }
 
 async function editGenerator(id: string, changes: Partial<Omit<Generator, 'id' | 'createdAt'>>): Promise<void> {
-    await updateGenerator(id, changes);
+    await withDbWrite(() => updateGenerator(id, changes));
     invalidateGenerators();
 }
 
 async function removeGenerator(id: string): Promise<void> {
-    await deleteGenerator(id);
+    await withDbWrite(() => deleteGenerator(id));
     invalidateGenerators();
 }
 

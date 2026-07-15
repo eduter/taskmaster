@@ -1,4 +1,5 @@
 /* @refresh reload */
+import './db/dbLifecycle.ts';
 import { Route, Router } from '@solidjs/router';
 import { render } from 'solid-js/web';
 import './styles/global.css';

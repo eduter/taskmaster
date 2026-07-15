@@ -1,4 +1,5 @@
 import { Show } from 'solid-js';
+import { dbError, dbStatus } from '../db/dbLifecycle.ts';
 import type { Task } from '../db/types.ts';
 import { reorder, tasks } from '../stores/taskStore.ts';
 import { TaskCard } from './TaskCard.tsx';
@@ -24,16 +25,33 @@ function SortableTaskList() {
     );
 }
 
+function taskLoadError(): string | null {
+    const err = tasks.error;
+    if (err == null) {
+        return null;
+    }
+    return err instanceof Error ? err.message : String(err);
+}
+
 function TaskList() {
+    const loadFailed = () => dbStatus() === 'blocked' || dbStatus() === 'error' || taskLoadError() != null;
+
     return (
         <div class="task-list">
-            <Show when={!tasks.loading} fallback={<p class="task-list__empty">Loading…</p>}>
-                <Show
-                    when={(tasks() ?? []).length > 0}
-                    fallback={<p class="task-list__empty">No tasks for today. Add one above!</p>}
-                >
-                    <SortableTaskList />
-                </Show>
+            <Show
+                when={loadFailed()}
+                fallback={
+                    <Show when={!tasks.loading} fallback={<p class="task-list__empty">Loading…</p>}>
+                        <Show
+                            when={(tasks() ?? []).length > 0}
+                            fallback={<p class="task-list__empty">No tasks for today. Add one above!</p>}
+                        >
+                            <SortableTaskList />
+                        </Show>
+                    </Show>
+                }
+            >
+                <p class="task-list__empty task-list__empty--error">{dbError() ?? taskLoadError()}</p>
             </Show>
         </div>
     );

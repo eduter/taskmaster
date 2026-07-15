@@ -1,4 +1,5 @@
 import { createResource, createSignal } from 'solid-js';
+import { dbStatus, withDbRead, withDbWrite } from '../db/dbLifecycle.ts';
 import { createTask, deleteTask, getVisibleTasks, reorderTasks, toggleTaskCompleted, updateTask } from '../db/tasks.ts';
 import type { Task } from '../db/types.ts';
 import { schedulePush } from '../sync/syncEngine.ts';
@@ -24,34 +25,37 @@ function invalidateTasks(options?: { push?: boolean }) {
 
 async function fetchTasks(): Promise<Task[]> {
     taskVersion();
-    return getVisibleTasks(today());
+    if (dbStatus() === 'blocked') {
+        return [];
+    }
+    return withDbRead(() => getVisibleTasks(today()));
 }
 
 const [tasks, { refetch: refetchTasks }] = createResource(taskVersion, fetchTasks);
 
 async function addTask(summary: string): Promise<Task> {
-    const task = await createTask({ summary, date: today() });
+    const task = await withDbWrite(() => createTask({ summary, date: today() }));
     invalidateTasks();
     return task;
 }
 
 async function editTask(id: string, changes: Partial<Omit<Task, 'id' | 'createdAt'>>): Promise<void> {
-    await updateTask(id, changes);
+    await withDbWrite(() => updateTask(id, changes));
     invalidateTasks();
 }
 
 async function removeTask(id: string): Promise<void> {
-    await deleteTask(id);
+    await withDbWrite(() => deleteTask(id));
     invalidateTasks();
 }
 
 async function toggleComplete(id: string): Promise<void> {
-    await toggleTaskCompleted(id);
+    await withDbWrite(() => toggleTaskCompleted(id));
     invalidateTasks();
 }
 
 async function reorder(orderedIds: string[]): Promise<void> {
-    await reorderTasks(orderedIds);
+    await withDbWrite(() => reorderTasks(orderedIds));
     invalidateTasks();
 }
 

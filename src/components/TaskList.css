@@ -31,3 +31,7 @@
     color: var(--text-muted);
     padding: var(--space-xl) 0;
 }
+
+.task-list__empty--error {
+    color: var(--danger);
+}
