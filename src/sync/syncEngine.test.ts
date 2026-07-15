@@ -8,11 +8,13 @@ const mockFilesDownload = vi.fn();
 const mockFilesGetMetadata = vi.fn();
 const mockFilesCopyV2 = vi.fn();
 
+const mockIsAuthenticated = vi.fn(() => true);
+
 vi.mock('./dropboxAuth.ts', async (importOriginal) => {
     const actual = await importOriginal<typeof import('./dropboxAuth.ts')>();
     return {
         ...actual,
-        isAuthenticated: () => true,
+        isAuthenticated: () => mockIsAuthenticated(),
         getDropboxClient: () => ({
             filesUpload: mockFilesUpload,
             filesDownload: mockFilesDownload,
@@ -65,6 +67,7 @@ function waitForSyncIdle(): Promise<void> {
 describe('syncEngine', () => {
     beforeEach(async () => {
         await resetDb();
+        mockIsAuthenticated.mockReturnValue(true);
         mockFilesUpload.mockReset();
         mockFilesDownload.mockReset();
         mockFilesUpload.mockResolvedValue({});
@@ -399,6 +402,20 @@ describe('syncEngine', () => {
     });
 
     describe('sync()', () => {
+        it('records error and returns ok:false when not authenticated', async () => {
+            mockIsAuthenticated.mockReturnValue(false);
+            const { lastMessage, lastResult } = await import('../stores/syncStore.ts');
+
+            const outcome = await sync();
+
+            expect(outcome.ok).toBe(false);
+            expect(outcome.pulled).toBe(false);
+            expect(outcome.pushed).toBe(false);
+            expect(lastResult()).toBe('error');
+            expect(lastMessage()).toBe('Not connected to Dropbox');
+            expect(mockFilesDownload).not.toHaveBeenCalled();
+        });
+
         it('does not upload when download fails', async () => {
             await seedTask({ id: 'local', summary: 'Local' });
             mockFilesDownload.mockRejectedValue(new Error('network error'));

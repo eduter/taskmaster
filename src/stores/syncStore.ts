@@ -47,7 +47,6 @@ function markConnected(): void {
 
 function beginSync(): void {
     setOperation('syncing');
-    setLastMessage(null);
 }
 
 function beginPush(): void {
@@ -120,8 +119,16 @@ function formatRelativeTime(timestamp: number | null): string {
     return new Date(timestamp).toLocaleString();
 }
 
-function hasSyncIssue(): boolean {
+function isSyncNotConfigured(): boolean {
+    return connection() === 'disconnected';
+}
+
+function hasSyncFailure(): boolean {
     return connection() === 'needs_reauth' || lastResult() === 'error';
+}
+
+function hasSyncIssue(): boolean {
+    return hasSyncFailure() || isSyncNotConfigured();
 }
 
 export type { SyncConnectionState, SyncOperationState, SyncResultKind };
@@ -131,7 +138,9 @@ export {
     connection,
     endOperation,
     formatRelativeTime,
+    hasSyncFailure,
     hasSyncIssue,
+    isSyncNotConfigured,
     hydrateLastBackupDay,
     hydrateLastSyncedAt,
     lastBackupDay,

@@ -22,3 +22,8 @@
     background: var(--danger-subtle);
     color: var(--danger);
 }
+
+.sync-status-bar--warning {
+    background: var(--warning-subtle);
+    color: var(--warning);
+}

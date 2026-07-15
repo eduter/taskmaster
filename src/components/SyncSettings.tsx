@@ -4,6 +4,7 @@ import { onAppResume } from '../app/resume.ts';
 import {
     connection,
     formatRelativeTime,
+    hasSyncFailure,
     hasSyncIssue,
     lastErrorAt,
     lastMessage,
@@ -122,7 +123,7 @@ function SyncSettings() {
                     <span
                         class="sync-trigger__badge"
                         classList={{
-                            'sync-trigger__badge--error': hasSyncIssue(),
+                            'sync-trigger__badge--error': hasSyncFailure(),
                             'sync-trigger__badge--pending': !hasSyncIssue() && pendingPush(),
                         }}
                     />
