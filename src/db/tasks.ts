@@ -42,12 +42,31 @@ async function toggleTaskCompleted(id: string): Promise<boolean> {
     if (!task) {
         return false;
     }
+
+    // Flip completion
     const completed = !task.completed;
     await db.tasks.update(id, {
         completed,
         completedAt: completed ? Date.now() : null,
         updatedAt: Date.now(),
     });
+
+    // Seat above the first remaining incomplete (completed pile at top; uncomplete rejoins it)
+    const today = getLogicalDay();
+    const visible = await getVisibleTasks(today);
+    if (!visible.some((t) => t.id === id)) {
+        return completed;
+    }
+    const without = visible.filter((t) => t.id !== id);
+    const firstIncompleteIdx = without.findIndex((t) => !t.completed);
+    const insertAt = firstIncompleteIdx === -1 ? without.length : firstIncompleteIdx;
+    const orderedIds = [
+        ...without.slice(0, insertAt).map((t) => t.id),
+        id,
+        ...without.slice(insertAt).map((t) => t.id),
+    ];
+    await reorderTasks(orderedIds);
+
     return completed;
 }
 
