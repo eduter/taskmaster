@@ -21,6 +21,11 @@ import {
     reduceRowGesture,
 } from '../gestures/rowGesture.ts';
 import { lockGestureScroll, unlockGestureScroll } from '../gestures/scrollLock.ts';
+import {
+    shouldAllowNativeVerticalScrollWhilePending,
+    shouldPreventActiveTouchMove,
+    shouldPreventTouchScroll,
+} from '../gestures/touchScrollGuard.ts';
 import { useTouchDrag } from '../gestures/touchDragContext.tsx';
 import trashIcon from '../icons/trash.svg?raw';
 import { transformStyle, useVariableHeightSortable } from './VariableHeightSortable.tsx';
@@ -53,6 +58,7 @@ const MOUSE_DRAG_VERTICAL_PX = 14;
 const TAP_SUPPRESS_AFTER_DRAG_MS = 350;
 
 const DOCUMENT_POINTER_OPTIONS: AddEventListenerOptions = { passive: false, capture: true };
+const SURFACE_TOUCH_MOVE_OPTIONS: AddEventListenerOptions = { passive: false };
 
 function nowMs(): number {
     return Date.now();
@@ -137,16 +143,33 @@ function GestureRow(props: GestureRowProps): JSX.Element {
 
     function detachDocumentPointerListeners() {
         document.removeEventListener('pointermove', onDocumentPointerMove, true);
-        document.removeEventListener('pointerup', onDocumentPointerEnd, true);
-        document.removeEventListener('pointercancel', onDocumentPointerEnd, true);
+        document.removeEventListener('pointerup', onDocumentPointerUp, true);
+        document.removeEventListener('pointercancel', onDocumentPointerCancel, true);
         activePointerId = null;
     }
 
     function attachDocumentPointerListeners(pointerId: number) {
         activePointerId = pointerId;
         document.addEventListener('pointermove', onDocumentPointerMove, DOCUMENT_POINTER_OPTIONS);
-        document.addEventListener('pointerup', onDocumentPointerEnd, DOCUMENT_POINTER_OPTIONS);
-        document.addEventListener('pointercancel', onDocumentPointerEnd, DOCUMENT_POINTER_OPTIONS);
+        document.addEventListener('pointerup', onDocumentPointerUp, DOCUMENT_POINTER_OPTIONS);
+        document.addEventListener('pointercancel', onDocumentPointerCancel, DOCUMENT_POINTER_OPTIONS);
+    }
+
+    function detachSurfaceTouchMoveListener() {
+        surfaceEl?.removeEventListener('touchmove', onSurfaceTouchMove);
+    }
+
+    function attachSurfaceTouchMoveListener(element: HTMLDivElement) {
+        detachSurfaceTouchMoveListener();
+        surfaceEl = element;
+        element.addEventListener('touchmove', onSurfaceTouchMove, SURFACE_TOUCH_MOVE_OPTIONS);
+    }
+
+    function onSurfaceTouchMove(event: TouchEvent) {
+        if (!shouldPreventActiveTouchMove(gesture(), touchDrag.isDragging())) {
+            return;
+        }
+        event.preventDefault();
     }
 
     function markInteractionConsumed() {
@@ -212,26 +235,6 @@ function GestureRow(props: GestureRowProps): JSX.Element {
         return gesture().phase === 'dragging' || touchDrag.isDragging();
     }
 
-    function shouldPreventTouchScroll(g: RowGestureState, dx: number, dy: number): boolean {
-        if (
-            g.phase === 'dragging' ||
-            g.phase === 'reveal-pull' ||
-            g.phase === 'reveal-close' ||
-            g.phase === 'check-stroke'
-        ) {
-            return true;
-        }
-        if (g.phase === 'pending') {
-            const absX = Math.abs(dx);
-            const absY = Math.abs(dy);
-            if (absY > absX && absY >= AXIS_LOCK_PX) {
-                return false;
-            }
-            return true;
-        }
-        return false;
-    }
-
     function handlePointerMove(event: PointerEvent) {
         lastClientX = event.clientX;
         lastClientY = event.clientY;
@@ -248,14 +251,12 @@ function GestureRow(props: GestureRowProps): JSX.Element {
         const dy = event.clientY - g.startY;
 
         if (g.phase === 'pending' && event.pointerType === 'touch') {
-            const absX = Math.abs(dx);
-            const absY = Math.abs(dy);
-            if (absY > absX && absY >= AXIS_LOCK_PX) {
+            if (shouldAllowNativeVerticalScrollWhilePending(g, dx, dy, AXIS_LOCK_PX)) {
                 clearLongPress();
             }
         }
 
-        if (event.pointerType === 'touch' && shouldPreventTouchScroll(g, dx, dy)) {
+        if (event.pointerType === 'touch' && shouldPreventTouchScroll(g, dx, dy, AXIS_LOCK_PX)) {
             event.preventDefault();
             event.stopPropagation();
         }
@@ -313,7 +314,37 @@ function GestureRow(props: GestureRowProps): JSX.Element {
         handlePointerMove(event);
     }
 
-    function onDocumentPointerEnd(event: PointerEvent) {
+    function handlePointerCancel() {
+        clearLongPress();
+
+        if (isActiveDrag()) {
+            touchDrag.endDragIfActive();
+            releaseScrollLock();
+            setGesture((prev) => {
+                if (prev.phase !== 'dragging') {
+                    return prev;
+                }
+                return reduceRowGesture(prev, { type: 'DRAG_END' }, gestureConfig).state;
+            });
+            return;
+        }
+
+        releaseScrollLock();
+        setGesture((prev) => {
+            if (prev.phase === 'idle' || prev.pointerId === null) {
+                return prev;
+            }
+            return {
+                ...prev,
+                phase: 'idle',
+                pointerId: null,
+                checkProgress: 0,
+                revealOffsetX: prev.deleteRevealed ? -REVEAL_WIDTH_PX : 0,
+            };
+        });
+    }
+
+    function onDocumentPointerUp(event: PointerEvent) {
         if (event.pointerId !== activePointerId) {
             return;
         }
@@ -321,6 +352,16 @@ function GestureRow(props: GestureRowProps): JSX.Element {
         event.stopPropagation();
         detachDocumentPointerListeners();
         handlePointerUp(event);
+    }
+
+    function onDocumentPointerCancel(event: PointerEvent) {
+        if (event.pointerId !== activePointerId) {
+            return;
+        }
+        event.preventDefault();
+        event.stopPropagation();
+        detachDocumentPointerListeners();
+        handlePointerCancel();
     }
 
     function handlePointerDown(event: PointerEvent) {
@@ -419,6 +460,7 @@ function GestureRow(props: GestureRowProps): JSX.Element {
     onCleanup(() => {
         clearLongPress();
         releaseScrollLock();
+        detachSurfaceTouchMoveListener();
         detachDocumentPointerListeners();
         if (touchDrag.isDragging() && isDraggingThis()) {
             touchDrag.endDragIfActive();
@@ -450,7 +492,7 @@ function GestureRow(props: GestureRowProps): JSX.Element {
                 {/* biome-ignore lint/a11y/noStaticElementInteractions: custom pointer gesture handler */}
                 {/* biome-ignore lint/a11y/useKeyWithClickEvents: keyboard affordances are provided by row content */}
                 <div
-                    ref={surfaceEl}
+                    ref={attachSurfaceTouchMoveListener}
                     class="task-row__surface"
                     classList={{
                         'task-row__surface--placeholder': hideDuringDrag() && isDraggingThis(),
