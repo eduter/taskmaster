@@ -7,6 +7,7 @@ const runGenerators = vi.fn();
 const commitGeneratorRuns = vi.fn();
 const setPushPending = vi.fn();
 const isSyncRunning = vi.fn(() => false);
+const isAuthenticated = vi.fn(() => true);
 const invalidateLabels = vi.fn();
 const waitForDb = vi.fn();
 const recordError = vi.fn();
@@ -18,6 +19,10 @@ vi.mock('../db/dbLifecycle.ts', () => ({
 
 vi.mock('../stores/syncStore.ts', () => ({
     recordError: (message: string) => recordError(message),
+}));
+
+vi.mock('../sync/dropboxAuth.ts', () => ({
+    isAuthenticated: () => isAuthenticated(),
 }));
 
 vi.mock('../sync/syncEngine.ts', () => ({
@@ -69,12 +74,57 @@ describe('onAppResume', () => {
         setPushPending.mockResolvedValue(undefined);
         isSyncRunning.mockReset();
         isSyncRunning.mockReturnValue(false);
+        isAuthenticated.mockReset();
+        isAuthenticated.mockReturnValue(true);
         syncIdleCallback = null;
         runGenerators.mockResolvedValue({ created: 0, generatorIds: [] });
         waitForDb.mockResolvedValue(undefined);
     });
 
-    afterEach(() => resetDb());
+    afterEach(() => {
+        vi.unstubAllEnvs();
+        return resetDb();
+    });
+
+    it('runs generators in dev when Dropbox is not configured', async () => {
+        vi.stubEnv('DEV', true);
+        vi.stubEnv('PROD', false);
+        isAuthenticated.mockReturnValue(false);
+        runGenerators.mockResolvedValue({ created: 1, generatorIds: ['daily'] });
+
+        const { onAppResume } = await importResume();
+        await onAppResume();
+
+        expect(sync).not.toHaveBeenCalled();
+        expect(runGenerators).toHaveBeenCalled();
+        expect(commitGeneratorRuns).toHaveBeenCalledWith(['daily'], '2026-05-23');
+        expect(setPushPending).not.toHaveBeenCalled();
+    });
+
+    it('blocks generators in prod when Dropbox is not configured', async () => {
+        vi.stubEnv('DEV', false);
+        vi.stubEnv('PROD', true);
+        isAuthenticated.mockReturnValue(false);
+        sync.mockResolvedValue({ ok: false, pulled: false, pushed: false, dataChanged: false });
+
+        const { onAppResume } = await importResume();
+        await onAppResume();
+
+        expect(sync).toHaveBeenCalledOnce();
+        expect(runGenerators).not.toHaveBeenCalled();
+    });
+
+    it('skips generators in dev when authenticated sync fails', async () => {
+        vi.stubEnv('DEV', true);
+        vi.stubEnv('PROD', false);
+        sync.mockResolvedValue({ ok: false, pulled: false, pushed: false, dataChanged: false });
+
+        const { onAppResume } = await importResume();
+        await onAppResume();
+
+        expect(sync).toHaveBeenCalledOnce();
+        expect(runGenerators).not.toHaveBeenCalled();
+    });
 
     it('records an error when the database is unavailable', async () => {
         waitForDb.mockRejectedValue(new Error('Another TaskMaster tab is using the database'));

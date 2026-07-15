@@ -4,6 +4,7 @@ import { invalidateGenerators } from '../stores/generatorStore.ts';
 import { invalidateLabels } from '../stores/labelStore.ts';
 import { recordError } from '../stores/syncStore.ts';
 import { invalidateTasks, refreshTodayIfNeeded, today } from '../stores/taskStore.ts';
+import { isAuthenticated } from '../sync/dropboxAuth.ts';
 import { isSyncRunning, onSyncIdle, setPushPending, sync } from '../sync/syncEngine.ts';
 
 const RESUME_DEBOUNCE_MS = 500;
@@ -18,15 +19,20 @@ async function onAppResume(): Promise<void> {
         refreshTodayIfNeeded();
         await waitForDb();
 
-        const outcome = await sync();
-        if (!outcome.ok) {
-            return;
-        }
+        if (isAuthenticated()) {
+            const outcome = await sync();
+            if (!outcome.ok) {
+                return;
+            }
 
-        if (outcome.dataChanged) {
-            invalidateTasks({ push: false });
-            invalidateGenerators({ push: false });
-            invalidateLabels({ push: false });
+            if (outcome.dataChanged) {
+                invalidateTasks({ push: false });
+                invalidateGenerators({ push: false });
+                invalidateLabels({ push: false });
+            }
+        } else if (!import.meta.env.DEV) {
+            await sync();
+            return;
         }
 
         const { created, generatorIds } = await runGenerators();
@@ -34,11 +40,14 @@ async function onAppResume(): Promise<void> {
             invalidateTasks({ push: false });
 
             await commitGeneratorRuns(generatorIds, today());
-            await setPushPending(true);
 
-            const pushOutcome = await sync();
-            if (!pushOutcome.ok) {
-                return;
+            if (isAuthenticated()) {
+                await setPushPending(true);
+
+                const pushOutcome = await sync();
+                if (!pushOutcome.ok) {
+                    return;
+                }
             }
         }
     } catch (err: unknown) {
