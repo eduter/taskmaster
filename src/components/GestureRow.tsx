@@ -64,6 +64,20 @@ function nowMs(): number {
     return Date.now();
 }
 
+function isPointerReleaseOverTarget(event: PointerEvent): boolean {
+    const target = event.currentTarget;
+    if (!(target instanceof HTMLElement)) {
+        return false;
+    }
+    const rect = target.getBoundingClientRect();
+    return (
+        event.clientX >= rect.left &&
+        event.clientX <= rect.right &&
+        event.clientY >= rect.top &&
+        event.clientY <= rect.bottom
+    );
+}
+
 /** Sortable row surface with shared tap, swipe, delete reveal, and long-press drag gestures. */
 function GestureRow(props: GestureRowProps): JSX.Element {
     const sortable = useVariableHeightSortable(props.id);
@@ -425,10 +439,44 @@ function GestureRow(props: GestureRowProps): JSX.Element {
         openItem();
     }
 
-    function handleDeleteClick(event: MouseEvent) {
-        event.stopPropagation();
+    function commitDelete() {
         void props.onDelete();
         props.onRevealChange(props.id, false);
+    }
+
+    let deleteCommittedOnPointerUp = false;
+
+    function handleDeleteClick(event: MouseEvent) {
+        event.stopPropagation();
+        // Touch already deleted on pointerup; click is often suppressed after swipe preventDefault.
+        if (deleteCommittedOnPointerUp) {
+            deleteCommittedOnPointerUp = false;
+            return;
+        }
+        commitDelete();
+    }
+
+    function handleDeletePointerDown() {
+        deleteCommittedOnPointerUp = false;
+    }
+
+    function handleDeletePointerCancel() {
+        deleteCommittedOnPointerUp = false;
+    }
+
+    function handleDeletePointerUp(event: PointerEvent) {
+        // After reveal swipe, Chrome suppresses the synthetic click for a while; commit on touch up.
+        if (event.pointerType !== 'touch') {
+            return;
+        }
+        // Implicit capture can deliver pointerup after the finger leaves the button.
+        if (!isPointerReleaseOverTarget(event)) {
+            return;
+        }
+        event.preventDefault();
+        event.stopPropagation();
+        deleteCommittedOnPointerUp = true;
+        commitDelete();
     }
 
     createEffect(() => {
@@ -486,6 +534,9 @@ function GestureRow(props: GestureRowProps): JSX.Element {
                         type="button"
                         class="task-row__delete"
                         aria-label={props.deleteLabel}
+                        onPointerDown={handleDeletePointerDown}
+                        onPointerUp={handleDeletePointerUp}
+                        onPointerCancel={handleDeletePointerCancel}
                         onClick={handleDeleteClick}
                     >
                         <Icon src={trashIcon} />
