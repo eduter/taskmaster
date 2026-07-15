@@ -1,3 +1,4 @@
+import { waitForDb } from '../db/dbLifecycle.ts';
 import { db } from '../db/database.ts';
 import type { Generator, Label, SyncMeta, Task } from '../db/types.ts';
 import {
@@ -357,6 +358,8 @@ async function sync(): Promise<SyncOutcome> {
 }
 
 async function syncNow(): Promise<SyncOutcome> {
+    await waitForDb();
+
     const download = await attemptWithRetry(downloadRemote, (r) => !r.ok);
     if (!download.ok) {
         return { ok: false, pulled: false, pushed: false, dataChanged: false };
@@ -451,6 +454,8 @@ async function pushToDropbox(): Promise<boolean> {
 }
 
 async function loadSyncMetaIntoStore(): Promise<void> {
+    await waitForDb();
+
     const meta = await getSyncMeta();
     hydrateLastSyncedAt(meta.lastSyncedAt);
     if (meta.lastBackupDay) {

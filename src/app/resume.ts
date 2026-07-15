@@ -1,6 +1,8 @@
+import { waitForDb } from '../db/dbLifecycle.ts';
 import { commitGeneratorRuns, runGenerators } from '../scheduling/generate.ts';
 import { invalidateGenerators } from '../stores/generatorStore.ts';
 import { invalidateLabels } from '../stores/labelStore.ts';
+import { recordError } from '../stores/syncStore.ts';
 import { invalidateTasks, refreshTodayIfNeeded, today } from '../stores/taskStore.ts';
 import { isSyncRunning, onSyncIdle, setPushPending, sync } from '../sync/syncEngine.ts';
 
@@ -12,30 +14,37 @@ let resumePending = false;
 let syncIdleHookInstalled = false;
 
 async function onAppResume(): Promise<void> {
-    refreshTodayIfNeeded();
+    try {
+        refreshTodayIfNeeded();
+        await waitForDb();
 
-    const outcome = await sync();
-    if (!outcome.ok) {
-        return;
-    }
-
-    if (outcome.dataChanged) {
-        invalidateTasks({ push: false });
-        invalidateGenerators({ push: false });
-        invalidateLabels({ push: false });
-    }
-
-    const { created, generatorIds } = await runGenerators();
-    if (created > 0) {
-        invalidateTasks({ push: false });
-
-        await commitGeneratorRuns(generatorIds, today());
-        await setPushPending(true);
-
-        const pushOutcome = await sync();
-        if (!pushOutcome.ok) {
+        const outcome = await sync();
+        if (!outcome.ok) {
             return;
         }
+
+        if (outcome.dataChanged) {
+            invalidateTasks({ push: false });
+            invalidateGenerators({ push: false });
+            invalidateLabels({ push: false });
+        }
+
+        const { created, generatorIds } = await runGenerators();
+        if (created > 0) {
+            invalidateTasks({ push: false });
+
+            await commitGeneratorRuns(generatorIds, today());
+            await setPushPending(true);
+
+            const pushOutcome = await sync();
+            if (!pushOutcome.ok) {
+                return;
+            }
+        }
+    } catch (err: unknown) {
+        console.error('App resume failed:', err);
+        const message = err instanceof Error ? err.message : 'App resume failed';
+        recordError(message);
     }
 }
 

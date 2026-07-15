@@ -8,7 +8,17 @@ const commitGeneratorRuns = vi.fn();
 const setPushPending = vi.fn();
 const isSyncRunning = vi.fn(() => false);
 const invalidateLabels = vi.fn();
+const waitForDb = vi.fn();
+const recordError = vi.fn();
 let syncIdleCallback: (() => void) | null = null;
+
+vi.mock('../db/dbLifecycle.ts', () => ({
+    waitForDb: () => waitForDb(),
+}));
+
+vi.mock('../stores/syncStore.ts', () => ({
+    recordError: (message: string) => recordError(message),
+}));
 
 vi.mock('../sync/syncEngine.ts', () => ({
     sync,
@@ -41,6 +51,11 @@ vi.mock('../stores/labelStore.ts', () => ({
     invalidateLabels,
 }));
 
+async function importResume() {
+    vi.resetModules();
+    return import('./resume.ts');
+}
+
 describe('onAppResume', () => {
     beforeEach(async () => {
         await resetDb();
@@ -49,19 +64,33 @@ describe('onAppResume', () => {
         commitGeneratorRuns.mockReset();
         setPushPending.mockReset();
         invalidateLabels.mockReset();
+        waitForDb.mockReset();
+        recordError.mockReset();
         setPushPending.mockResolvedValue(undefined);
         isSyncRunning.mockReset();
         isSyncRunning.mockReturnValue(false);
         syncIdleCallback = null;
         runGenerators.mockResolvedValue({ created: 0, generatorIds: [] });
+        waitForDb.mockResolvedValue(undefined);
     });
 
     afterEach(() => resetDb());
 
+    it('records an error when the database is unavailable', async () => {
+        waitForDb.mockRejectedValue(new Error('Another TaskMaster tab is using the database'));
+
+        const { onAppResume } = await importResume();
+        await onAppResume();
+
+        expect(recordError).toHaveBeenCalledWith('Another TaskMaster tab is using the database');
+        expect(sync).not.toHaveBeenCalled();
+        expect(runGenerators).not.toHaveBeenCalled();
+    });
+
     it('skips generators when sync fails', async () => {
         sync.mockResolvedValue({ ok: false, pulled: false, pushed: false, dataChanged: false });
 
-        const { onAppResume } = await import('./resume.ts');
+        const { onAppResume } = await importResume();
         await onAppResume();
 
         expect(runGenerators).not.toHaveBeenCalled();
@@ -70,7 +99,7 @@ describe('onAppResume', () => {
     it('refreshes labels after sync changes data', async () => {
         sync.mockResolvedValue({ ok: true, pulled: true, pushed: false, dataChanged: true });
 
-        const { onAppResume } = await import('./resume.ts');
+        const { onAppResume } = await importResume();
         await onAppResume();
 
         expect(invalidateLabels).toHaveBeenCalledWith({ push: false });
@@ -96,7 +125,7 @@ describe('onAppResume', () => {
             lastGeneratedDate: null,
         });
 
-        const { onAppResume } = await import('./resume.ts');
+        const { onAppResume } = await importResume();
         await onAppResume();
 
         expect(commitGeneratorRuns).toHaveBeenCalledWith(['daily'], '2026-05-23');
@@ -118,8 +147,7 @@ describe('onAppResume', () => {
             sync.mockResolvedValue({ ok: true, pulled: false, pushed: false, dataChanged: false });
             isSyncRunning.mockReturnValue(true);
 
-            vi.resetModules();
-            const { setupResumeListeners } = await import('./resume.ts');
+            const { setupResumeListeners } = await importResume();
             setupResumeListeners();
 
             const onVisible = addEventListener.mock.calls.find(([event]) => event === 'visibilitychange')?.[1] as
@@ -145,7 +173,7 @@ describe('onAppResume', () => {
         sync.mockResolvedValue({ ok: true, pulled: false, pushed: true, dataChanged: true });
         runGenerators.mockResolvedValue({ created: 1, generatorIds: ['daily'] });
 
-        const { onAppResume } = await import('./resume.ts');
+        const { onAppResume } = await importResume();
         await onAppResume();
 
         expect(commitGeneratorRuns).toHaveBeenCalledWith(['daily'], '2026-05-23');

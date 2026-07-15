@@ -1,6 +1,7 @@
 import { Navigate } from '@solidjs/router';
 import { onMount, type JSX } from 'solid-js';
 import { onAppResume, setupResumeListeners } from './app/resume.ts';
+import { waitForDb } from './db/dbLifecycle.ts';
 import { AddTask } from './components/AddTask.tsx';
 import { AppTabs } from './components/AppTabs.tsx';
 import { GeneratorEditorModal } from './components/GeneratorEditorModal.tsx';
@@ -29,9 +30,10 @@ function App(props: AppProps) {
             markConnected();
         }
         refreshAuthState();
+        await waitForDb();
         await loadSyncMetaIntoStore();
         setupResumeListeners();
-        await onAppResume();
+        void onAppResume();
     });
 
     return (
