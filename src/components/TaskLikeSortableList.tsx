@@ -57,7 +57,11 @@ function SortableTaskLikeListItems<T extends TaskLikeSortableItem>(props: TaskLi
                 <For each={props.items}>
                     {(item) =>
                         props.renderRow(item, {
-                            deleteRevealed: openRevealId() === item.id,
+                            // Getter so Solid prop reads stay live; a plain boolean
+                            // snapped at render-prop call time never updates in GestureRow.
+                            get deleteRevealed() {
+                                return openRevealId() === item.id;
+                            },
                             onRevealChange: handleRevealChange,
                             onRowTouchStart: handleRowTouchStart,
                         })

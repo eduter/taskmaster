@@ -374,6 +374,9 @@ function GestureRow(props: GestureRowProps): JSX.Element {
         props.onRowTouchStart?.(props.id);
 
         const cardWidth = surfaceEl?.clientWidth ?? 300;
+        // Prefer local (set on snap) so a stale props snapshot can't re-enter check-stroke
+        // while the delete strip is still visually open.
+        const deleteRevealedForDown = gesture().deleteRevealed || props.deleteRevealed;
         dispatch(
             {
                 type: 'POINTER_DOWN',
@@ -381,7 +384,7 @@ function GestureRow(props: GestureRowProps): JSX.Element {
                 x: event.clientX,
                 y: event.clientY,
                 time: nowMs(),
-                deleteRevealed: props.deleteRevealed,
+                deleteRevealed: deleteRevealedForDown,
                 allowCheckSwipe: allowCheckSwipe() && !completed(),
                 cardWidth,
             },
