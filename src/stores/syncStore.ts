@@ -35,6 +35,7 @@ function markDisconnected(): void {
     setOperation('idle');
     setLastResult(null);
     setLastMessage(null);
+    setLastErrorAt(null);
     setPendingPush(false);
 }
 

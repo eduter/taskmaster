@@ -101,6 +101,10 @@ function SyncSettings() {
         if (operation() !== 'idle') {
             return null;
         }
+        // Errors render with the last-error timestamp below
+        if (lastResult() === 'error') {
+            return null;
+        }
         return lastMessage();
     }
 
@@ -151,6 +155,9 @@ function SyncSettings() {
                         </p>
                     </Show>
                     <Show when={lastErrorAt()}>
+                        <Show when={lastMessage()}>
+                            <p class="sync-panel__result sync-panel__result--error">{lastMessage()}</p>
+                        </Show>
                         <p class="sync-panel__meta">Last error: {formatRelativeTime(lastErrorAt())}</p>
                     </Show>
                 </div>
