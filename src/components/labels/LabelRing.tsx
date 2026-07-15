@@ -22,11 +22,7 @@ function LabelRing(props: LabelRingProps): JSX.Element {
     };
 
     return (
-        <span
-            class="label-ring"
-            classList={{ 'label-ring--single': ringLabels().length === 1 }}
-            aria-hidden="true"
-        >
+        <span class="label-ring" classList={{ 'label-ring--single': ringLabels().length === 1 }} aria-hidden="true">
             <For each={ringLabels()}>
                 {(_, index) => <span class="label-ring__sector" style={sectorStyle(index())} />}
             </For>
