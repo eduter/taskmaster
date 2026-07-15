@@ -5,7 +5,6 @@ If the work reveals follow-up tasks, add those as new items. If something is wor
 in code comments, or other doc files — not the backlog.
 
 * When marking a task completed, move it above the first incomplete
-* Allow reordering of carried tasks
 * The sync dialog should display the actual error, when the latest try failed. I've been getting a lot of failures lately, it would be nice to see what error I'm getting.
 * Implement filters by label and name substring
 * Implement the calendar tab

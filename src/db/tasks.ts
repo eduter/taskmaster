@@ -64,12 +64,7 @@ async function getVisibleTasks(today: string): Promise<Task[]> {
 
     return tasks
         .filter((t) => !t.completed || t.date === today || wasCompletedOn(t, today))
-        .sort((a, b) => {
-            if (a.date !== b.date) {
-                return a.date < b.date ? -1 : 1;
-            }
-            return a.sortOrder - b.sortOrder;
-        });
+        .sort((a, b) => a.sortOrder - b.sortOrder);
 }
 
 async function reorderTasks(orderedIds: string[]): Promise<void> {

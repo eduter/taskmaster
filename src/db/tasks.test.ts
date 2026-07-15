@@ -47,4 +47,22 @@ describe('getVisibleTasks', () => {
         const visible = await getVisibleTasks('2026-05-23');
         expect(visible.map((t) => t.id)).toContain('today-done');
     });
+
+    it('orders by sortOrder across dates so carried tasks can sit below today', async () => {
+        await seedTask({
+            id: 'carried',
+            summary: 'Carried',
+            date: '2026-05-20',
+            sortOrder: 1,
+        });
+        await seedTask({
+            id: 'today',
+            summary: 'Today',
+            date: '2026-05-23',
+            sortOrder: 0,
+        });
+
+        const visible = await getVisibleTasks('2026-05-23');
+        expect(visible.map((t) => t.id)).toEqual(['today', 'carried']);
+    });
 });
