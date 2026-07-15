@@ -41,7 +41,7 @@ function TaskList() {
             <Show
                 when={loadFailed()}
                 fallback={
-                    <Show when={!tasks.loading} fallback={<p class="task-list__empty">Loading…</p>}>
+                    <Show when={tasks() != null || !tasks.loading} fallback={<p class="task-list__empty">Loading…</p>}>
                         <Show
                             when={(tasks() ?? []).length > 0}
                             fallback={<p class="task-list__empty">No tasks for today. Add one above!</p>}
