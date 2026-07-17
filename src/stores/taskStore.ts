@@ -49,9 +49,11 @@ async function removeTask(id: string): Promise<void> {
     invalidateTasks();
 }
 
-async function toggleComplete(id: string): Promise<void> {
-    await withDbWrite(() => toggleTaskCompleted(id));
+/** @returns Whether the task is completed after the toggle. */
+async function toggleComplete(id: string): Promise<boolean> {
+    const completed = await withDbWrite(() => toggleTaskCompleted(id));
     invalidateTasks();
+    return completed;
 }
 
 async function reorder(orderedIds: string[]): Promise<void> {

@@ -13,6 +13,7 @@ interface TaskCardProps {
     /** When set, overrides completed appearance (e.g. swipe-to-check preview). */
     visualCompleted?: boolean;
     onCheckClick?: (event: MouseEvent) => void;
+    checkRef?: (el: HTMLButtonElement | undefined) => void;
 }
 
 interface TaskCardViewProps {
@@ -23,6 +24,7 @@ interface TaskCardViewProps {
     carried?: boolean;
     showCheck?: boolean;
     onCheckClick?: (event: MouseEvent) => void;
+    checkRef?: (el: HTMLButtonElement | undefined) => void;
 }
 
 /** Shared task-like card display for persisted tasks and generator templates. */
@@ -53,6 +55,7 @@ function TaskCardView(props: TaskCardViewProps): JSX.Element {
                         <LabelRing labels={cardLabels()} />
                     </Show>
                     <button
+                        ref={props.checkRef}
                         type="button"
                         class="task-card__check"
                         classList={{ 'task-card__check--done': showCompleted() }}
@@ -103,6 +106,7 @@ function TaskCard(props: TaskCardProps): JSX.Element {
             carried={isCarriedOver()}
             showCheck={true}
             onCheckClick={props.onCheckClick}
+            checkRef={props.checkRef}
         />
     );
 }

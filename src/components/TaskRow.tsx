@@ -1,7 +1,8 @@
 import type { JSX } from 'solid-js';
 import type { Task } from '../db/types.ts';
 import { useAppNavigate } from '../routing/navigation.ts';
-import { removeTask, toggleComplete } from '../stores/taskStore.ts';
+import { removeTask, tasks, toggleComplete } from '../stores/taskStore.ts';
+import { fireConfetti, shouldCelebrateLastTask, type ConfettiOrigin } from '../utils/confetti.ts';
 import { GestureRow } from './GestureRow.tsx';
 import { TaskCard } from './TaskCard.tsx';
 
@@ -15,18 +16,36 @@ interface TaskRowProps {
 
 function TaskRow(props: TaskRowProps): JSX.Element {
     const { toTask } = useAppNavigate();
+    let checkEl: HTMLButtonElement | undefined;
 
     function openTaskDetail() {
         toTask(props.task.id);
     }
 
+    function checkOrigin(): ConfettiOrigin | undefined {
+        if (!checkEl) {
+            return undefined;
+        }
+        const rect = checkEl.getBoundingClientRect();
+        return { x: rect.left + rect.width / 2, y: rect.top + rect.height / 2 };
+    }
+
+    async function toggleAndMaybeCelebrate(): Promise<void> {
+        const celebrate = shouldCelebrateLastTask(tasks() ?? [], props.task.id);
+        const origin = checkOrigin();
+        const completed = await toggleComplete(props.task.id);
+        if (completed && celebrate) {
+            fireConfetti(origin);
+        }
+    }
+
     function completeTask() {
-        void toggleComplete(props.task.id);
+        void toggleAndMaybeCelebrate();
     }
 
     function handleCheckClick(event: MouseEvent) {
         event.stopPropagation();
-        void toggleComplete(props.task.id);
+        void toggleAndMaybeCelebrate();
     }
 
     function deleteTask() {
@@ -52,6 +71,9 @@ function TaskRow(props: TaskRowProps): JSX.Element {
                         task={props.task}
                         visualCompleted={state.visualCompleted}
                         onCheckClick={handleCheckClick}
+                        checkRef={(el) => {
+                            checkEl = el;
+                        }}
                     />
                     {state.showStrike && (
                         <div class="task-row__strike" style={{ width: state.strikeWidth }} aria-hidden="true" />
