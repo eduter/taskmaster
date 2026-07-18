@@ -55,7 +55,7 @@ function TaskCardView(props: TaskCardViewProps): JSX.Element {
                         <LabelRing labels={cardLabels()} />
                     </Show>
                     <button
-                        ref={props.checkRef}
+                        ref={(el) => props.checkRef?.(el)}
                         type="button"
                         class="task-card__check"
                         classList={{ 'task-card__check--done': showCompleted() }}
