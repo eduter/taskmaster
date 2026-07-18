@@ -53,14 +53,22 @@ const pwa = VitePWA({
     },
 });
 
-export default defineConfig({
+export default defineConfig(({ mode }) => ({
     base: '/taskmaster/',
     plugins: [solid(), pwa],
     server: {
         host: true,
     },
+    // jsdom component tests need Solid's browser build; keep this off prod/dev resolve.
+    ...(mode === 'test'
+        ? {
+              resolve: {
+                  conditions: ['development', 'browser'],
+              },
+          }
+        : {}),
     test: {
         environment: 'node',
         setupFiles: ['src/test/setup.ts'],
     },
-});
+}));
