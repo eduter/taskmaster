@@ -220,6 +220,7 @@ function CalendarTab(): JSX.Element {
                             onDay={navigation.toCalendarDay}
                             scrollerRef={(element) => {
                                 monthScroller = element;
+                                enableMouseDragScroll(element);
                             }}
                             onScroll={handleMonthScroll}
                         />
@@ -258,6 +259,73 @@ function CalendarTab(): JSX.Element {
                 stackLevel={2}
             />
         </section>
+    );
+}
+
+/** Adds mouse drag paging while leaving Chrome's native touch panning unchanged. */
+function enableMouseDragScroll(scroller: HTMLDivElement): void {
+    let pointerId: number | undefined;
+    let lastY = 0;
+    let dragged = false;
+    let suppressClick = false;
+
+    scroller.addEventListener('pointerdown', (event) => {
+        if (event.pointerType !== 'mouse' || event.button !== 0) {
+            return;
+        }
+        pointerId = event.pointerId;
+        lastY = event.clientY;
+        dragged = false;
+    });
+    scroller.addEventListener('pointermove', (event) => {
+        if (event.pointerId !== pointerId) {
+            return;
+        }
+        const delta = lastY - event.clientY;
+        if (!dragged && Math.abs(delta) <= 2) {
+            return;
+        }
+        if (!dragged) {
+            dragged = true;
+            scroller.style.scrollSnapType = 'none';
+            scroller.setPointerCapture(event.pointerId);
+        }
+        lastY = event.clientY;
+        scroller.scrollTop += delta;
+        event.preventDefault();
+    });
+
+    const finishDrag = (event: PointerEvent, shouldSuppressClick: boolean) => {
+        if (event.pointerId !== pointerId) {
+            return;
+        }
+        suppressClick = dragged && shouldSuppressClick;
+        pointerId = undefined;
+        if (!dragged) {
+            return;
+        }
+        scroller.style.scrollSnapType = '';
+        if (scroller.hasPointerCapture(event.pointerId)) {
+            scroller.releasePointerCapture(event.pointerId);
+        }
+        scroller.scrollTo({
+            top: Math.round(scroller.scrollTop / scroller.clientHeight) * scroller.clientHeight,
+            behavior: 'smooth',
+        });
+    };
+    scroller.addEventListener('pointerup', (event) => finishDrag(event, true));
+    scroller.addEventListener('pointercancel', (event) => finishDrag(event, false));
+    scroller.addEventListener(
+        'click',
+        (event) => {
+            if (!suppressClick) {
+                return;
+            }
+            suppressClick = false;
+            event.preventDefault();
+            event.stopImmediatePropagation();
+        },
+        true
     );
 }
 
