@@ -54,12 +54,7 @@ describe('projectGeneratorTasks', () => {
     it('does not duplicate a date that already has a generated task', () => {
         const projected = projectGeneratorTasks([generator()], [task()], '2026-07-25', '2026-07-27', '2026-07-24');
 
-        expect(projected.map((item) => item.date)).toEqual([
-            '2026-07-25',
-            '2026-07-25',
-            '2026-07-27',
-            '2026-07-27',
-        ]);
+        expect(projected.map((item) => item.date)).toEqual(['2026-07-25', '2026-07-25', '2026-07-27', '2026-07-27']);
     });
 
     it('skips inactive generators and dates already generated', () => {

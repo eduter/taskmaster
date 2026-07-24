@@ -23,9 +23,7 @@ function projectGeneratorTasks(
     rangeEnd: string,
     today: string
 ): ProjectedTask[] {
-    const existing = new Set(
-        tasks.flatMap((task) => (task.generatorId ? [`${task.generatorId}:${task.date}`] : []))
-    );
+    const existing = new Set(tasks.flatMap((task) => (task.generatorId ? [`${task.generatorId}:${task.date}`] : [])));
     const projected: ProjectedTask[] = [];
 
     for (const generator of generators) {
