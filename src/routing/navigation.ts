@@ -30,6 +30,14 @@ function generatorDetailPath(id: string | 'new'): string {
     return `/generators/${id}`;
 }
 
+function calendarDayPath(date: string): string {
+    return `/calendar/${date}`;
+}
+
+function calendarTaskPath(date: string, id: string): string {
+    return `${calendarDayPath(date)}/tasks/${id}`;
+}
+
 /** Route-aware navigation helpers aligned with the app's history rules. */
 function useAppNavigate() {
     const navigate = useNavigate();
@@ -52,6 +60,18 @@ function useAppNavigate() {
         },
         toTasksList() {
             navigate(pathKeepingOverlays(TAB_ROUTES.today), { replace: true });
+        },
+        toCalendarDay(date: string) {
+            navigate(calendarDayPath(date));
+        },
+        toCalendarTask(date: string, id: string) {
+            navigate(calendarTaskPath(date, id));
+        },
+        closeCalendarDetail() {
+            navigate(-1);
+        },
+        toCalendar() {
+            navigate(pathKeepingOverlays(TAB_ROUTES.calendar), { replace: true });
         },
         toGenerator(id: string | 'new') {
             navigate(generatorDetailPath(id));
@@ -139,6 +159,8 @@ function useActiveTab() {
 
 export type { AppTab };
 export {
+    calendarDayPath,
+    calendarTaskPath,
     generatorDetailPath,
     TAB_ROUTES,
     taskDetailPath,

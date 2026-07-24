@@ -4,6 +4,7 @@ import { onAppResume, setupResumeListeners } from './app/resume.ts';
 import { waitForDb } from './db/dbLifecycle.ts';
 import { AddTask } from './components/AddTask.tsx';
 import { AppTabs } from './components/AppTabs.tsx';
+import { CalendarTab } from './components/CalendarTab.tsx';
 import { GeneratorEditorModal } from './components/GeneratorEditorModal.tsx';
 import { GeneratorsTab } from './components/GeneratorsTab.tsx';
 import { InstallPrompt } from './components/InstallPrompt.tsx';
@@ -67,7 +68,7 @@ function TasksSection() {
 }
 
 function CalendarSection() {
-    return <p class="app-placeholder">Not implemented yet.</p>;
+    return <CalendarTab />;
 }
 
 function GeneratorsSection() {

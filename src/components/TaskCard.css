@@ -21,6 +21,11 @@
     border-left: 3px solid var(--warning);
 }
 
+.task-card--projected {
+    border-style: dashed;
+    opacity: 0.68;
+}
+
 .task-card__check {
     width: 22px;
     height: 22px;

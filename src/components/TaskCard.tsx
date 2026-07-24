@@ -25,6 +25,8 @@ interface TaskCardViewProps {
     showCheck?: boolean;
     onCheckClick?: (event: MouseEvent) => void;
     checkRef?: (el: HTMLButtonElement | undefined) => void;
+    variant?: 'default' | 'projected';
+    badge?: string;
 }
 
 /** Shared task-like card display for persisted tasks and generator templates. */
@@ -47,6 +49,7 @@ function TaskCardView(props: TaskCardViewProps): JSX.Element {
                 'task-card--completed': showCompleted(),
                 'task-card--carried': props.carried,
                 'task-card--labels-visible': labelsVisible(),
+                'task-card--projected': props.variant === 'projected',
             }}
         >
             <Show when={showCheck()}>
@@ -89,7 +92,7 @@ function TaskCardView(props: TaskCardViewProps): JSX.Element {
                     </div>
                 </Show>
             </div>
-            {props.carried && <span class="task-card__carried-badge">carried</span>}
+            {(props.carried || props.badge) && <span class="task-card__carried-badge">{props.badge ?? 'carried'}</span>}
         </div>
     );
 }

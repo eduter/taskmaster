@@ -18,6 +18,8 @@ render(
             <Route path="/tasks" component={TasksSection} />
             <Route path="/tasks/:id" component={TasksSection} />
             <Route path="/calendar" component={CalendarSection} />
+            <Route path="/calendar/:date" component={CalendarSection} />
+            <Route path="/calendar/:date/tasks/:taskId" component={CalendarSection} />
             <Route path="/generators" component={GeneratorsSection} />
             <Route path="/generators/:id" component={GeneratorsSection} />
         </Router>

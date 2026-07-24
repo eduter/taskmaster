@@ -33,4 +33,12 @@ async function removeGenerator(id: string): Promise<void> {
     invalidateGenerators();
 }
 
-export { addGenerator, editGenerator, generators, invalidateGenerators, refetchGenerators, removeGenerator };
+export {
+    addGenerator,
+    editGenerator,
+    generators,
+    genVersion,
+    invalidateGenerators,
+    refetchGenerators,
+    removeGenerator,
+};
