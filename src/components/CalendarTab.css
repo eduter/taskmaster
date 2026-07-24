@@ -6,8 +6,7 @@
 }
 
 .calendar-toolbar {
-    position: sticky;
-    top: 57px;
+    position: relative;
     z-index: 15;
     display: grid;
     gap: var(--space-sm);
