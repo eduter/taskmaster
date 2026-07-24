@@ -1,7 +1,7 @@
 import { afterEach, beforeEach, describe, expect, it } from 'vitest';
 import { resetDb, seedTask } from '../test/helpers.ts';
 import { getLogicalDay } from '../utils/logicalDay.ts';
-import { getVisibleTasks, toggleTaskCompleted } from './tasks.ts';
+import { getTasksForDateRange, getVisibleTasks, toggleTaskCompleted } from './tasks.ts';
 
 describe('getVisibleTasks', () => {
     beforeEach(() => resetDb());
@@ -65,6 +65,22 @@ describe('getVisibleTasks', () => {
 
         const visible = await getVisibleTasks('2026-05-23');
         expect(visible.map((t) => t.id)).toEqual(['today', 'carried']);
+    });
+});
+
+describe('getTasksForDateRange', () => {
+    beforeEach(() => resetDb());
+    afterEach(() => resetDb());
+
+    it('returns tasks in the inclusive range ordered by date and sort order', async () => {
+        await seedTask({ id: 'late', summary: 'Late', date: '2026-07-25', sortOrder: 2 });
+        await seedTask({ id: 'early', summary: 'Early', date: '2026-07-25', sortOrder: 1 });
+        await seedTask({ id: 'outside', summary: 'Outside', date: '2026-07-27' });
+        await seedTask({ id: 'first-day', summary: 'First day', date: '2026-07-24' });
+
+        const tasks = await getTasksForDateRange('2026-07-24', '2026-07-25');
+
+        expect(tasks.map((task) => task.id)).toEqual(['first-day', 'early', 'late']);
     });
 });
 

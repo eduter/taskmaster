@@ -74,6 +74,11 @@ async function getTasksForDay(date: string): Promise<Task[]> {
     return db.tasks.where('date').equals(date).sortBy('sortOrder');
 }
 
+async function getTasksForDateRange(start: string, end: string): Promise<Task[]> {
+    const tasks = await db.tasks.where('date').between(start, end, true, true).toArray();
+    return tasks.sort((left, right) => left.date.localeCompare(right.date) || left.sortOrder - right.sortOrder);
+}
+
 function wasCompletedOn(task: Task, day: string): boolean {
     return task.completedAt != null && getLogicalDay(new Date(task.completedAt)) === day;
 }
@@ -100,6 +105,7 @@ export {
     deleteTask,
     getTask,
     getTasksForDay,
+    getTasksForDateRange,
     getVisibleTasks,
     reorderTasks,
     toggleTaskCompleted,
