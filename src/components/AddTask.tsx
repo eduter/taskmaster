@@ -2,7 +2,13 @@ import { createSignal } from 'solid-js';
 import { addTask } from '../stores/taskStore.ts';
 import './AddTask.css';
 
-function AddTask() {
+interface AddTaskProps {
+    date?: string;
+    onAdded?: () => void;
+}
+
+/** Adds a concrete task to today or an explicitly supplied logical date. */
+function AddTask(props: AddTaskProps) {
     const [value, setValue] = createSignal('');
 
     async function handleSubmit(e: SubmitEvent) {
@@ -11,8 +17,9 @@ function AddTask() {
         if (!summary) {
             return;
         }
-        await addTask(summary);
+        await addTask(summary, props.date);
         setValue('');
+        props.onAdded?.();
     }
 
     return (
@@ -31,4 +38,5 @@ function AddTask() {
     );
 }
 
+export type { AddTaskProps };
 export { AddTask };

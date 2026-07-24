@@ -33,8 +33,8 @@ async function fetchTasks(): Promise<Task[]> {
 
 const [tasks, { refetch: refetchTasks }] = createResource(taskVersion, fetchTasks);
 
-async function addTask(summary: string): Promise<Task> {
-    const task = await withDbWrite(() => createTask({ summary, date: today() }));
+async function addTask(summary: string, date: string = today()): Promise<Task> {
+    const task = await withDbWrite(() => createTask({ summary, date }));
     invalidateTasks();
     return task;
 }
@@ -70,6 +70,7 @@ export {
     removeTask,
     reorder,
     tasks,
+    taskVersion,
     today,
     toggleComplete,
 };
