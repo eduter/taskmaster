@@ -146,3 +146,24 @@ described under "Function body shape" — not JSDoc.
 
 - `./docs/vision.md`: vision and roadmap
 - `./docs/backlog.md`: open tasks
+
+
+## Cursor Cloud specific instructions
+
+- **Frontend-only app.** TaskMaster is an offline-first Solid.js PWA with no
+  backend to run. State lives in the browser's IndexedDB (Dexie). Dropbox sync
+  is optional and only activates once Dropbox credentials are configured, so it
+  is not needed to develop or test the core app.
+- **Node version.** The repo pins Node via `.nvmrc` (currently v24). The VM's
+  default `node` shim resolves to an older Node; the setup adds an nvm-managed
+  Node 24 ahead of it in `PATH` (via `~/.bashrc`), so interactive shells get the
+  correct `node`/`npm`. If a shell somehow reports the wrong version, run
+  `nvm use` from the repo root.
+- **Run the app.** `npm run dev` (Vite) serves at
+  `http://localhost:5173/taskmaster/`. The `/taskmaster/` base path is required —
+  the bare `/` path 404s.
+- **Lint / typecheck / test.** See `package.json` scripts. `npm run check` chains
+  lint, typecheck, `format:check`, and tests. As of setup, `format:check` reports
+  a pre-existing formatting diff in committed code, which stops the chain before
+  tests; `npm run lint`, `npm run typecheck`, and `npm run test` all pass when run
+  individually.
