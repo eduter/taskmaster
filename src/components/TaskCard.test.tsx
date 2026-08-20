@@ -53,7 +53,9 @@ describe('TaskCardView projected tasks', () => {
             />
         ));
 
-        expect(result.container.querySelector('.task-card')?.classList.contains('task-card--labels-visible')).toBe(true);
+        expect(result.container.querySelector('.task-card')?.classList.contains('task-card--labels-visible')).toBe(
+            true
+        );
         expect(result.getByText('Home')).toBeInstanceOf(HTMLElement);
     });
 });

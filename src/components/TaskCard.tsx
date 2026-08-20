@@ -101,7 +101,12 @@ function TaskCardView(props: TaskCardViewProps): JSX.Element {
             </div>
             <Show when={props.generatorName}>
                 {(name) => (
-                    <span class="task-card__generator-indicator" aria-label={`Projected by ${name()}`} title={name()}>
+                    <span
+                        class="task-card__generator-indicator"
+                        role="img"
+                        aria-label={`Projected by ${name()}`}
+                        title={name()}
+                    >
                         <Icon src={generatorIcon} width={16} height={16} />
                     </span>
                 )}
