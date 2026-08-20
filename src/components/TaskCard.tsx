@@ -1,6 +1,7 @@
 import { createMemo, For, Show, type JSX } from 'solid-js';
 import type { Task } from '../db/types.ts';
 import checkIcon from '../icons/check.svg?raw';
+import generatorIcon from '../icons/tab-generators.svg?raw';
 import { labels } from '../stores/labelStore.ts';
 import { today } from '../stores/taskStore.ts';
 import { showTaskLabels } from '../stores/viewPreferencesStore.ts';
@@ -28,7 +29,8 @@ interface TaskCardViewProps {
     onCheckClick?: (event: MouseEvent) => void;
     checkRef?: (el: HTMLButtonElement | undefined) => void;
     variant?: 'default' | 'projected';
-    badge?: string;
+    inertCheck?: boolean;
+    generatorName?: string;
     /** When set, overrides the device task-label display preference. */
     labelsVisible?: boolean;
 }
@@ -61,17 +63,22 @@ function TaskCardView(props: TaskCardViewProps): JSX.Element {
                     <Show when={cardLabels().length > 0}>
                         <LabelRing labels={cardLabels()} />
                     </Show>
-                    <button
-                        ref={(el) => props.checkRef?.(el)}
-                        type="button"
-                        class="task-card__check"
-                        classList={{ 'task-card__check--done': showCompleted() }}
-                        aria-label={showCompleted() ? 'Mark incomplete' : 'Mark complete'}
-                        onClick={props.onCheckClick}
-                        onPointerDown={(event) => event.stopPropagation()}
+                    <Show
+                        when={!props.inertCheck}
+                        fallback={<span class="task-card__check task-card__check--inert" aria-hidden="true" />}
                     >
-                        {showCompleted() && <Icon src={checkIcon} width={14} height={14} />}
-                    </button>
+                        <button
+                            ref={(el) => props.checkRef?.(el)}
+                            type="button"
+                            class="task-card__check"
+                            classList={{ 'task-card__check--done': showCompleted() }}
+                            aria-label={showCompleted() ? 'Mark incomplete' : 'Mark complete'}
+                            onClick={props.onCheckClick}
+                            onPointerDown={(event) => event.stopPropagation()}
+                        >
+                            {showCompleted() && <Icon src={checkIcon} width={14} height={14} />}
+                        </button>
+                    </Show>
                 </span>
             </Show>
             <div class="task-card__content">
@@ -96,7 +103,21 @@ function TaskCardView(props: TaskCardViewProps): JSX.Element {
                     </div>
                 </Show>
             </div>
-            {(props.carried || props.badge) && <span class="task-card__carried-badge">{props.badge ?? 'carried'}</span>}
+            <Show when={props.generatorName}>
+                {(name) => (
+                    <span
+                        class="task-card__generator-indicator"
+                        role="img"
+                        aria-label={`Projected by ${name()}`}
+                        title={name()}
+                    >
+                        <Icon src={generatorIcon} width={16} height={16} />
+                    </span>
+                )}
+            </Show>
+            <Show when={props.carried}>
+                <span class="task-card__carried-badge">carried</span>
+            </Show>
         </div>
     );
 }

@@ -7,13 +7,13 @@ import {
     For,
     on,
     onCleanup,
-    onMount,
     Show,
     type JSX,
 } from 'solid-js';
 import { addMonths, getMonthGrid, getWeekDates, startOfMonth, startOfWeek } from '../calendar/calendarDate.ts';
 import { loadCalendarRange } from '../calendar/calendarData.ts';
 import type { ProjectedTask } from '../calendar/project.ts';
+import { indexCalendarItemsByDate, shouldRenderCalendarPage } from '../calendar/calendarViewModel.ts';
 import type { Task } from '../db/types.ts';
 import { useAppNavigate, useLabelsPanelOpen } from '../routing/navigation.ts';
 import { genVersion } from '../stores/generatorStore.ts';
@@ -81,23 +81,22 @@ function CalendarTab(): JSX.Element {
         () => loadCalendarRange(rangeStart(), rangeEnd(), today())
     );
 
+    const loadedData = createMemo(() => calendarData.latest);
+    const scheduledByDate = createMemo(() => indexCalendarItemsByDate(loadedData()?.scheduled ?? []));
+    const projectedByDate = createMemo(() => indexCalendarItemsByDate(loadedData()?.projected ?? []));
+    const scheduledById = createMemo(
+        () => new Map((loadedData()?.scheduled ?? []).map((task) => [task.id, task] as const))
+    );
     const selectedDate = createMemo(() => (isDate(params.date) ? params.date : undefined));
-    const selectedTask = createMemo(() => calendarData()?.scheduled.find((task) => task.id === params.taskId));
+    const selectedTask = createMemo(() => (params.taskId ? scheduledById().get(params.taskId) : undefined));
     const visibleMonth = createMemo(() => months()[monthIndex()] ?? baseMonth());
     const visibleWeek = createMemo(() => weeks()[weekIndex()] ?? baseWeek());
 
-    onMount(() => scrollToCurrent(false));
     createEffect(
         on(calendarView, () => {
             requestAnimationFrame(() => scrollToCurrent(false));
         })
     );
-    createEffect(() => {
-        if (calendarData()) {
-            requestAnimationFrame(() => scrollToCurrent(false));
-        }
-    });
-
     onCleanup(() => {
         clearTimeout(monthScrollTimer);
         clearTimeout(weekScrollTimer);
@@ -144,14 +143,14 @@ function CalendarTab(): JSX.Element {
         if (calendarFilter() === 'projected') {
             return [];
         }
-        return (calendarData()?.scheduled ?? []).filter((task) => task.date === date);
+        return scheduledByDate().get(date) ?? [];
     }
 
     function projectedFor(date: string): ProjectedTask[] {
         if (calendarFilter() === 'scheduled') {
             return [];
         }
-        return (calendarData()?.projected ?? []).filter((task) => task.date === date);
+        return projectedByDate().get(date) ?? [];
     }
 
     function closeDay(): void {
@@ -195,20 +194,25 @@ function CalendarTab(): JSX.Element {
             </header>
 
             <Show
-                when={calendarData() != null || !calendarData.loading}
+                when={loadedData() != null || !calendarData.loading}
                 fallback={<p class="calendar-status">Loading calendar…</p>}
             >
-                <Show when={!calendarData.error} fallback={<p class="calendar-status">Unable to load calendar.</p>}>
+                <Show
+                    when={!calendarData.error || loadedData() != null}
+                    fallback={<p class="calendar-status">Unable to load calendar.</p>}
+                >
                     <Show
                         when={calendarView() === 'month'}
                         fallback={
                             <WeekPager
                                 weeks={weeks()}
+                                currentIndex={weekIndex()}
                                 scheduledFor={scheduledFor}
                                 projectedFor={projectedFor}
                                 onTask={(date, id) => navigation.toCalendarTask(date, id)}
                                 scrollerRef={(element) => {
                                     weekScroller = element;
+                                    requestAnimationFrame(() => scrollToCurrent(false));
                                 }}
                                 onScroll={handleWeekScroll}
                             />
@@ -216,12 +220,14 @@ function CalendarTab(): JSX.Element {
                     >
                         <MonthPager
                             months={months()}
+                            currentIndex={monthIndex()}
                             scheduledFor={scheduledFor}
                             projectedFor={projectedFor}
                             onDay={navigation.toCalendarDay}
                             scrollerRef={(element) => {
                                 monthScroller = element;
                                 enableMouseDragScroll(element);
+                                requestAnimationFrame(() => scrollToCurrent(false));
                             }}
                             onScroll={handleMonthScroll}
                         />
@@ -235,6 +241,8 @@ function CalendarTab(): JSX.Element {
                         date={date()}
                         scheduled={scheduledFor(date())}
                         projected={projectedFor(date())}
+                        loading={loadedData() == null && calendarData.loading}
+                        loadFailed={loadedData() == null && calendarData.error != null}
                         onClose={closeDay}
                         onTask={(id) => navigation.toCalendarTask(date(), id)}
                     />
@@ -337,6 +345,7 @@ interface CalendarLookupProps {
 
 interface MonthPagerProps extends CalendarLookupProps {
     months: string[];
+    currentIndex: number;
     onDay: (date: string) => void;
     scrollerRef: (element: HTMLDivElement) => void;
     onScroll: () => void;
@@ -346,58 +355,66 @@ function MonthPager(props: MonthPagerProps): JSX.Element {
     return (
         <div ref={props.scrollerRef} class="calendar-month-scroller" onScroll={props.onScroll}>
             <For each={props.months}>
-                {(month) => (
+                {(month, index) => (
                     <section class="calendar-month-page" aria-label={formatMonth(month)}>
-                        <div class="calendar-month-weekdays" aria-hidden="true">
-                            <span>W</span>
-                            <For each={WEEKDAY_LABELS}>{(weekday) => <span>{weekday}</span>}</For>
-                        </div>
-                        <div class="calendar-month-grid">
-                            <For each={getMonthGrid(month)}>
-                                {(week) => (
-                                    <>
-                                        <div class="calendar-week-number">{week.weekNumber}</div>
-                                        <For each={week.days}>
-                                            {(day) => {
-                                                const items = () => [
-                                                    ...props.scheduledFor(day.date).map((task) => ({
-                                                        id: task.id,
-                                                        summary: task.summary,
-                                                        projected: false,
-                                                    })),
-                                                    ...props.projectedFor(day.date).map((task) => ({
-                                                        id: task.id,
-                                                        summary: task.summary,
-                                                        projected: true,
-                                                    })),
-                                                ];
-                                                return (
-                                                    <button
-                                                        type="button"
-                                                        class="calendar-day-cell"
-                                                        classList={{
-                                                            'calendar-day-cell--outside': !day.inMonth,
-                                                            'calendar-day-cell--today': day.date === today(),
-                                                        }}
-                                                        onClick={() => props.onDay(day.date)}
-                                                        aria-label={`${formatFullDate(day.date)}, ${items().length} tasks`}
-                                                    >
-                                                        <span class="calendar-day-cell__number">
-                                                            {Number(day.date.slice(-2))}
-                                                        </span>
-                                                        <MonthCellItems items={items()} />
-                                                    </button>
-                                                );
-                                            }}
-                                        </For>
-                                    </>
-                                )}
-                            </For>
-                        </div>
+                        <Show when={shouldRenderCalendarPage(index(), props.currentIndex)}>
+                            <MonthPage month={month} {...props} />
+                        </Show>
                     </section>
                 )}
             </For>
         </div>
+    );
+}
+
+function MonthPage(props: MonthPagerProps & { month: string }): JSX.Element {
+    return (
+        <>
+            <div class="calendar-month-weekdays" aria-hidden="true">
+                <span>W</span>
+                <For each={WEEKDAY_LABELS}>{(weekday) => <span>{weekday}</span>}</For>
+            </div>
+            <div class="calendar-month-grid">
+                <For each={getMonthGrid(props.month)}>
+                    {(week) => (
+                        <>
+                            <div class="calendar-week-number">{week.weekNumber}</div>
+                            <For each={week.days}>
+                                {(day) => {
+                                    const items = () => [
+                                        ...props.scheduledFor(day.date).map((task) => ({
+                                            id: task.id,
+                                            summary: task.summary,
+                                            projected: false,
+                                        })),
+                                        ...props.projectedFor(day.date).map((task) => ({
+                                            id: task.id,
+                                            summary: task.summary,
+                                            projected: true,
+                                        })),
+                                    ];
+                                    return (
+                                        <button
+                                            type="button"
+                                            class="calendar-day-cell"
+                                            classList={{
+                                                'calendar-day-cell--outside': !day.inMonth,
+                                                'calendar-day-cell--today': day.date === today(),
+                                            }}
+                                            onClick={() => props.onDay(day.date)}
+                                            aria-label={`${formatFullDate(day.date)}, ${items().length} tasks`}
+                                        >
+                                            <span class="calendar-day-cell__number">{Number(day.date.slice(-2))}</span>
+                                            <MonthCellItems items={items()} />
+                                        </button>
+                                    );
+                                }}
+                            </For>
+                        </>
+                    )}
+                </For>
+            </div>
+        </>
     );
 }
 
@@ -428,6 +445,7 @@ function MonthCellItems(props: { items: MonthCellItem[] }): JSX.Element {
 
 interface WeekPagerProps extends CalendarLookupProps {
     weeks: string[];
+    currentIndex: number;
     onTask: (date: string, id: string) => void;
     scrollerRef: (element: HTMLDivElement) => void;
     onScroll: () => void;
@@ -437,35 +455,11 @@ function WeekPager(props: WeekPagerProps): JSX.Element {
     return (
         <div ref={props.scrollerRef} class="calendar-week-scroller" onScroll={props.onScroll}>
             <For each={props.weeks}>
-                {(week) => (
+                {(week, index) => (
                     <section class="calendar-week-page" aria-label={formatWeek(week)}>
-                        <For each={getWeekDates(week)}>
-                            {(date, index) => (
-                                <section
-                                    class="calendar-week-day"
-                                    classList={{ 'calendar-week-day--today': date === today() }}
-                                >
-                                    <header class="calendar-week-day__header">
-                                        <span>{WEEKDAY_LABELS[index()]}</span>
-                                        <strong>{Number(date.slice(-2))}</strong>
-                                    </header>
-                                    <div class="calendar-week-day__tasks">
-                                        <For each={props.scheduledFor(date)}>
-                                            {(task) => (
-                                                <CalendarTaskButton
-                                                    task={task}
-                                                    compact={true}
-                                                    onOpen={() => props.onTask(date, task.id)}
-                                                />
-                                            )}
-                                        </For>
-                                        <For each={props.projectedFor(date)}>
-                                            {(task) => <ProjectedTaskCard task={task} />}
-                                        </For>
-                                    </div>
-                                </section>
-                            )}
-                        </For>
+                        <Show when={shouldRenderCalendarPage(index(), props.currentIndex)}>
+                            <WeekPage week={week} {...props} />
+                        </Show>
                     </section>
                 )}
             </For>
@@ -473,10 +467,39 @@ function WeekPager(props: WeekPagerProps): JSX.Element {
     );
 }
 
+function WeekPage(props: WeekPagerProps & { week: string }): JSX.Element {
+    return (
+        <For each={getWeekDates(props.week)}>
+            {(date, index) => (
+                <section class="calendar-week-day" classList={{ 'calendar-week-day--today': date === today() }}>
+                    <header class="calendar-week-day__header">
+                        <span>{WEEKDAY_LABELS[index()]}</span>
+                        <strong>{Number(date.slice(-2))}</strong>
+                    </header>
+                    <div class="calendar-week-day__tasks">
+                        <For each={props.scheduledFor(date)}>
+                            {(task) => (
+                                <CalendarTaskButton
+                                    task={task}
+                                    compact={true}
+                                    onOpen={() => props.onTask(date, task.id)}
+                                />
+                            )}
+                        </For>
+                        <For each={props.projectedFor(date)}>{(task) => <ProjectedTaskCard task={task} />}</For>
+                    </div>
+                </section>
+            )}
+        </For>
+    );
+}
+
 interface DayDialogProps {
     date: string;
     scheduled: Task[];
     projected: ProjectedTask[];
+    loading: boolean;
+    loadFailed: boolean;
     onClose: () => void;
     onTask: (id: string) => void;
 }
@@ -491,18 +514,25 @@ function DayDialog(props: DayDialogProps): JSX.Element {
                         items={props.scheduled}
                         onReorder={reorder}
                         onOpen={props.onTask}
-                        labelsVisible={true}
                         celebrateCompletion={false}
                     />
                 </Show>
                 <Show when={props.projected.length > 0}>
                     <div class="calendar-day-dialog__projected">
                         <For each={props.projected}>
-                            {(task) => <ProjectedTaskCard task={task} labelsVisible={true} />}
+                            {(task) => <ProjectedTaskCard task={task} />}
                         </For>
                     </div>
                 </Show>
-                <Show when={props.scheduled.length + props.projected.length === 0}>
+                <Show when={props.loading}>
+                    <p class="calendar-status">Loading tasks…</p>
+                </Show>
+                <Show when={props.loadFailed}>
+                    <p class="calendar-status">Unable to load tasks.</p>
+                </Show>
+                <Show
+                    when={!props.loading && !props.loadFailed && props.scheduled.length + props.projected.length === 0}
+                >
                     <p class="calendar-status">No tasks for this day.</p>
                 </Show>
             </div>
@@ -529,15 +559,16 @@ function CalendarTaskButton(props: { task: Task; onOpen: () => void; compact?: b
     );
 }
 
-function ProjectedTaskCard(props: { task: ProjectedTask; labelsVisible?: boolean }): JSX.Element {
+function ProjectedTaskCard(props: { task: ProjectedTask }): JSX.Element {
     return (
         <div class="calendar-projected-card">
             <TaskCardView
                 summary={props.task.summary}
                 labelIds={props.task.labelIds}
                 variant="projected"
-                badge="projected"
-                labelsVisible={props.labelsVisible}
+                showCheck={true}
+                inertCheck={true}
+                generatorName={props.task.generatorName}
             />
         </div>
     );
