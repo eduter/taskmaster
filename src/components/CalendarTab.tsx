@@ -1,15 +1,5 @@
 import { useParams } from '@solidjs/router';
-import {
-    createEffect,
-    createMemo,
-    createResource,
-    createSignal,
-    For,
-    on,
-    onCleanup,
-    Show,
-    type JSX,
-} from 'solid-js';
+import { createEffect, createMemo, createResource, createSignal, For, on, onCleanup, Show, type JSX } from 'solid-js';
 import { addMonths, getMonthGrid, getWeekDates, startOfMonth, startOfWeek } from '../calendar/calendarDate.ts';
 import { loadCalendarRange } from '../calendar/calendarData.ts';
 import type { ProjectedTask } from '../calendar/project.ts';
@@ -519,9 +509,7 @@ function DayDialog(props: DayDialogProps): JSX.Element {
                 </Show>
                 <Show when={props.projected.length > 0}>
                     <div class="calendar-day-dialog__projected">
-                        <For each={props.projected}>
-                            {(task) => <ProjectedTaskCard task={task} />}
-                        </For>
+                        <For each={props.projected}>{(task) => <ProjectedTaskCard task={task} />}</For>
                     </div>
                 </Show>
                 <Show when={props.loading}>
