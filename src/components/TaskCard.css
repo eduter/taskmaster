@@ -22,7 +22,7 @@
 }
 
 .task-card--projected {
-    border-style: dashed;
+    border: 1px dashed var(--border-light);
     opacity: 0.68;
 }
 

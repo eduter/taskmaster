@@ -1,26 +1,18 @@
 import { Show } from 'solid-js';
 import { dbError, dbStatus } from '../db/dbLifecycle.ts';
-import type { Task } from '../db/types.ts';
+import { useAppNavigate } from '../routing/navigation.ts';
 import { reorder, tasks } from '../stores/taskStore.ts';
-import { TaskCard } from './TaskCard.tsx';
-import { TaskLikeSortableList } from './TaskLikeSortableList.tsx';
-import { TaskRow } from './TaskRow.tsx';
+import { TaskRows } from './TaskRows.tsx';
 import './TaskList.css';
 
 function SortableTaskList() {
+    const navigation = useAppNavigate();
+
     return (
-        <TaskLikeSortableList<Task>
+        <TaskRows
             items={tasks() ?? []}
             onReorder={reorder}
-            renderRow={(task, row) => (
-                <TaskRow
-                    task={task}
-                    deleteRevealed={row.deleteRevealed}
-                    onRevealChange={row.onRevealChange}
-                    onRowTouchStart={row.onRowTouchStart}
-                />
-            )}
-            renderOverlay={(task) => <TaskCard task={task} />}
+            onOpen={navigation.toTask}
         />
     );
 }

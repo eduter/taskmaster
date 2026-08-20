@@ -17,7 +17,7 @@ import type { ProjectedTask } from '../calendar/project.ts';
 import type { Task } from '../db/types.ts';
 import { useAppNavigate, useLabelsPanelOpen } from '../routing/navigation.ts';
 import { genVersion } from '../stores/generatorStore.ts';
-import { editTask, taskVersion, today, toggleComplete } from '../stores/taskStore.ts';
+import { editTask, reorder, taskVersion, today } from '../stores/taskStore.ts';
 import {
     calendarFilter,
     calendarView,
@@ -32,6 +32,7 @@ import { Dialog } from './Dialog.tsx';
 import { SegmentedControl, type SegmentedOption } from './SegmentedControl.tsx';
 import { TaskCardView } from './TaskCard.tsx';
 import { TaskEditorDialog } from './TaskEditorDialog.tsx';
+import { TaskRows } from './TaskRows.tsx';
 import { LabelsDialog } from './labels/LabelsDialog.tsx';
 import './CalendarTab.css';
 
@@ -407,8 +408,8 @@ interface MonthCellItem {
 }
 
 function MonthCellItems(props: { items: MonthCellItem[] }): JSX.Element {
-    const hasOverflow = () => props.items.length > 2;
-    const shown = () => (hasOverflow() ? props.items.slice(0, 1) : props.items.slice(0, 2));
+    const hasOverflow = () => props.items.length > 3;
+    const shown = () => (hasOverflow() ? props.items.slice(0, 2) : props.items.slice(0, 3));
     return (
         <span class="calendar-day-cell__items">
             <For each={shown()}>
@@ -419,7 +420,7 @@ function MonthCellItems(props: { items: MonthCellItem[] }): JSX.Element {
                 )}
             </For>
             <Show when={hasOverflow()}>
-                <span class="calendar-month-task calendar-month-task--more">+{props.items.length - 1}</span>
+                <span class="calendar-month-task calendar-month-task--more">+{props.items.length - 2}</span>
             </Show>
         </span>
     );
@@ -485,10 +486,20 @@ function DayDialog(props: DayDialogProps): JSX.Element {
         <Dialog open={true} onClose={props.onClose} title={formatFullDate(props.date)} panelClass="calendar-day-dialog">
             <AddTask date={props.date} />
             <div class="calendar-day-dialog__tasks">
-                <For each={props.scheduled}>
-                    {(task) => <CalendarTaskButton task={task} onOpen={() => props.onTask(task.id)} />}
-                </For>
-                <For each={props.projected}>{(task) => <ProjectedTaskCard task={task} />}</For>
+                <Show when={props.scheduled.length > 0}>
+                    <TaskRows
+                        items={props.scheduled}
+                        onReorder={reorder}
+                        onOpen={props.onTask}
+                        labelsVisible={true}
+                        celebrateCompletion={false}
+                    />
+                </Show>
+                <Show when={props.projected.length > 0}>
+                    <div class="calendar-day-dialog__projected">
+                        <For each={props.projected}>{(task) => <ProjectedTaskCard task={task} labelsVisible={true} />}</For>
+                    </div>
+                </Show>
                 <Show when={props.scheduled.length + props.projected.length === 0}>
                     <p class="calendar-status">No tasks for this day.</p>
                 </Show>
@@ -498,23 +509,8 @@ function DayDialog(props: DayDialogProps): JSX.Element {
 }
 
 function CalendarTaskButton(props: { task: Task; onOpen: () => void; compact?: boolean }): JSX.Element {
-    async function handleCheck(): Promise<void> {
-        await toggleComplete(props.task.id);
-    }
-
     return (
         <div class="calendar-task-button" classList={{ 'calendar-task-button--compact': props.compact }}>
-            <Show when={!props.compact}>
-                <button
-                    type="button"
-                    class="calendar-task-button__check"
-                    classList={{ 'calendar-task-button__check--done': props.task.completed }}
-                    aria-label={props.task.completed ? 'Mark incomplete' : 'Mark complete'}
-                    onClick={() => void handleCheck()}
-                >
-                    {props.task.completed ? '✓' : ''}
-                </button>
-            </Show>
             <button
                 type="button"
                 class="calendar-task-button__open"
@@ -531,7 +527,7 @@ function CalendarTaskButton(props: { task: Task; onOpen: () => void; compact?: b
     );
 }
 
-function ProjectedTaskCard(props: { task: ProjectedTask }): JSX.Element {
+function ProjectedTaskCard(props: { task: ProjectedTask; labelsVisible?: boolean }): JSX.Element {
     return (
         <div class="calendar-projected-card">
             <TaskCardView
@@ -539,6 +535,7 @@ function ProjectedTaskCard(props: { task: ProjectedTask }): JSX.Element {
                 labelIds={props.task.labelIds}
                 variant="projected"
                 badge="projected"
+                labelsVisible={props.labelsVisible}
             />
         </div>
     );

@@ -12,6 +12,8 @@ interface TaskCardProps {
     task: Task;
     /** When set, overrides completed appearance (e.g. swipe-to-check preview). */
     visualCompleted?: boolean;
+    /** When set, overrides the device task-label display preference. */
+    labelsVisible?: boolean;
     onCheckClick?: (event: MouseEvent) => void;
     checkRef?: (el: HTMLButtonElement | undefined) => void;
 }
@@ -27,13 +29,15 @@ interface TaskCardViewProps {
     checkRef?: (el: HTMLButtonElement | undefined) => void;
     variant?: 'default' | 'projected';
     badge?: string;
+    /** When set, overrides the device task-label display preference. */
+    labelsVisible?: boolean;
 }
 
 /** Shared task-like card display for persisted tasks and generator templates. */
 function TaskCardView(props: TaskCardViewProps): JSX.Element {
     const showCheck = () => props.showCheck ?? false;
     const showCompleted = createMemo(() => props.visualCompleted ?? props.completed ?? false);
-    const labelsVisible = () => showTaskLabels();
+    const labelsVisible = () => props.labelsVisible ?? showTaskLabels();
 
     const cardLabels = createMemo(() => {
         const byId = new Map((labels() ?? []).map((l) => [l.id, l]));
@@ -108,6 +112,7 @@ function TaskCard(props: TaskCardProps): JSX.Element {
             visualCompleted={props.visualCompleted}
             carried={isCarriedOver()}
             showCheck={true}
+            labelsVisible={props.labelsVisible}
             onCheckClick={props.onCheckClick}
             checkRef={props.checkRef}
         />

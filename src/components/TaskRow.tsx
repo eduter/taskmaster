@@ -1,6 +1,5 @@
 import type { JSX } from 'solid-js';
 import type { Task } from '../db/types.ts';
-import { useAppNavigate } from '../routing/navigation.ts';
 import { removeTask, tasks, toggleComplete } from '../stores/taskStore.ts';
 import { fireConfetti, shouldCelebrateLastTask, type ConfettiOrigin } from '../utils/confetti.ts';
 import { GestureRow } from './GestureRow.tsx';
@@ -12,14 +11,16 @@ interface TaskRowProps {
     onRevealChange: (taskId: string, open: boolean) => void;
     onRowTouchStart?: (taskId: string) => void;
     onDragEnd?: () => void;
+    onOpen: (taskId: string) => void;
+    labelsVisible?: boolean;
+    celebrateCompletion?: boolean;
 }
 
 function TaskRow(props: TaskRowProps): JSX.Element {
-    const { toTask } = useAppNavigate();
     let checkEl: HTMLButtonElement | undefined;
 
-    function openTaskDetail() {
-        toTask(props.task.id);
+    function openTaskDetail(): void {
+        props.onOpen(props.task.id);
     }
 
     function checkOrigin(): ConfettiOrigin | undefined {
@@ -31,7 +32,7 @@ function TaskRow(props: TaskRowProps): JSX.Element {
     }
 
     async function toggleAndMaybeCelebrate(): Promise<void> {
-        const celebrate = shouldCelebrateLastTask(tasks() ?? [], props.task.id);
+        const celebrate = (props.celebrateCompletion ?? true) && shouldCelebrateLastTask(tasks() ?? [], props.task.id);
         const origin = checkOrigin();
         const completed = await toggleComplete(props.task.id);
         if (completed && celebrate) {
@@ -39,16 +40,16 @@ function TaskRow(props: TaskRowProps): JSX.Element {
         }
     }
 
-    function completeTask() {
+    function completeTask(): void {
         void toggleAndMaybeCelebrate();
     }
 
-    function handleCheckClick(event: MouseEvent) {
+    function handleCheckClick(event: MouseEvent): void {
         event.stopPropagation();
         void toggleAndMaybeCelebrate();
     }
 
-    function deleteTask() {
+    function deleteTask(): void {
         void removeTask(props.task.id);
     }
 
@@ -70,6 +71,7 @@ function TaskRow(props: TaskRowProps): JSX.Element {
                     <TaskCard
                         task={props.task}
                         visualCompleted={state.visualCompleted}
+                        labelsVisible={props.labelsVisible}
                         onCheckClick={handleCheckClick}
                         checkRef={(el) => {
                             checkEl = el;
