@@ -22,7 +22,7 @@
 }
 
 .task-card--projected {
-    border: 1px dashed var(--border-light);
+    border: 1px dashed var(--text-secondary);
     opacity: 0.7;
 }
 
@@ -56,12 +56,13 @@
 }
 
 .task-card__check--inert {
+    border-color: var(--text-secondary);
     border-style: dashed;
     cursor: default;
 }
 
 .task-card__check--inert:hover {
-    border-color: var(--border-light);
+    border-color: var(--text-secondary);
 }
 
 .task-card__check--done {
