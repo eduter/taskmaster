@@ -497,7 +497,9 @@ function DayDialog(props: DayDialogProps): JSX.Element {
                 </Show>
                 <Show when={props.projected.length > 0}>
                     <div class="calendar-day-dialog__projected">
-                        <For each={props.projected}>{(task) => <ProjectedTaskCard task={task} labelsVisible={true} />}</For>
+                        <For each={props.projected}>
+                            {(task) => <ProjectedTaskCard task={task} labelsVisible={true} />}
+                        </For>
                     </div>
                 </Show>
                 <Show when={props.scheduled.length + props.projected.length === 0}>

@@ -8,13 +8,7 @@ import './TaskList.css';
 function SortableTaskList() {
     const navigation = useAppNavigate();
 
-    return (
-        <TaskRows
-            items={tasks() ?? []}
-            onReorder={reorder}
-            onOpen={navigation.toTask}
-        />
-    );
+    return <TaskRows items={tasks() ?? []} onReorder={reorder} onOpen={navigation.toTask} />;
 }
 
 function taskLoadError(): string | null {

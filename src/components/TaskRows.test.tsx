@@ -66,13 +66,36 @@ describe('TaskRows', () => {
         expect(container.querySelector('.task-card--labels-visible')).not.toBeNull();
         expect(screen.getByText('Work')).not.toBeNull();
 
+        const surface = container.querySelector<HTMLElement>('.task-row__surface');
+        if (!surface) {
+            throw new Error('expected a shared task row gesture surface');
+        }
+        surface.dispatchEvent(
+            new PointerEvent('pointerdown', {
+                bubbles: true,
+                pointerId: 1,
+                pointerType: 'mouse',
+                button: 0,
+                clientX: 20,
+                clientY: 20,
+            })
+        );
+        document.dispatchEvent(
+            new PointerEvent('pointerup', {
+                bubbles: true,
+                pointerId: 1,
+                pointerType: 'mouse',
+                button: 0,
+                clientX: 20,
+                clientY: 20,
+            })
+        );
+        await vi.waitFor(() => expect(onOpen).toHaveBeenCalledWith('future-task'));
+
         fireEvent.click(screen.getByRole('button', { name: 'Mark complete' }));
         await vi.waitFor(() => expect(toggleComplete).toHaveBeenCalledWith('future-task'));
 
         fireEvent.click(screen.getByRole('button', { name: 'Delete task' }));
         await vi.waitFor(() => expect(removeTask).toHaveBeenCalledWith('future-task'));
-
-        fireEvent.click(container.querySelector<HTMLElement>('.task-row__surface')!);
-        await vi.waitFor(() => expect(onOpen).toHaveBeenCalledWith('future-task'));
     });
 });
