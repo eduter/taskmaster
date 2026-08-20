@@ -17,9 +17,10 @@ render(
             <Route path="/" component={RedirectToTasks} />
             <Route path="/tasks" component={TasksSection} />
             <Route path="/tasks/:id" component={TasksSection} />
-            <Route path="/calendar" component={CalendarSection} />
-            <Route path="/calendar/:date" component={CalendarSection} />
-            <Route path="/calendar/:date/tasks/:taskId" component={CalendarSection} />
+            <Route
+                path={['/calendar', '/calendar/:date', '/calendar/:date/tasks/:taskId']}
+                component={CalendarSection}
+            />
             <Route path="/generators" component={GeneratorsSection} />
             <Route path="/generators/:id" component={GeneratorsSection} />
         </Router>
