@@ -560,7 +560,9 @@ function ProjectedTaskCard(props: { task: ProjectedTask }): JSX.Element {
                 summary={props.task.summary}
                 labelIds={props.task.labelIds}
                 variant="projected"
-                badge="projected"
+                showCheck={true}
+                inertCheck={true}
+                generatorName={props.task.generatorName}
             />
         </div>
     );
