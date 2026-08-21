@@ -293,7 +293,20 @@
 
 .calendar-projected-card {
     min-height: 44px;
-    pointer-events: none;
+}
+
+.calendar-projected-card__open {
+    width: 100%;
+    padding: 0;
+    border: 0;
+    color: inherit;
+    background: transparent;
+    text-align: left;
+}
+
+.calendar-projected-card__open:focus-visible {
+    border-radius: var(--radius-md);
+    box-shadow: 0 0 0 2px var(--accent);
 }
 
 .calendar-projected-card .task-card {

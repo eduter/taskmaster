@@ -200,6 +200,7 @@ function CalendarTab(): JSX.Element {
                                 scheduledFor={scheduledFor}
                                 projectedFor={projectedFor}
                                 onTask={(date, id) => navigation.toCalendarTask(date, id)}
+                                onGenerator={navigation.toGenerator}
                                 scrollerRef={(element) => {
                                     weekScroller = element;
                                     requestAnimationFrame(() => scrollToCurrent(false));
@@ -235,6 +236,7 @@ function CalendarTab(): JSX.Element {
                         loadFailed={loadedData() == null && calendarData.error != null}
                         onClose={closeDay}
                         onTask={(id) => navigation.toCalendarTask(date(), id)}
+                        onGenerator={navigation.toGenerator}
                     />
                 )}
             </Show>
@@ -437,6 +439,7 @@ interface WeekPagerProps extends CalendarLookupProps {
     weeks: string[];
     currentIndex: number;
     onTask: (date: string, id: string) => void;
+    onGenerator: (id: string) => void;
     scrollerRef: (element: HTMLDivElement) => void;
     onScroll: () => void;
 }
@@ -476,7 +479,11 @@ function WeekPage(props: WeekPagerProps & { week: string }): JSX.Element {
                                 />
                             )}
                         </For>
-                        <For each={props.projectedFor(date)}>{(task) => <ProjectedTaskCard task={task} />}</For>
+                        <For each={props.projectedFor(date)}>
+                            {(task) => (
+                                <ProjectedTaskCard task={task} onOpen={() => props.onGenerator(task.generatorId)} />
+                            )}
+                        </For>
                     </div>
                 </section>
             )}
@@ -492,6 +499,7 @@ interface DayDialogProps {
     loadFailed: boolean;
     onClose: () => void;
     onTask: (id: string) => void;
+    onGenerator: (id: string) => void;
 }
 
 function DayDialog(props: DayDialogProps): JSX.Element {
@@ -509,7 +517,11 @@ function DayDialog(props: DayDialogProps): JSX.Element {
                 </Show>
                 <Show when={props.projected.length > 0}>
                     <div class="calendar-day-dialog__projected">
-                        <For each={props.projected}>{(task) => <ProjectedTaskCard task={task} />}</For>
+                        <For each={props.projected}>
+                            {(task) => (
+                                <ProjectedTaskCard task={task} onOpen={() => props.onGenerator(task.generatorId)} />
+                            )}
+                        </For>
                     </div>
                 </Show>
                 <Show when={props.loading}>
@@ -547,17 +559,25 @@ function CalendarTaskButton(props: { task: Task; onOpen: () => void; compact?: b
     );
 }
 
-function ProjectedTaskCard(props: { task: ProjectedTask }): JSX.Element {
+/** Interactive projected task that opens its source generator. */
+function ProjectedTaskCard(props: { task: ProjectedTask; onOpen: () => void }): JSX.Element {
     return (
         <div class="calendar-projected-card">
-            <TaskCardView
-                summary={props.task.summary}
-                labelIds={props.task.labelIds}
-                variant="projected"
-                showCheck={true}
-                inertCheck={true}
-                generatorName={props.task.generatorName}
-            />
+            <button
+                type="button"
+                class="calendar-projected-card__open"
+                aria-label={`Edit generator ${props.task.generatorName}`}
+                onClick={props.onOpen}
+            >
+                <TaskCardView
+                    summary={props.task.summary}
+                    labelIds={props.task.labelIds}
+                    variant="projected"
+                    showCheck={true}
+                    inertCheck={true}
+                    generatorName={props.task.generatorName}
+                />
+            </button>
         </div>
     );
 }
@@ -592,4 +612,4 @@ function parseDate(date: string): Date {
     return new Date(`${date}T12:00:00`);
 }
 
-export { CalendarTab };
+export { CalendarTab, ProjectedTaskCard };
