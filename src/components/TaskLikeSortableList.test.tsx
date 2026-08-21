@@ -109,7 +109,7 @@ describe('TaskLikeSortableList drag reorder', () => {
         vi.restoreAllMocks();
     });
 
-    it('locks text selection while a touch long-press is pending', () => {
+    it('blocks native text selection while a touch long-press is pending', () => {
         vi.useFakeTimers();
         const { container } = render(() => (
             <SortableListHarness initial={[makeTask('a', 'Alpha', 0)]} onReorder={() => {}} />
@@ -130,6 +130,11 @@ describe('TaskLikeSortableList drag reorder', () => {
                 clientY: 20,
             })
         );
+
+        const pendingSelection = new Event('selectstart', { bubbles: true, cancelable: true });
+        expect(document.dispatchEvent(pendingSelection)).toBe(false);
+        expect(pendingSelection.defaultPrevented).toBe(true);
+
         vi.advanceTimersByTime(SCROLL_LOCK_DELAY_MS);
 
         expect(document.documentElement.classList.contains('task-gesture-scroll-lock')).toBe(true);
@@ -148,6 +153,10 @@ describe('TaskLikeSortableList drag reorder', () => {
         );
         expect(document.documentElement.classList.contains('task-gesture-scroll-lock')).toBe(false);
         expect(document.body.classList.contains('task-gesture-scroll-lock')).toBe(false);
+
+        const releasedSelection = new Event('selectstart', { bubbles: true, cancelable: true });
+        expect(document.dispatchEvent(releasedSelection)).toBe(true);
+        expect(releasedSelection.defaultPrevented).toBe(false);
     });
 
     it('calls onReorder when a row is dragged onto another', async () => {

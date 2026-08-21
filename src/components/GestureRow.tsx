@@ -162,6 +162,19 @@ function GestureRow(props: GestureRowProps): JSX.Element {
         activePointerId = null;
     }
 
+    function preventNativeSelection(event: Event) {
+        event.preventDefault();
+    }
+
+    function detachNativeSelectionGuard() {
+        document.removeEventListener('selectstart', preventNativeSelection, true);
+    }
+
+    function attachNativeSelectionGuard() {
+        detachNativeSelectionGuard();
+        document.addEventListener('selectstart', preventNativeSelection, true);
+    }
+
     function attachDocumentPointerListeners(pointerId: number) {
         activePointerId = pointerId;
         document.addEventListener('pointermove', onDocumentPointerMove, DOCUMENT_POINTER_OPTIONS);
@@ -218,6 +231,7 @@ function GestureRow(props: GestureRowProps): JSX.Element {
                     break;
                 case 'START_DRAG':
                     markInteractionConsumed();
+                    window.getSelection()?.removeAllRanges();
                     if (surfaceEl) {
                         touchDrag.startDrag(props.id, pointerX, pointerY, surfaceEl);
                     }
@@ -364,6 +378,7 @@ function GestureRow(props: GestureRowProps): JSX.Element {
         }
         event.preventDefault();
         event.stopPropagation();
+        detachNativeSelectionGuard();
         detachDocumentPointerListeners();
         handlePointerUp(event);
     }
@@ -374,6 +389,7 @@ function GestureRow(props: GestureRowProps): JSX.Element {
         }
         event.preventDefault();
         event.stopPropagation();
+        detachNativeSelectionGuard();
         detachDocumentPointerListeners();
         handlePointerCancel();
     }
@@ -412,6 +428,7 @@ function GestureRow(props: GestureRowProps): JSX.Element {
         clearScrollLockTimer();
 
         attachDocumentPointerListeners(event.pointerId);
+        detachNativeSelectionGuard();
 
         if (event.pointerType === 'mouse' || event.pointerType === 'touch') {
             scrollLockTimer = setTimeout(() => {
@@ -422,6 +439,7 @@ function GestureRow(props: GestureRowProps): JSX.Element {
         }
 
         if (event.pointerType === 'touch') {
+            attachNativeSelectionGuard();
             longPressTimer = setTimeout(() => {
                 startDragAt(lastClientX, lastClientY);
             }, LONG_PRESS_MS);
@@ -512,6 +530,7 @@ function GestureRow(props: GestureRowProps): JSX.Element {
         clearLongPress();
         releaseScrollLock();
         detachSurfaceTouchMoveListener();
+        detachNativeSelectionGuard();
         detachDocumentPointerListeners();
         if (touchDrag.isDragging() && isDraggingThis()) {
             touchDrag.endDragIfActive();
