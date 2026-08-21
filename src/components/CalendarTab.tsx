@@ -168,12 +168,12 @@ function CalendarTab(): JSX.Element {
                     </button>
                 </div>
                 <div class="calendar-toolbar__controls">
-                    <SegmentedControl
+                    {/*<SegmentedControl
                         label="Calendar view"
                         value={calendarView()}
                         options={VIEW_OPTIONS}
                         onChange={setCalendarView}
-                    />
+                    />*/}
                     <SegmentedControl
                         label="Task type"
                         value={calendarFilter()}
