@@ -3,6 +3,7 @@ import { render } from '@solidjs/testing-library';
 import type { JSX } from 'solid-js';
 import { afterEach, describe, expect, it, vi } from 'vitest';
 import type { Task } from '../db/types.ts';
+import { SCROLL_LOCK_DELAY_MS } from '../gestures/constants.ts';
 import { GestureRow } from './GestureRow.tsx';
 import { TaskCard } from './TaskCard.tsx';
 import { TaskLikeSortableList } from './TaskLikeSortableList.tsx';
@@ -104,7 +105,49 @@ function SortableListHarness(props: HarnessProps): JSX.Element {
 
 describe('TaskLikeSortableList drag reorder', () => {
     afterEach(() => {
+        vi.useRealTimers();
         vi.restoreAllMocks();
+    });
+
+    it('locks text selection while a touch long-press is pending', () => {
+        vi.useFakeTimers();
+        const { container } = render(() => (
+            <SortableListHarness initial={[makeTask('a', 'Alpha', 0)]} onReorder={() => {}} />
+        ));
+        const surface = container.querySelector<HTMLElement>('.task-row__surface');
+        if (!surface) {
+            throw new Error('expected a task surface to hold');
+        }
+
+        surface.dispatchEvent(
+            new PointerEvent('pointerdown', {
+                bubbles: true,
+                cancelable: true,
+                pointerId: 1,
+                pointerType: 'touch',
+                button: 0,
+                clientX: 20,
+                clientY: 20,
+            })
+        );
+        vi.advanceTimersByTime(SCROLL_LOCK_DELAY_MS);
+
+        expect(document.documentElement.classList.contains('task-gesture-scroll-lock')).toBe(true);
+        expect(document.body.classList.contains('task-gesture-scroll-lock')).toBe(true);
+
+        document.dispatchEvent(
+            new PointerEvent('pointerup', {
+                bubbles: true,
+                cancelable: true,
+                pointerId: 1,
+                pointerType: 'touch',
+                button: 0,
+                clientX: 20,
+                clientY: 20,
+            })
+        );
+        expect(document.documentElement.classList.contains('task-gesture-scroll-lock')).toBe(false);
+        expect(document.body.classList.contains('task-gesture-scroll-lock')).toBe(false);
     });
 
     it('calls onReorder when a row is dragged onto another', async () => {

@@ -413,7 +413,7 @@ function GestureRow(props: GestureRowProps): JSX.Element {
 
         attachDocumentPointerListeners(event.pointerId);
 
-        if (event.pointerType === 'mouse') {
+        if (event.pointerType === 'mouse' || event.pointerType === 'touch') {
             scrollLockTimer = setTimeout(() => {
                 if (gesture().phase === 'pending') {
                     lockGestureScroll();
