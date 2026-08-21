@@ -12,9 +12,7 @@ import {
     calendarFilter,
     calendarView,
     setCalendarFilter,
-    setCalendarView,
     type CalendarFilter,
-    type CalendarView,
 } from '../stores/viewPreferencesStore.ts';
 import { addDays } from '../utils/logicalDay.ts';
 import { AddTask } from './AddTask.tsx';
@@ -30,10 +28,6 @@ const MONTH_PAGE_COUNT = 25;
 const MONTH_MIDDLE_INDEX = 12;
 const WEEK_PAGE_COUNT = 53;
 const WEEK_MIDDLE_INDEX = 26;
-const VIEW_OPTIONS: SegmentedOption<CalendarView>[] = [
-    { value: 'month', label: 'Month' },
-    { value: 'week', label: 'Week' },
-];
 const FILTER_OPTIONS: SegmentedOption<CalendarFilter>[] = [
     { value: 'all', label: 'All' },
     { value: 'scheduled', label: 'Scheduled' },
@@ -168,12 +162,6 @@ function CalendarTab(): JSX.Element {
                     </button>
                 </div>
                 <div class="calendar-toolbar__controls">
-                    {/*<SegmentedControl
-                        label="Calendar view"
-                        value={calendarView()}
-                        options={VIEW_OPTIONS}
-                        onChange={setCalendarView}
-                    />*/}
                     <SegmentedControl
                         label="Task type"
                         value={calendarFilter()}
