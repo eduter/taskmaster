@@ -2,6 +2,7 @@ import { db } from '../db/database.ts';
 import { getActiveGenerators, updateGenerator } from '../db/generators.ts';
 import { createTask } from '../db/tasks.ts';
 import { getLogicalDay } from '../utils/logicalDay.ts';
+import { generateId } from '../utils/id.ts';
 import { getGenerationStartDate, parseGeneratorRule, toISODate } from './rruleHelpers.ts';
 
 interface GeneratorRunOutcome {
@@ -40,6 +41,11 @@ async function runGenerators(today: string = getLogicalDay()): Promise<Generator
                     summary: tmpl.summary,
                     description: tmpl.description,
                     labelIds: tmpl.labelIds,
+                    checklistItems: tmpl.checklistItems.map((item) => ({
+                        id: generateId(),
+                        summary: item.summary,
+                        completed: false,
+                    })),
                     date: dateStr,
                     generatorId: gen.id,
                 });

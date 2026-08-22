@@ -14,7 +14,7 @@ async function seedGenerator(overrides: Partial<Generator> & Pick<Generator, 'na
         id: overrides.id ?? `gen-${now}`,
         name: overrides.name,
         rrule: overrides.rrule,
-        templates: overrides.templates ?? [{ summary: 'Task A', description: '', labelIds: [] }],
+        templates: overrides.templates ?? [{ summary: 'Task A', description: '', labelIds: [], checklistItems: [] }],
         active: overrides.active ?? true,
         lastGeneratedDate: overrides.lastGeneratedDate ?? null,
         createdAt: overrides.createdAt ?? now,
@@ -39,6 +39,7 @@ async function seedTask(overrides: Partial<Task> & Pick<Task, 'summary'>): Promi
         updatedAt: overrides.updatedAt ?? now,
         generatorId: overrides.generatorId ?? null,
         parentTaskId: overrides.parentTaskId ?? null,
+        checklistItems: overrides.checklistItems ?? [],
     };
     await db.tasks.add(task);
     return task;

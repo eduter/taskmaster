@@ -29,15 +29,21 @@ const DEBUG_PATH_PREFIX = '/taskmaster/debug/sync-anomaly-';
 const DEBOUNCE_MS = 2000;
 
 interface SyncPayload {
-    version: 2;
+    version: 3;
     lastModifiedAt: number;
     labels: Label[];
     tasks: Task[];
     generators: Generator[];
 }
 
-type LegacyTask = Task & { labelIds?: string[] };
-type LegacyTaskTemplate = Generator['templates'][number] & { labelIds?: string[] };
+type LegacyTask = Omit<Task, 'checklistItems' | 'labelIds'> & {
+    checklistItems?: Task['checklistItems'];
+    labelIds?: string[];
+};
+type LegacyTaskTemplate = Omit<Generator['templates'][number], 'checklistItems' | 'labelIds'> & {
+    checklistItems?: Generator['templates'][number]['checklistItems'];
+    labelIds?: string[];
+};
 type LegacyGenerator = Omit<Generator, 'templates'> & { templates: LegacyTaskTemplate[] };
 
 interface LegacySyncPayload {
@@ -141,18 +147,20 @@ function maxRecordUpdatedAt(payload: Pick<SyncPayload, 'tasks' | 'generators'>):
 
 function normalizeSyncPayload(payload: LegacySyncPayload): SyncPayload {
     return {
-        version: 2,
+        version: 3,
         lastModifiedAt: payload.lastModifiedAt,
         labels: payload.labels ?? [],
         tasks: payload.tasks.map((task) => ({
             ...task,
             labelIds: task.labelIds ?? [],
+            checklistItems: task.checklistItems ?? [],
         })),
         generators: payload.generators.map((generator) => ({
             ...generator,
             templates: generator.templates.map((template) => ({
                 ...template,
                 labelIds: template.labelIds ?? [],
+                checklistItems: template.checklistItems ?? [],
             })),
         })),
     };
@@ -167,7 +175,7 @@ async function buildPayload(): Promise<SyncPayload> {
     ]);
     const recordMax = maxRecordUpdatedAt({ tasks, generators });
     const lastModifiedAt = Math.max(meta.lastModifiedAt, recordMax, Date.now());
-    return { version: 2, lastModifiedAt, labels, tasks, generators };
+    return { version: 3, lastModifiedAt, labels, tasks, generators };
 }
 
 async function applyPayload(payload: SyncPayload): Promise<void> {

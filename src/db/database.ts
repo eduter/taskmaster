@@ -2,8 +2,14 @@ import type { Table } from 'dexie';
 import Dexie from 'dexie';
 import type { Generator, Label, SyncMeta, Task, TaskTemplate } from './types.ts';
 
-type LegacyTask = Task & { labelIds?: string[] };
-type LegacyTaskTemplate = TaskTemplate & { labelIds?: string[] };
+type LegacyTask = Omit<Task, 'checklistItems' | 'labelIds'> & {
+    checklistItems?: Task['checklistItems'];
+    labelIds?: string[];
+};
+type LegacyTaskTemplate = Omit<TaskTemplate, 'checklistItems' | 'labelIds'> & {
+    checklistItems?: TaskTemplate['checklistItems'];
+    labelIds?: string[];
+};
 type LegacyGenerator = Generator & { templates: LegacyTaskTemplate[] };
 
 class TaskMasterDB extends Dexie {
@@ -43,6 +49,32 @@ class TaskMasterDB extends Dexie {
                         generator.templates = generator.templates.map((template) => ({
                             ...template,
                             labelIds: template.labelIds ?? [],
+                        }));
+                    });
+            });
+
+        this.version(3)
+            .stores({
+                tasks: 'id, date, generatorId, completed, sortOrder, [date+completed]',
+                generators: 'id, active',
+                labels: 'id, name',
+                syncMeta: 'key',
+            })
+            .upgrade(async (tx) => {
+                await tx
+                    .table<LegacyTask, string>('tasks')
+                    .toCollection()
+                    .modify((task) => {
+                        task.checklistItems ??= [];
+                    });
+
+                await tx
+                    .table<LegacyGenerator, string>('generators')
+                    .toCollection()
+                    .modify((generator) => {
+                        generator.templates = generator.templates.map((template) => ({
+                            ...template,
+                            checklistItems: template.checklistItems ?? [],
                         }));
                     });
             });

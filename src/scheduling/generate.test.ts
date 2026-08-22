@@ -97,6 +97,30 @@ describe('runGenerators', () => {
         expect((await db.tasks.toArray()).length).toBe(1);
     });
 
+    it('creates incomplete checklist items with fresh IDs for every task', async () => {
+        await seedGenerator({
+            id: 'daily',
+            name: 'Groceries',
+            rrule: dailyRrule('2026-05-22'),
+            templates: [
+                {
+                    summary: 'Groceries',
+                    description: '',
+                    labelIds: [],
+                    checklistItems: [{ id: 'template-milk', summary: 'Milk' }],
+                },
+            ],
+        });
+
+        await runGenerators('2026-05-23');
+        const tasks = await db.tasks.orderBy('date').toArray();
+
+        expect(tasks.map((task) => task.checklistItems[0].summary)).toEqual(['Milk', 'Milk']);
+        expect(tasks.map((task) => task.checklistItems[0].completed)).toEqual([false, false]);
+        expect(new Set(tasks.map((task) => task.checklistItems[0].id)).size).toBe(2);
+        expect(tasks.map((task) => task.checklistItems[0].id)).not.toContain('template-milk');
+    });
+
     it('skips inactive generators', async () => {
         await seedGenerator({
             id: 'inactive',
@@ -130,6 +154,7 @@ describe('runGenerators', () => {
             updatedAt: 1,
             generatorId: 'daily',
             parentTaskId: null,
+            checklistItems: [],
         });
 
         const { created } = await runGenerators('2026-05-23');

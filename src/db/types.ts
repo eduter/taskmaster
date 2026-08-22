@@ -4,6 +4,19 @@ interface Label {
     color: string;
 }
 
+/** A lightweight, ordered checklist entry embedded in a task. */
+interface ChecklistItem {
+    id: string;
+    summary: string;
+    completed: boolean;
+}
+
+/** A checklist entry copied into generated tasks as incomplete. */
+interface ChecklistItemTemplate {
+    id: string;
+    summary: string;
+}
+
 interface Task {
     id: string;
     summary: string;
@@ -17,12 +30,14 @@ interface Task {
     updatedAt: number;
     generatorId: string | null;
     parentTaskId: string | null;
+    checklistItems: ChecklistItem[];
 }
 
 interface TaskTemplate {
     summary: string;
     description: string;
     labelIds: string[];
+    checklistItems: ChecklistItemTemplate[];
 }
 
 interface Generator {
@@ -45,4 +60,4 @@ interface SyncMeta {
     localChangedAt?: number;
 }
 
-export type { Generator, Label, SyncMeta, Task, TaskTemplate };
+export type { ChecklistItem, ChecklistItemTemplate, Generator, Label, SyncMeta, Task, TaskTemplate };

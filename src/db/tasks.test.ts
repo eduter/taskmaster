@@ -1,7 +1,17 @@
 import { afterEach, beforeEach, describe, expect, it } from 'vitest';
 import { resetDb, seedTask } from '../test/helpers.ts';
 import { getLogicalDay } from '../utils/logicalDay.ts';
-import { getTasksForDateRange, getVisibleTasks, toggleTaskCompleted } from './tasks.ts';
+import {
+    addChecklistItem,
+    deleteChecklistItem,
+    getTask,
+    getTasksForDateRange,
+    getVisibleTasks,
+    reorderChecklistItems,
+    toggleChecklistItemCompleted,
+    toggleTaskCompleted,
+    updateChecklistItemSummary,
+} from './tasks.ts';
 
 describe('getVisibleTasks', () => {
     beforeEach(() => resetDb());
@@ -143,5 +153,79 @@ describe('toggleTaskCompleted ordering', () => {
         await toggleTaskCompleted('c');
 
         expect(await visibleIds()).toEqual(['a', 'c', 'b', 'd']);
+    });
+});
+
+describe('task checklist mutations', () => {
+    beforeEach(() => resetDb());
+    afterEach(() => resetDb());
+
+    it('adds, renames, reorders, and deletes checklist items', async () => {
+        const task = await seedTask({ id: 'groceries', summary: 'Groceries', updatedAt: 1 });
+
+        const milk = await addChecklistItem(task.id, 'Milk');
+        const bread = await addChecklistItem(task.id, 'Bread');
+        expect(milk).toMatchObject({ summary: 'Milk', completed: false });
+        expect(bread).toMatchObject({ summary: 'Bread', completed: false });
+
+        await updateChecklistItemSummary(task.id, milk?.id ?? '', 'Oat milk');
+        await reorderChecklistItems(task.id, [bread?.id ?? '', milk?.id ?? '']);
+        await deleteChecklistItem(task.id, bread?.id ?? '');
+
+        const stored = await getTask(task.id);
+        expect(stored?.checklistItems).toEqual([{ id: milk?.id, summary: 'Oat milk', completed: false }]);
+        expect(stored?.updatedAt).toBeGreaterThan(1);
+    });
+
+    it('completes the parent when the final unchecked item is checked', async () => {
+        const task = await seedTask({
+            id: 'groceries',
+            summary: 'Groceries',
+            checklistItems: [
+                { id: 'milk', summary: 'Milk', completed: true },
+                { id: 'bread', summary: 'Bread', completed: false },
+            ],
+        });
+
+        const completed = await toggleChecklistItemCompleted(task.id, 'bread');
+        const stored = await getTask(task.id);
+
+        expect(completed).toBe(true);
+        expect(stored).toMatchObject({ completed: true });
+        expect(stored?.completedAt).not.toBeNull();
+    });
+
+    it('does not reopen the parent when an item is unchecked', async () => {
+        const task = await seedTask({
+            id: 'groceries',
+            summary: 'Groceries',
+            completed: true,
+            completedAt: Date.now(),
+            checklistItems: [{ id: 'milk', summary: 'Milk', completed: true }],
+        });
+
+        await toggleChecklistItemCompleted(task.id, 'milk');
+        const stored = await getTask(task.id);
+
+        expect(stored).toMatchObject({
+            completed: true,
+            checklistItems: [{ id: 'milk', summary: 'Milk', completed: false }],
+        });
+    });
+
+    it('does not complete the parent when deletion leaves only completed items', async () => {
+        const task = await seedTask({
+            id: 'groceries',
+            summary: 'Groceries',
+            checklistItems: [
+                { id: 'milk', summary: 'Milk', completed: true },
+                { id: 'bread', summary: 'Bread', completed: false },
+            ],
+        });
+
+        await deleteChecklistItem(task.id, 'bread');
+        const stored = await getTask(task.id);
+
+        expect(stored).toMatchObject({ completed: false });
     });
 });

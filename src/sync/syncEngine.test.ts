@@ -40,7 +40,7 @@ const {
 
 function makePayload(overrides: Partial<SyncPayload> = {}): SyncPayload {
     return {
-        version: 2,
+        version: 3,
         lastModifiedAt: overrides.lastModifiedAt ?? 1000,
         labels: overrides.labels ?? [],
         tasks: overrides.tasks ?? [],
@@ -179,12 +179,18 @@ describe('syncEngine', () => {
 
         expect(pulled).toBe(true);
         expect((await db.tasks.get('remote'))?.labelIds).toEqual([]);
+        expect((await db.tasks.get('remote'))?.checklistItems).toEqual([]);
         expect((await db.generators.get('gen-1'))?.templates[0].labelIds).toEqual([]);
+        expect((await db.generators.get('gen-1'))?.templates[0].checklistItems).toEqual([]);
         expect(await db.labels.toArray()).toEqual([]);
     });
 
     it('push uploads local payload when remote is not newer', async () => {
-        await seedTask({ id: 'local', summary: 'Local' });
+        await seedTask({
+            id: 'local',
+            summary: 'Local',
+            checklistItems: [{ id: 'milk', summary: 'Milk', completed: false }],
+        });
         await db.syncMeta.put({ key: 'primary', lastSyncedAt: 0, lastModifiedAt: 5000 });
 
         const remote = makePayload({ lastModifiedAt: 1000, tasks: [], generators: [] });
@@ -199,8 +205,10 @@ describe('syncEngine', () => {
         expect(mockFilesUpload).toHaveBeenCalledOnce();
         const uploadArg = mockFilesUpload.mock.calls[0][0];
         const uploaded = JSON.parse(uploadArg.contents as string) as SyncPayload;
+        expect(uploaded.version).toBe(3);
         expect(uploaded.tasks).toHaveLength(1);
         expect(uploaded.tasks[0].summary).toBe('Local');
+        expect(uploaded.tasks[0].checklistItems).toEqual([{ id: 'milk', summary: 'Milk', completed: false }]);
     });
 
     it('push includes generators from local db', async () => {

@@ -1,7 +1,19 @@
 import { createResource, createSignal } from 'solid-js';
 import { dbStatus, withDbRead, withDbWrite } from '../db/dbLifecycle.ts';
-import { createTask, deleteTask, getVisibleTasks, reorderTasks, toggleTaskCompleted, updateTask } from '../db/tasks.ts';
-import type { Task } from '../db/types.ts';
+import {
+    addChecklistItem as addChecklistItemRecord,
+    createTask,
+    deleteChecklistItem as deleteChecklistItemRecord,
+    deleteTask,
+    getVisibleTasks,
+    reorderChecklistItems as reorderChecklistItemRecords,
+    reorderTasks,
+    toggleChecklistItemCompleted as toggleChecklistItemCompletedRecord,
+    toggleTaskCompleted,
+    updateChecklistItemSummary as updateChecklistItemSummaryRecord,
+    updateTask,
+} from '../db/tasks.ts';
+import type { ChecklistItem, Task } from '../db/types.ts';
 import { schedulePush } from '../sync/syncEngine.ts';
 import { getLogicalDay } from '../utils/logicalDay.ts';
 
@@ -49,6 +61,33 @@ async function removeTask(id: string): Promise<void> {
     invalidateTasks();
 }
 
+async function addChecklistItem(taskId: string, summary: string): Promise<ChecklistItem | undefined> {
+    const item = await withDbWrite(() => addChecklistItemRecord(taskId, summary));
+    invalidateTasks();
+    return item;
+}
+
+async function updateChecklistItemSummary(taskId: string, itemId: string, summary: string): Promise<void> {
+    await withDbWrite(() => updateChecklistItemSummaryRecord(taskId, itemId, summary));
+    invalidateTasks();
+}
+
+async function toggleChecklistItemCompleted(taskId: string, itemId: string): Promise<boolean | undefined> {
+    const completed = await withDbWrite(() => toggleChecklistItemCompletedRecord(taskId, itemId));
+    invalidateTasks();
+    return completed;
+}
+
+async function deleteChecklistItem(taskId: string, itemId: string): Promise<void> {
+    await withDbWrite(() => deleteChecklistItemRecord(taskId, itemId));
+    invalidateTasks();
+}
+
+async function reorderChecklistItems(taskId: string, orderedIds: string[]): Promise<void> {
+    await withDbWrite(() => reorderChecklistItemRecords(taskId, orderedIds));
+    invalidateTasks();
+}
+
 /** @returns Whether the task is completed after the toggle. */
 async function toggleComplete(id: string): Promise<boolean> {
     const completed = await withDbWrite(() => toggleTaskCompleted(id));
@@ -62,15 +101,20 @@ async function reorder(orderedIds: string[]): Promise<void> {
 }
 
 export {
+    addChecklistItem,
     addTask,
+    deleteChecklistItem,
     editTask,
     invalidateTasks,
     refetchTasks,
     refreshTodayIfNeeded,
     removeTask,
+    reorderChecklistItems,
     reorder,
     tasks,
     taskVersion,
     today,
+    toggleChecklistItemCompleted,
     toggleComplete,
+    updateChecklistItemSummary,
 };

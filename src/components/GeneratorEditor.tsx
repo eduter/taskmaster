@@ -128,7 +128,7 @@ function GeneratorEditor(props: GeneratorEditorProps) {
         if (!summary) {
             return;
         }
-        setTemplates([...templates(), templateToDraft({ summary, description: '', labelIds: [] })]);
+        setTemplates([...templates(), templateToDraft({ summary, description: '', labelIds: [], checklistItems: [] })]);
         setNewTemplateSummary('');
     }
 
@@ -150,6 +150,7 @@ function GeneratorEditor(props: GeneratorEditorProps) {
                     summary: template.summary,
                     description: template.description,
                     labelIds: template.labelIds,
+                    checklistItems: template.checklistItems,
                 };
             })
         );
@@ -358,6 +359,7 @@ function templateToDraft(template: TaskTemplate): TaskTemplateDraft {
         summary: template.summary,
         description: template.description,
         labelIds: [...template.labelIds],
+        checklistItems: template.checklistItems.map((item) => ({ ...item })),
     };
 }
 
@@ -366,6 +368,7 @@ function draftToTemplate(draft: TaskTemplateDraft): TaskTemplate {
         summary: draft.summary,
         description: draft.description,
         labelIds: draft.labelIds,
+        checklistItems: draft.checklistItems.map((item) => ({ ...item })),
     };
 }
 

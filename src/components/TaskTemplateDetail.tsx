@@ -1,5 +1,5 @@
 import { createEffect, createSignal, on, Show, type JSX } from 'solid-js';
-import type { TaskTemplate } from '../db/types.ts';
+import type { ChecklistItemTemplate, TaskTemplate } from '../db/types.ts';
 import { Dialog } from './Dialog.tsx';
 import { LabelsDialog } from './labels/LabelsDialog.tsx';
 import { TaskDetailActions } from './TaskDetailActions.tsx';
@@ -22,6 +22,7 @@ function TaskTemplateDetail(props: TaskTemplateDetailProps): JSX.Element {
     const [summary, setSummary] = createSignal('');
     const [description, setDescription] = createSignal('');
     const [labelIds, setLabelIds] = createSignal<string[]>([]);
+    const [checklistItems, setChecklistItems] = createSignal<ChecklistItemTemplate[]>([]);
     const [labelsOpen, setLabelsOpen] = createSignal(false);
 
     createEffect(
@@ -35,6 +36,7 @@ function TaskTemplateDetail(props: TaskTemplateDetailProps): JSX.Element {
                 setSummary(template.summary);
                 setDescription(template.description);
                 setLabelIds([...template.labelIds]);
+                setChecklistItems(template.checklistItems.map((item) => ({ ...item })));
                 setLabelsOpen(false);
             }
         )
@@ -59,6 +61,7 @@ function TaskTemplateDetail(props: TaskTemplateDetailProps): JSX.Element {
             summary: nextSummary,
             description: description(),
             labelIds: labelIds(),
+            checklistItems: checklistItems(),
         });
         props.onClose();
     }

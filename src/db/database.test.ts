@@ -9,7 +9,7 @@ describe('TaskMasterDB migrations', () => {
         await Dexie.delete(TEST_DB_NAME);
     });
 
-    it('adds empty labelIds to legacy tasks and generator templates', async () => {
+    it('adds empty collections to legacy tasks and generator templates', async () => {
         await Dexie.delete(TEST_DB_NAME);
 
         const legacyDb = new Dexie(TEST_DB_NAME);
@@ -51,7 +51,9 @@ describe('TaskMasterDB migrations', () => {
         ]);
 
         expect(task?.labelIds).toEqual([]);
+        expect(task?.checklistItems).toEqual([]);
         expect(generator?.templates[0].labelIds).toEqual([]);
+        expect(generator?.templates[0].checklistItems).toEqual([]);
 
         migratedDb.close();
     });
