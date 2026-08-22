@@ -1,5 +1,6 @@
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import { db } from '../db/database.ts';
+import { pruneCompletedTasks } from '../db/tasks.ts';
 import { resetDb, seedGenerator, seedTask } from '../test/helpers.ts';
 import type { SyncPayload } from './syncEngine.ts';
 
@@ -250,6 +251,29 @@ describe('syncEngine', () => {
             await setPushPending(false);
             expect(await isPushPending()).toBe(false);
             expect((await getSyncMeta()).pushPending).toBeUndefined();
+        });
+
+        it('uploads a payload without tasks removed by retention pruning', async () => {
+            await seedTask({
+                id: 'expired',
+                summary: 'Expired',
+                completed: true,
+                completedAt: new Date('2026-01-01T12:00:00').getTime(),
+            });
+            await seedTask({ id: 'kept', summary: 'Kept' });
+            await db.syncMeta.put({ key: 'primary', lastSyncedAt: 0, lastModifiedAt: 1000 });
+            const remote = makePayload({ lastModifiedAt: 1000 });
+            mockFilesDownload.mockResolvedValue({
+                result: { fileBlob: blobFromPayload(remote) },
+            });
+
+            await pruneCompletedTasks('2026-06-24');
+            await setPushPending(true);
+            const outcome = await sync();
+
+            expect(outcome.pushed).toBe(true);
+            const uploaded = JSON.parse(mockFilesUpload.mock.calls[0][0].contents as string) as SyncPayload;
+            expect(uploaded.tasks.map((task) => task.id)).toEqual(['kept']);
         });
     });
 

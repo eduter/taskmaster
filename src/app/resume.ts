@@ -1,4 +1,5 @@
 import { waitForDb } from '../db/dbLifecycle.ts';
+import { pruneCompletedTasks } from '../db/tasks.ts';
 import { commitGeneratorRuns, runGenerators } from '../scheduling/generate.ts';
 import { invalidateGenerators } from '../stores/generatorStore.ts';
 import { invalidateLabels } from '../stores/labelStore.ts';
@@ -6,8 +7,10 @@ import { recordError } from '../stores/syncStore.ts';
 import { invalidateTasks, refreshTodayIfNeeded, today } from '../stores/taskStore.ts';
 import { isAuthenticated } from '../sync/dropboxAuth.ts';
 import { isSyncRunning, onSyncIdle, setPushPending, sync } from '../sync/syncEngine.ts';
+import { addDays } from '../utils/logicalDay.ts';
 
 const RESUME_DEBOUNCE_MS = 500;
+const TASK_RETENTION_DAYS = 60;
 
 let resumeTimer: ReturnType<typeof setTimeout> | null = null;
 let resumeInFlight = false;
@@ -32,15 +35,21 @@ async function onAppResume(): Promise<void> {
             }
         } else if (!import.meta.env.DEV) {
             await sync();
+            const pruned = await pruneCompletedTasks(addDays(today(), -TASK_RETENTION_DAYS));
+            if (pruned > 0) {
+                invalidateTasks({ push: false });
+            }
             return;
         }
 
         const { created, generatorIds } = await runGenerators();
         if (created > 0) {
-            invalidateTasks({ push: false });
-
             await commitGeneratorRuns(generatorIds, today());
+        }
 
+        const pruned = await pruneCompletedTasks(addDays(today(), -TASK_RETENTION_DAYS));
+        if (created > 0 || pruned > 0) {
+            invalidateTasks({ push: false });
             if (isAuthenticated()) {
                 await setPushPending(true);
 
