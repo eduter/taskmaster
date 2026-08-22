@@ -26,6 +26,21 @@ async function createTask(
     return task;
 }
 
+/** Creates a fresh incomplete task from the reusable fields of a completed task. */
+async function copyTaskFromHistory(source: Task, date: string): Promise<Task> {
+    return createTask({
+        summary: source.summary.trim(),
+        description: source.description,
+        labelIds: [...source.labelIds],
+        checklistItems: source.checklistItems.map((item) => ({
+            id: generateId(),
+            summary: item.summary,
+            completed: false,
+        })),
+        date,
+    });
+}
+
 async function updateTask(id: string, changes: Partial<Omit<Task, 'id' | 'createdAt'>>): Promise<void> {
     await db.tasks.update(id, { ...changes, updatedAt: Date.now() });
 }
@@ -264,6 +279,7 @@ async function reorderTasks(orderedIds: string[]): Promise<void> {
 
 export {
     addChecklistItem,
+    copyTaskFromHistory,
     createTask,
     deleteChecklistItem,
     deleteTask,

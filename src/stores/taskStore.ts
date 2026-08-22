@@ -2,9 +2,11 @@ import { createResource, createSignal } from 'solid-js';
 import { dbStatus, withDbRead, withDbWrite } from '../db/dbLifecycle.ts';
 import {
     addChecklistItem as addChecklistItemRecord,
+    copyTaskFromHistory,
     createTask,
     deleteChecklistItem as deleteChecklistItemRecord,
     deleteTask,
+    getCompletedTaskCandidates,
     getVisibleTasks,
     reorderChecklistItems as reorderChecklistItemRecords,
     reorderTasks,
@@ -47,6 +49,18 @@ const [tasks, { refetch: refetchTasks }] = createResource(taskVersion, fetchTask
 
 async function addTask(summary: string, date: string = today()): Promise<Task> {
     const task = await withDbWrite(() => createTask({ summary, date }));
+    invalidateTasks();
+    return task;
+}
+
+/** Loads completed tasks that can be reused from the add-task field. */
+async function loadCompletedTaskCandidates(): Promise<Task[]> {
+    return withDbRead(getCompletedTaskCandidates);
+}
+
+/** Creates a fresh task from a completed task's reusable fields. */
+async function copyPreviousTask(source: Task, date: string = today()): Promise<Task> {
+    const task = await withDbWrite(() => copyTaskFromHistory(source, date));
     invalidateTasks();
     return task;
 }
@@ -103,9 +117,11 @@ async function reorder(orderedIds: string[]): Promise<void> {
 export {
     addChecklistItem,
     addTask,
+    copyPreviousTask,
     deleteChecklistItem,
     editTask,
     invalidateTasks,
+    loadCompletedTaskCandidates,
     refetchTasks,
     refreshTodayIfNeeded,
     removeTask,

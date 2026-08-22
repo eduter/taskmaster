@@ -4,6 +4,7 @@ import { getLogicalDay } from '../utils/logicalDay.ts';
 import { db } from './database.ts';
 import {
     addChecklistItem,
+    copyTaskFromHistory,
     deleteChecklistItem,
     filterTaskCandidates,
     getCompletedTaskCandidates,
@@ -66,6 +67,42 @@ describe('completed task candidates', () => {
         const candidate = await seedTask({ id: 'task', summary: 'Task' });
 
         expect(filterTaskCandidates([candidate], '   ')).toEqual([]);
+    });
+});
+
+describe('copyTaskFromHistory', () => {
+    beforeEach(() => resetDb());
+    afterEach(() => resetDb());
+
+    it('copies reusable fields and resets task identity and completion state', async () => {
+        const source = await seedTask({
+            id: 'source',
+            summary: 'Pick up package',
+            description: 'Bring photo ID',
+            labelIds: ['errands'],
+            date: '2026-06-01',
+            completed: true,
+            completedAt: 1000,
+            generatorId: 'generator',
+            parentTaskId: 'parent',
+            checklistItems: [{ id: 'old-item', summary: 'Take ID', completed: true }],
+        });
+
+        const copy = await copyTaskFromHistory(source, '2026-08-23');
+
+        expect(copy).toMatchObject({
+            summary: 'Pick up package',
+            description: 'Bring photo ID',
+            labelIds: ['errands'],
+            date: '2026-08-23',
+            completed: false,
+            completedAt: null,
+            generatorId: null,
+            parentTaskId: null,
+        });
+        expect(copy.id).not.toBe(source.id);
+        expect(copy.checklistItems).toEqual([{ id: expect.any(String), summary: 'Take ID', completed: false }]);
+        expect(copy.checklistItems[0].id).not.toBe('old-item');
     });
 });
 
