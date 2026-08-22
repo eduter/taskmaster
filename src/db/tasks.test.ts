@@ -5,6 +5,8 @@ import { db } from './database.ts';
 import {
     addChecklistItem,
     deleteChecklistItem,
+    filterTaskCandidates,
+    getCompletedTaskCandidates,
     getTask,
     getTasksForDateRange,
     getVisibleTasks,
@@ -14,6 +16,58 @@ import {
     toggleTaskCompleted,
     updateChecklistItemSummary,
 } from './tasks.ts';
+
+describe('completed task candidates', () => {
+    beforeEach(() => resetDb());
+    afterEach(() => resetDb());
+
+    it('deduplicates normalized summaries using the most recently completed task', async () => {
+        await seedTask({
+            id: 'older',
+            summary: 'Pick up package',
+            description: 'Old details',
+            completed: true,
+            completedAt: 1000,
+        });
+        await seedTask({
+            id: 'newer',
+            summary: '  PICK UP PACKAGE  ',
+            description: 'Current details',
+            completed: true,
+            completedAt: 3000,
+        });
+        await seedTask({
+            id: 'other',
+            summary: 'Post letter',
+            completed: true,
+            completedAt: 2000,
+        });
+        await seedTask({ id: 'active', summary: 'Active package' });
+        await seedTask({ id: 'legacy', summary: 'Legacy package', completed: true, completedAt: null });
+
+        const candidates = await getCompletedTaskCandidates();
+
+        expect(candidates.map((task) => task.id)).toEqual(['newer', 'other']);
+        expect(candidates[0].description).toBe('Current details');
+    });
+
+    it('matches case-insensitive summary substrings and limits results', async () => {
+        const candidates = [
+            await seedTask({ id: 'package', summary: 'Pick up package at the post office' }),
+            await seedTask({ id: 'letter', summary: 'Post a letter' }),
+            await seedTask({ id: 'unrelated', summary: 'Buy groceries' }),
+        ];
+
+        expect(filterTaskCandidates(candidates, 'POST', 1).map((task) => task.id)).toEqual(['package']);
+        expect(filterTaskCandidates(candidates, 'package').map((task) => task.id)).toEqual(['package']);
+    });
+
+    it('returns no matches for a blank query', async () => {
+        const candidate = await seedTask({ id: 'task', summary: 'Task' });
+
+        expect(filterTaskCandidates([candidate], '   ')).toEqual([]);
+    });
+});
 
 describe('pruneCompletedTasks', () => {
     beforeEach(() => resetDb());

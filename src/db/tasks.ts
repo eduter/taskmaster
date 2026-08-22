@@ -209,6 +209,38 @@ async function getTasksForDateRange(start: string, end: string): Promise<Task[]>
     return tasks.sort((left, right) => left.date.localeCompare(right.date) || left.sortOrder - right.sortOrder);
 }
 
+/** Returns one recent completed task for each normalized summary. */
+async function getCompletedTaskCandidates(): Promise<Task[]> {
+    const tasks = await db.tasks.toArray();
+    const completed = tasks
+        .filter((task) => task.completed && task.completedAt !== null && task.summary.trim())
+        .sort((left, right) => (right.completedAt ?? 0) - (left.completedAt ?? 0));
+    const summaries = new Set<string>();
+
+    return completed.filter((task) => {
+        const key = normalizeTaskSummary(task.summary);
+        if (summaries.has(key)) {
+            return false;
+        }
+        summaries.add(key);
+        return true;
+    });
+}
+
+/** Filters reusable task candidates by a case-insensitive summary substring. */
+function filterTaskCandidates(candidates: Task[], query: string, limit = 5): Task[] {
+    const normalizedQuery = normalizeTaskSummary(query);
+    if (!normalizedQuery) {
+        return [];
+    }
+
+    return candidates.filter((task) => normalizeTaskSummary(task.summary).includes(normalizedQuery)).slice(0, limit);
+}
+
+function normalizeTaskSummary(summary: string): string {
+    return summary.trim().toLocaleLowerCase();
+}
+
 function wasCompletedOn(task: Task, day: string): boolean {
     return task.completedAt != null && getLogicalDay(new Date(task.completedAt)) === day;
 }
@@ -235,6 +267,8 @@ export {
     createTask,
     deleteChecklistItem,
     deleteTask,
+    filterTaskCandidates,
+    getCompletedTaskCandidates,
     getTask,
     getTasksForDay,
     getTasksForDateRange,
