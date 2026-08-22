@@ -34,6 +34,24 @@ async function deleteTask(id: string): Promise<void> {
     await db.tasks.delete(id);
 }
 
+/** Deletes completed tasks from logical days before the retention cutoff. */
+async function pruneCompletedTasks(cutoffDay: string): Promise<number> {
+    const expiredIds = await db.tasks
+        .filter(
+            (task) =>
+                task.completed &&
+                task.completedAt !== null &&
+                getLogicalDay(new Date(task.completedAt)) < cutoffDay
+        )
+        .primaryKeys();
+    if (expiredIds.length === 0) {
+        return 0;
+    }
+
+    await db.tasks.bulkDelete(expiredIds);
+    return expiredIds.length;
+}
+
 async function getTask(id: string): Promise<Task | undefined> {
     return db.tasks.get(id);
 }
@@ -221,6 +239,7 @@ export {
     getTasksForDay,
     getTasksForDateRange,
     getVisibleTasks,
+    pruneCompletedTasks,
     reorderChecklistItems,
     reorderTasks,
     toggleChecklistItemCompleted,

@@ -1,17 +1,78 @@
 import { afterEach, beforeEach, describe, expect, it } from 'vitest';
 import { resetDb, seedTask } from '../test/helpers.ts';
 import { getLogicalDay } from '../utils/logicalDay.ts';
+import { db } from './database.ts';
 import {
     addChecklistItem,
     deleteChecklistItem,
     getTask,
     getTasksForDateRange,
     getVisibleTasks,
+    pruneCompletedTasks,
     reorderChecklistItems,
     toggleChecklistItemCompleted,
     toggleTaskCompleted,
     updateChecklistItemSummary,
 } from './tasks.ts';
+
+describe('pruneCompletedTasks', () => {
+    beforeEach(() => resetDb());
+    afterEach(() => resetDb());
+
+    it('deletes completed tasks before the cutoff logical day', async () => {
+        await seedTask({
+            id: 'expired',
+            summary: 'Expired',
+            completed: true,
+            completedAt: new Date('2026-06-23T12:00:00').getTime(),
+        });
+        await seedTask({
+            id: 'boundary',
+            summary: 'Boundary',
+            completed: true,
+            completedAt: new Date('2026-06-24T12:00:00').getTime(),
+        });
+        await seedTask({
+            id: 'recent',
+            summary: 'Recent',
+            completed: true,
+            completedAt: new Date('2026-08-01T12:00:00').getTime(),
+        });
+        await seedTask({
+            id: 'incomplete',
+            summary: 'Incomplete',
+            completedAt: new Date('2026-05-01T12:00:00').getTime(),
+        });
+        await seedTask({
+            id: 'legacy',
+            summary: 'Legacy',
+            completed: true,
+            completedAt: null,
+        });
+
+        const deleted = await pruneCompletedTasks('2026-06-24');
+
+        expect(deleted).toBe(1);
+        expect((await db.tasks.toArray()).map((task) => task.id).sort()).toEqual([
+            'boundary',
+            'incomplete',
+            'legacy',
+            'recent',
+        ]);
+    });
+
+    it('is idempotent', async () => {
+        await seedTask({
+            id: 'expired',
+            summary: 'Expired',
+            completed: true,
+            completedAt: new Date('2026-01-01T12:00:00').getTime(),
+        });
+
+        expect(await pruneCompletedTasks('2026-06-24')).toBe(1);
+        expect(await pruneCompletedTasks('2026-06-24')).toBe(0);
+    });
+});
 
 describe('getVisibleTasks', () => {
     beforeEach(() => resetDb());
