@@ -1,0 +1,95 @@
+.checklist-editor {
+    display: flex;
+    flex-direction: column;
+    gap: var(--space-sm);
+    min-width: 0;
+}
+
+.checklist-editor__header {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+}
+
+.checklist-editor__add {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    width: 32px;
+    height: 32px;
+    padding: 0;
+    border: 1px solid var(--border-light);
+    border-radius: var(--radius-sm);
+    background: var(--bg-surface);
+    color: var(--text-primary);
+    font-size: 1.4rem;
+    line-height: 1;
+    cursor: pointer;
+}
+
+.checklist-editor__add:hover {
+    background: var(--bg-surface-hover);
+}
+
+.checklist-editor__item {
+    display: flex;
+    align-items: center;
+    gap: var(--space-sm);
+    min-height: 44px;
+    padding: var(--space-xs) var(--space-sm);
+    border: 1px solid var(--border-light);
+    border-radius: var(--radius-md);
+    background: var(--bg-surface);
+    color: var(--text-primary);
+}
+
+.checklist-editor__item--completed {
+    color: var(--text-muted);
+}
+
+.checklist-editor__check {
+    display: inline-flex;
+    flex: 0 0 auto;
+    align-items: center;
+    justify-content: center;
+    width: 22px;
+    height: 22px;
+    padding: 0;
+    border: 2px solid var(--text-muted);
+    border-radius: 50%;
+    background: transparent;
+    color: var(--bg-primary);
+    cursor: pointer;
+}
+
+.checklist-editor__check--done {
+    border-color: var(--success);
+    background: var(--success);
+}
+
+.checklist-editor__summary {
+    min-width: 0;
+    overflow-wrap: anywhere;
+}
+
+.checklist-editor__input {
+    width: 100%;
+    min-width: 0;
+    padding: var(--space-xs) var(--space-sm);
+    border: 1px solid var(--accent);
+    border-radius: var(--radius-sm);
+    outline: none;
+    background: var(--bg-input);
+    color: var(--text-primary);
+    font: inherit;
+    user-select: text;
+    -webkit-user-select: text;
+}
+
+.checklist-editor__new-input {
+    min-height: 40px;
+}
+
+.checklist-editor__strike {
+    left: calc(var(--space-sm) + 22px + var(--space-sm));
+}

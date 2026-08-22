@@ -1,5 +1,7 @@
 import { createEffect, createSignal, on, Show, type JSX } from 'solid-js';
 import type { ChecklistItemTemplate, TaskTemplate } from '../db/types.ts';
+import { generateId } from '../utils/id.ts';
+import { ChecklistEditor } from './ChecklistEditor.tsx';
 import { Dialog } from './Dialog.tsx';
 import { LabelsDialog } from './labels/LabelsDialog.tsx';
 import { TaskDetailActions } from './TaskDetailActions.tsx';
@@ -50,6 +52,25 @@ function TaskTemplateDetail(props: TaskTemplateDetailProps): JSX.Element {
         setLabelIds((ids) => ids.filter((id) => id !== labelId));
     }
 
+    function addChecklistItem(summary: string): void {
+        setChecklistItems((items) => [...items, { id: generateId(), summary }]);
+    }
+
+    function renameChecklistItem(id: string, summary: string): void {
+        setChecklistItems((items) => items.map((item) => (item.id === id ? { ...item, summary } : item)));
+    }
+
+    function deleteChecklistItem(id: string): void {
+        setChecklistItems((items) => items.filter((item) => item.id !== id));
+    }
+
+    function reorderChecklistItems(orderedIds: string[]): void {
+        const byId = new Map(checklistItems().map((item) => [item.id, item]));
+        setChecklistItems(
+            orderedIds.map((id) => byId.get(id)).filter((item): item is ChecklistItemTemplate => item !== undefined)
+        );
+    }
+
     function save() {
         const template = props.template;
         const nextSummary = summary().trim();
@@ -94,6 +115,14 @@ function TaskTemplateDetail(props: TaskTemplateDetailProps): JSX.Element {
                     onSummaryChange={setSummary}
                     onDescriptionChange={setDescription}
                     onOpenLabelsPicker={() => setLabelsOpen(true)}
+                />
+
+                <ChecklistEditor
+                    items={checklistItems()}
+                    onAdd={addChecklistItem}
+                    onRename={renameChecklistItem}
+                    onDelete={deleteChecklistItem}
+                    onReorder={reorderChecklistItems}
                 />
 
                 <TaskDetailActions onSave={save} onDelete={deleteTemplate} />

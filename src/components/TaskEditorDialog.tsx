@@ -1,6 +1,15 @@
 import { createEffect, createSignal, on, type JSX } from 'solid-js';
 import type { Task } from '../db/types.ts';
-import { editTask, removeTask } from '../stores/taskStore.ts';
+import {
+    addChecklistItem,
+    deleteChecklistItem,
+    editTask,
+    removeTask,
+    reorderChecklistItems,
+    toggleChecklistItemCompleted,
+    updateChecklistItemSummary,
+} from '../stores/taskStore.ts';
+import { ChecklistEditor } from './ChecklistEditor.tsx';
 import { Dialog } from './Dialog.tsx';
 import { PostponeMenu } from './PostponeMenu.tsx';
 import { TaskDetailActions } from './TaskDetailActions.tsx';
@@ -53,6 +62,26 @@ function TaskEditorDialog(props: TaskEditorDialogProps): JSX.Element {
         props.onClose();
     }
 
+    async function addItem(itemSummary: string): Promise<void> {
+        await addChecklistItem(props.task.id, itemSummary);
+    }
+
+    function renameItem(itemId: string, itemSummary: string): Promise<void> {
+        return updateChecklistItemSummary(props.task.id, itemId, itemSummary);
+    }
+
+    async function toggleItem(itemId: string): Promise<void> {
+        await toggleChecklistItemCompleted(props.task.id, itemId);
+    }
+
+    function deleteItem(itemId: string): Promise<void> {
+        return deleteChecklistItem(props.task.id, itemId);
+    }
+
+    function reorderItems(orderedIds: string[]): Promise<void> {
+        return reorderChecklistItems(props.task.id, orderedIds);
+    }
+
     return (
         <Dialog open={true} onClose={tryDismiss} canClose={canClose} title="Edit Task" stackLevel={props.stackLevel}>
             <TaskFields
@@ -64,6 +93,15 @@ function TaskEditorDialog(props: TaskEditorDialogProps): JSX.Element {
                 onSummaryChange={setSummary}
                 onDescriptionChange={setDescription}
                 onOpenLabelsPicker={props.onOpenLabelsPicker}
+            />
+
+            <ChecklistEditor
+                items={props.task.checklistItems}
+                onAdd={addItem}
+                onRename={renameItem}
+                onToggle={toggleItem}
+                onDelete={deleteItem}
+                onReorder={reorderItems}
             />
 
             <PostponeMenu taskId={props.task.id} onDone={props.onClose} />
