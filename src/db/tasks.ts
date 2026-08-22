@@ -54,9 +54,7 @@ async function pruneCompletedTasks(cutoffDay: string): Promise<number> {
     const expiredIds = await db.tasks
         .filter(
             (task) =>
-                task.completed &&
-                task.completedAt !== null &&
-                getLogicalDay(new Date(task.completedAt)) < cutoffDay
+                task.completed && task.completedAt !== null && getLogicalDay(new Date(task.completedAt)) < cutoffDay
         )
         .primaryKeys();
     if (expiredIds.length === 0) {

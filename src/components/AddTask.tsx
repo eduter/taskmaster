@@ -1,11 +1,6 @@
 import { createMemo, createSignal, createUniqueId, For, onCleanup, onMount, Show } from 'solid-js';
 import type { Task } from '../db/types.ts';
-import {
-    addTask,
-    copyPreviousTask,
-    filterTaskCandidates,
-    loadCompletedTaskCandidates,
-} from '../stores/taskStore.ts';
+import { addTask, copyPreviousTask, filterTaskCandidates, loadCompletedTaskCandidates } from '../stores/taskStore.ts';
 import './AddTask.css';
 
 const MIN_SUGGESTION_QUERY_LENGTH = 2;
@@ -152,9 +147,7 @@ function AddTask(props: AddTaskProps) {
                     aria-autocomplete="list"
                     aria-expanded={suggestionsVisible()}
                     aria-controls={listboxId}
-                    aria-activedescendant={
-                        activeIndex() >= 0 ? `${listboxId}-option-${activeIndex()}` : undefined
-                    }
+                    aria-activedescendant={activeIndex() >= 0 ? `${listboxId}-option-${activeIndex()}` : undefined}
                     placeholder="Add a task…"
                     value={value()}
                     onInput={(event) => handleInput(event.currentTarget.value)}
