@@ -45,4 +45,46 @@ describe('TaskTemplateDetail', () => {
             })
         );
     });
+
+    it('does not retarget a touch checklist deletion to the template delete action', () => {
+        const onDelete = vi.fn();
+        const template: TaskTemplateDraft = {
+            id: 'template',
+            summary: 'Groceries',
+            description: '',
+            labelIds: [],
+            checklistItems: [{ id: 'milk', summary: 'Milk' }],
+        };
+        render(() => (
+            <TaskTemplateDetail
+                open={true}
+                template={template}
+                onClose={() => {}}
+                onSave={() => {}}
+                onDelete={onDelete}
+            />
+        ));
+
+        const checklistDelete = screen.getByRole('button', { name: 'Delete Milk from checklist' });
+        const templateDelete = screen.getByRole('button', { name: 'Delete' });
+        document.elementFromPoint = () => templateDelete;
+        fireEvent.pointerDown(checklistDelete, {
+            pointerId: 1,
+            pointerType: 'touch',
+            button: 0,
+            clientX: 0,
+            clientY: 0,
+        });
+        fireEvent.pointerUp(checklistDelete, {
+            pointerId: 1,
+            pointerType: 'touch',
+            button: 0,
+            clientX: 0,
+            clientY: 0,
+        });
+        fireEvent.click(templateDelete);
+
+        expect(screen.queryByRole('button', { name: 'Delete Milk from checklist' })).toBeNull();
+        expect(onDelete).not.toHaveBeenCalled();
+    });
 });

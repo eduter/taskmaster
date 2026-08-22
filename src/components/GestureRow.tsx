@@ -60,8 +60,36 @@ const TAP_SUPPRESS_AFTER_DRAG_MS = 350;
 const DOCUMENT_POINTER_OPTIONS: AddEventListenerOptions = { passive: false, capture: true };
 const SURFACE_TOUCH_MOVE_OPTIONS: AddEventListenerOptions = { passive: false };
 
+let touchDeleteClickGuard: ((event: MouseEvent) => void) | undefined;
+let touchDeleteClickGuardTimer: number | undefined;
+
 function nowMs(): number {
     return Date.now();
+}
+
+function disarmTouchDeleteClickGuard(): void {
+    if (touchDeleteClickGuard) {
+        document.removeEventListener('click', touchDeleteClickGuard, true);
+        touchDeleteClickGuard = undefined;
+    }
+    if (touchDeleteClickGuardTimer !== undefined) {
+        window.clearTimeout(touchDeleteClickGuardTimer);
+        touchDeleteClickGuardTimer = undefined;
+    }
+}
+
+/**
+ * Blocks the compatibility click from a touch pointerup before synchronous deletion can retarget it.
+ */
+function armTouchDeleteClickGuard(): void {
+    disarmTouchDeleteClickGuard();
+    touchDeleteClickGuard = (event) => {
+        event.preventDefault();
+        event.stopImmediatePropagation();
+        disarmTouchDeleteClickGuard();
+    };
+    document.addEventListener('click', touchDeleteClickGuard, { capture: true });
+    touchDeleteClickGuardTimer = window.setTimeout(disarmTouchDeleteClickGuard, 0);
 }
 
 function isPointerReleaseOverTarget(event: PointerEvent): boolean {
@@ -494,6 +522,7 @@ function GestureRow(props: GestureRowProps): JSX.Element {
         event.preventDefault();
         event.stopPropagation();
         deleteCommittedOnPointerUp = true;
+        armTouchDeleteClickGuard();
         commitDelete();
     }
 
