@@ -141,6 +141,15 @@ Required on:
 Inline comments inside a function body are the section headers
 described under "Function body shape" — not JSDoc.
 
+### Persistence
+
+Existing, atomic, reversible edits persist immediately. No primary
+button. A primary button is only for creating a new composite thing,
+or committing a batch that can hurt.
+
+Copy: **Add** = append an item; **Create** = first persist of a
+composite; **Save** = commit a draft or batch. Do not use **Update**.
+
 
 ## Docs
 
