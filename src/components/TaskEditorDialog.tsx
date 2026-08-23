@@ -1,10 +1,9 @@
-import { createEffect, createSignal, on, type JSX } from 'solid-js';
+import { createEffect, createSignal, on, onCleanup, type JSX } from 'solid-js';
 import type { Task } from '../db/types.ts';
 import {
     addChecklistItem,
     deleteChecklistItem,
     editTask,
-    removeTask,
     reorderChecklistItems,
     toggleChecklistItemCompleted,
     updateChecklistItemSummary,
@@ -12,8 +11,9 @@ import {
 import { ChecklistEditor } from './ChecklistEditor.tsx';
 import { Dialog } from './Dialog.tsx';
 import { PostponeMenu } from './PostponeMenu.tsx';
-import { TaskDetailActions } from './TaskDetailActions.tsx';
 import { TaskFields } from './TaskFields.tsx';
+
+const FIELD_AUTOSAVE_MS = 300;
 
 interface TaskEditorDialogProps {
     task: Task;
@@ -27,6 +27,7 @@ function TaskEditorDialog(props: TaskEditorDialogProps): JSX.Element {
     const [summary, setSummary] = createSignal('');
     const [description, setDescription] = createSignal('');
     let dismissGuardUntil = Date.now() + 500;
+    let autosaveTimer: ReturnType<typeof setTimeout> | undefined;
 
     createEffect(
         on(
@@ -35,31 +36,74 @@ function TaskEditorDialog(props: TaskEditorDialogProps): JSX.Element {
                 setSummary(props.task.summary);
                 setDescription(props.task.description);
                 dismissGuardUntil = Date.now() + 500;
+                clearAutosaveTimer();
             }
         )
     );
+
+    onCleanup(() => {
+        const hadPending = autosaveTimer !== undefined;
+        clearAutosaveTimer();
+        if (hadPending) {
+            void persistFields();
+        }
+    });
 
     function canClose(): boolean {
         return Date.now() >= dismissGuardUntil;
     }
 
+    function clearAutosaveTimer(): void {
+        if (autosaveTimer === undefined) {
+            return;
+        }
+        clearTimeout(autosaveTimer);
+        autosaveTimer = undefined;
+    }
+
+    function persistFields(): Promise<void> {
+        const nextSummary = summary().trim();
+        const nextDescription = description();
+        if (!nextSummary) {
+            return Promise.resolve();
+        }
+        if (nextSummary === props.task.summary && nextDescription === props.task.description) {
+            return Promise.resolve();
+        }
+        return editTask(props.task.id, {
+            summary: nextSummary,
+            description: nextDescription,
+        });
+    }
+
+    function schedulePersist(): void {
+        clearAutosaveTimer();
+        autosaveTimer = setTimeout(() => {
+            autosaveTimer = undefined;
+            void persistFields();
+        }, FIELD_AUTOSAVE_MS);
+    }
+
+    function handleSummaryChange(value: string): void {
+        setSummary(value);
+        schedulePersist();
+    }
+
+    function handleDescriptionChange(value: string): void {
+        setDescription(value);
+        schedulePersist();
+    }
+
+    async function persistThenClose(): Promise<void> {
+        clearAutosaveTimer();
+        await persistFields();
+        props.onClose();
+    }
+
     function tryDismiss(): void {
         if (canClose()) {
-            props.onClose();
+            void persistThenClose();
         }
-    }
-
-    async function save(): Promise<void> {
-        await editTask(props.task.id, {
-            summary: summary(),
-            description: description(),
-        });
-        props.onClose();
-    }
-
-    async function handleDelete(): Promise<void> {
-        await removeTask(props.task.id);
-        props.onClose();
     }
 
     async function addItem(itemSummary: string): Promise<void> {
@@ -90,8 +134,8 @@ function TaskEditorDialog(props: TaskEditorDialogProps): JSX.Element {
                 labelIds={props.task.labelIds}
                 summaryInputId={`task-detail-summary-${props.task.id}`}
                 descriptionInputId={`task-detail-description-${props.task.id}`}
-                onSummaryChange={setSummary}
-                onDescriptionChange={setDescription}
+                onSummaryChange={handleSummaryChange}
+                onDescriptionChange={handleDescriptionChange}
                 onOpenLabelsPicker={props.onOpenLabelsPicker}
             />
 
@@ -104,9 +148,7 @@ function TaskEditorDialog(props: TaskEditorDialogProps): JSX.Element {
                 onReorder={reorderItems}
             />
 
-            <PostponeMenu taskId={props.task.id} onDone={props.onClose} />
-
-            <TaskDetailActions onSave={save} onDelete={handleDelete} />
+            <PostponeMenu taskId={props.task.id} onDone={() => void persistThenClose()} />
         </Dialog>
     );
 }
