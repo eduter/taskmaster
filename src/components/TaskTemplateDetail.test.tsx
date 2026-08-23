@@ -36,7 +36,6 @@ describe('TaskTemplateDetail', () => {
         const input = screen.getByRole('textbox', { name: 'New checklist item' });
         fireEvent.input(input, { target: { value: 'Bread' } });
         fireEvent.keyDown(input, { key: 'Enter' });
-        fireEvent.click(screen.getByRole('button', { name: 'Save' }));
 
         expect(onSave).toHaveBeenCalledWith(
             'template',
@@ -86,5 +85,66 @@ describe('TaskTemplateDetail', () => {
 
         expect(screen.queryByRole('button', { name: 'Delete Milk from checklist' })).toBeNull();
         expect(onDelete).not.toHaveBeenCalled();
+    });
+
+    it('has no Save button', () => {
+        render(() => (
+            <TaskTemplateDetail
+                open={true}
+                template={{
+                    id: 'template',
+                    summary: 'Groceries',
+                    description: '',
+                    labelIds: [],
+                    checklistItems: [],
+                }}
+                onClose={() => {}}
+                onSave={() => {}}
+                onDelete={() => {}}
+            />
+        ));
+
+        expect(screen.queryByRole('button', { name: 'Save' })).toBeNull();
+        expect(screen.getByRole('button', { name: 'Delete' })).toBeTruthy();
+    });
+
+    it('writes field edits through to the parent draft and keeps them on close', () => {
+        const onSave = vi.fn();
+        const onClose = vi.fn();
+        render(() => (
+            <TaskTemplateDetail
+                open={true}
+                template={{
+                    id: 'template',
+                    summary: 'Groceries',
+                    description: '',
+                    labelIds: [],
+                    checklistItems: [],
+                }}
+                onClose={onClose}
+                onSave={onSave}
+                onDelete={() => {}}
+            />
+        ));
+
+        fireEvent.input(screen.getByLabelText('Summary'), { target: { value: 'Weekly groceries' } });
+        fireEvent.input(screen.getByLabelText('Description'), { target: { value: 'Include bread' } });
+        expect(onSave).toHaveBeenCalledWith(
+            'template',
+            expect.objectContaining({
+                summary: 'Weekly groceries',
+                description: 'Include bread',
+            })
+        );
+
+        fireEvent.click(screen.getAllByRole('button', { name: 'Close' })[1]);
+        expect(onClose).toHaveBeenCalled();
+        expect(onSave).toHaveBeenLastCalledWith(
+            'template',
+            expect.objectContaining({
+                summary: 'Weekly groceries',
+                description: 'Include bread',
+            })
+        );
     });
 });

@@ -4,8 +4,8 @@ import { generateId } from '../utils/id.ts';
 import { ChecklistEditor } from './ChecklistEditor.tsx';
 import { Dialog } from './Dialog.tsx';
 import { LabelsDialog } from './labels/LabelsDialog.tsx';
-import { TaskDetailActions } from './TaskDetailActions.tsx';
 import { TaskFields } from './TaskFields.tsx';
+import './TaskTemplateDetail.css';
 
 interface TaskTemplateDraft extends TaskTemplate {
     id: string;
@@ -44,24 +44,54 @@ function TaskTemplateDetail(props: TaskTemplateDetailProps): JSX.Element {
         )
     );
 
+    function persistToParent(): void {
+        const template = props.template;
+        if (!template) {
+            return;
+        }
+
+        const nextSummary = summary().trim();
+        props.onSave(template.id, {
+            summary: nextSummary || template.summary,
+            description: description(),
+            labelIds: labelIds(),
+            checklistItems: checklistItems(),
+        });
+    }
+
+    function handleSummaryChange(value: string): void {
+        setSummary(value);
+        persistToParent();
+    }
+
+    function handleDescriptionChange(value: string): void {
+        setDescription(value);
+        persistToParent();
+    }
+
     function toggleLabel(labelId: string) {
         setLabelIds((ids) => (ids.includes(labelId) ? ids.filter((id) => id !== labelId) : [...ids, labelId]));
+        persistToParent();
     }
 
     function pruneDeletedLabel(labelId: string) {
         setLabelIds((ids) => ids.filter((id) => id !== labelId));
+        persistToParent();
     }
 
-    function addChecklistItem(summary: string): void {
-        setChecklistItems((items) => [...items, { id: generateId(), summary }]);
+    function addChecklistItem(itemSummary: string): void {
+        setChecklistItems((items) => [...items, { id: generateId(), summary: itemSummary }]);
+        persistToParent();
     }
 
-    function renameChecklistItem(id: string, summary: string): void {
-        setChecklistItems((items) => items.map((item) => (item.id === id ? { ...item, summary } : item)));
+    function renameChecklistItem(id: string, itemSummary: string): void {
+        setChecklistItems((items) => items.map((item) => (item.id === id ? { ...item, summary: itemSummary } : item)));
+        persistToParent();
     }
 
     function deleteChecklistItem(id: string): void {
         setChecklistItems((items) => items.filter((item) => item.id !== id));
+        persistToParent();
     }
 
     function reorderChecklistItems(orderedIds: string[]): void {
@@ -69,22 +99,7 @@ function TaskTemplateDetail(props: TaskTemplateDetailProps): JSX.Element {
         setChecklistItems(
             orderedIds.map((id) => byId.get(id)).filter((item): item is ChecklistItemTemplate => item !== undefined)
         );
-    }
-
-    function save() {
-        const template = props.template;
-        const nextSummary = summary().trim();
-        if (!template || !nextSummary) {
-            return;
-        }
-
-        props.onSave(template.id, {
-            summary: nextSummary,
-            description: description(),
-            labelIds: labelIds(),
-            checklistItems: checklistItems(),
-        });
-        props.onClose();
+        persistToParent();
     }
 
     function deleteTemplate() {
@@ -98,6 +113,7 @@ function TaskTemplateDetail(props: TaskTemplateDetailProps): JSX.Element {
     }
 
     function close() {
+        persistToParent();
         setLabelsOpen(false);
         props.onClose();
     }
@@ -112,8 +128,8 @@ function TaskTemplateDetail(props: TaskTemplateDetailProps): JSX.Element {
                     summaryInputId="task-template-detail-summary"
                     descriptionInputId="task-template-detail-description"
                     labelsButtonLabel="Edit template labels"
-                    onSummaryChange={setSummary}
-                    onDescriptionChange={setDescription}
+                    onSummaryChange={handleSummaryChange}
+                    onDescriptionChange={handleDescriptionChange}
                     onOpenLabelsPicker={() => setLabelsOpen(true)}
                 />
 
@@ -125,7 +141,11 @@ function TaskTemplateDetail(props: TaskTemplateDetailProps): JSX.Element {
                     onReorder={reorderChecklistItems}
                 />
 
-                <TaskDetailActions onSave={save} onDelete={deleteTemplate} />
+                <div class="task-template-detail__actions">
+                    <button type="button" class="btn btn--danger" onClick={deleteTemplate}>
+                        Delete
+                    </button>
+                </div>
 
                 <LabelsDialog
                     open={labelsOpen()}
