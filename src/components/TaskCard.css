@@ -17,10 +17,6 @@
     background: var(--bg-surface-completed);
 }
 
-.task-card--carried {
-    border-left: 3px solid var(--warning);
-}
-
 .task-card--projected {
     border: 1px dashed var(--text-secondary);
     opacity: 0.7;
@@ -149,16 +145,6 @@
     .task-card__label-item {
         transition: none;
     }
-}
-
-.task-card__carried-badge {
-    font-size: 11px;
-    padding: 1px 6px;
-    border-radius: var(--radius-sm);
-    background: var(--warning-subtle);
-    color: var(--warning);
-    flex-shrink: 0;
-    margin-top: 2px;
 }
 
 .task-card__generator-indicator {
