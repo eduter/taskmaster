@@ -5,6 +5,7 @@ import { resetDb, seedGenerator } from '../test/helpers.ts';
 const sync = vi.fn();
 const runGenerators = vi.fn();
 const commitGeneratorRuns = vi.fn();
+const pruneCompletedTasks = vi.fn();
 const setPushPending = vi.fn();
 const isSyncRunning = vi.fn(() => false);
 const isAuthenticated = vi.fn(() => true);
@@ -42,6 +43,10 @@ vi.mock('../scheduling/generate.ts', () => ({
     commitGeneratorRuns,
 }));
 
+vi.mock('../db/tasks.ts', () => ({
+    pruneCompletedTasks,
+}));
+
 vi.mock('../stores/taskStore.ts', () => ({
     invalidateTasks: vi.fn(),
     refreshTodayIfNeeded: vi.fn(),
@@ -67,6 +72,7 @@ describe('onAppResume', () => {
         sync.mockReset();
         runGenerators.mockReset();
         commitGeneratorRuns.mockReset();
+        pruneCompletedTasks.mockReset();
         setPushPending.mockReset();
         invalidateLabels.mockReset();
         waitForDb.mockReset();
@@ -78,6 +84,7 @@ describe('onAppResume', () => {
         isAuthenticated.mockReturnValue(true);
         syncIdleCallback = null;
         runGenerators.mockResolvedValue({ created: 0, generatorIds: [] });
+        pruneCompletedTasks.mockResolvedValue(0);
         waitForDb.mockResolvedValue(undefined);
     });
 
@@ -111,6 +118,7 @@ describe('onAppResume', () => {
         await onAppResume();
 
         expect(sync).toHaveBeenCalledOnce();
+        expect(pruneCompletedTasks).toHaveBeenCalledWith('2026-03-24');
         expect(runGenerators).not.toHaveBeenCalled();
     });
 
@@ -232,5 +240,33 @@ describe('onAppResume', () => {
         const commitOrder = commitGeneratorRuns.mock.invocationCallOrder[0];
         const secondSyncOrder = sync.mock.invocationCallOrder[1];
         expect(commitOrder).toBeLessThan(secondSyncOrder);
+    });
+
+    it('prunes after generator state is committed and shares its push', async () => {
+        sync.mockResolvedValue({ ok: true, pulled: false, pushed: true, dataChanged: false });
+        runGenerators.mockResolvedValue({ created: 1, generatorIds: ['daily'] });
+        pruneCompletedTasks.mockResolvedValue(2);
+
+        const { onAppResume } = await importResume();
+        await onAppResume();
+
+        expect(pruneCompletedTasks).toHaveBeenCalledWith('2026-03-24');
+        expect(commitGeneratorRuns.mock.invocationCallOrder[0]).toBeLessThan(
+            pruneCompletedTasks.mock.invocationCallOrder[0]
+        );
+        expect(setPushPending).toHaveBeenCalledOnce();
+        expect(sync).toHaveBeenCalledTimes(2);
+    });
+
+    it('pushes when pruning is the only local maintenance change', async () => {
+        sync.mockResolvedValue({ ok: true, pulled: false, pushed: true, dataChanged: false });
+        pruneCompletedTasks.mockResolvedValue(2);
+
+        const { onAppResume } = await importResume();
+        await onAppResume();
+
+        expect(commitGeneratorRuns).not.toHaveBeenCalled();
+        expect(setPushPending).toHaveBeenCalledWith(true);
+        expect(sync).toHaveBeenCalledTimes(2);
     });
 });

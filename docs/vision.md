@@ -73,7 +73,7 @@ Things deliberately left unresolved; the data model should stay flexible.
 
 ### History
 
-- **Task history** with **limited retention** — completed tasks kept for N days, then pruned (exact N TBD)
+- **Task history** with **60-day retention** — older completed tasks are pruned on app startup or resume
 
 ### Notifications and triggers
 

@@ -1,17 +1,169 @@
 import { afterEach, beforeEach, describe, expect, it } from 'vitest';
 import { resetDb, seedTask } from '../test/helpers.ts';
 import { getLogicalDay } from '../utils/logicalDay.ts';
+import { db } from './database.ts';
 import {
     addChecklistItem,
+    copyTaskFromHistory,
     deleteChecklistItem,
+    filterTaskCandidates,
+    getCompletedTaskCandidates,
     getTask,
     getTasksForDateRange,
     getVisibleTasks,
+    pruneCompletedTasks,
     reorderChecklistItems,
     toggleChecklistItemCompleted,
     toggleTaskCompleted,
     updateChecklistItemSummary,
 } from './tasks.ts';
+
+describe('completed task candidates', () => {
+    beforeEach(() => resetDb());
+    afterEach(() => resetDb());
+
+    it('deduplicates normalized summaries using the most recently completed task', async () => {
+        await seedTask({
+            id: 'older',
+            summary: 'Pick up package',
+            description: 'Old details',
+            completed: true,
+            completedAt: 1000,
+        });
+        await seedTask({
+            id: 'newer',
+            summary: '  PICK UP PACKAGE  ',
+            description: 'Current details',
+            completed: true,
+            completedAt: 3000,
+        });
+        await seedTask({
+            id: 'other',
+            summary: 'Post letter',
+            completed: true,
+            completedAt: 2000,
+        });
+        await seedTask({ id: 'active', summary: 'Active package' });
+        await seedTask({ id: 'legacy', summary: 'Legacy package', completed: true, completedAt: null });
+
+        const candidates = await getCompletedTaskCandidates();
+
+        expect(candidates.map((task) => task.id)).toEqual(['newer', 'other']);
+        expect(candidates[0].description).toBe('Current details');
+    });
+
+    it('matches case-insensitive summary substrings and limits results', async () => {
+        const candidates = [
+            await seedTask({ id: 'package', summary: 'Pick up package at the post office' }),
+            await seedTask({ id: 'letter', summary: 'Post a letter' }),
+            await seedTask({ id: 'unrelated', summary: 'Buy groceries' }),
+        ];
+
+        expect(filterTaskCandidates(candidates, 'POST', 1).map((task) => task.id)).toEqual(['package']);
+        expect(filterTaskCandidates(candidates, 'package').map((task) => task.id)).toEqual(['package']);
+    });
+
+    it('returns no matches for a blank query', async () => {
+        const candidate = await seedTask({ id: 'task', summary: 'Task' });
+
+        expect(filterTaskCandidates([candidate], '   ')).toEqual([]);
+    });
+});
+
+describe('copyTaskFromHistory', () => {
+    beforeEach(() => resetDb());
+    afterEach(() => resetDb());
+
+    it('copies reusable fields and resets task identity and completion state', async () => {
+        const source = await seedTask({
+            id: 'source',
+            summary: 'Pick up package',
+            description: 'Bring photo ID',
+            labelIds: ['errands'],
+            date: '2026-06-01',
+            completed: true,
+            completedAt: 1000,
+            generatorId: 'generator',
+            parentTaskId: 'parent',
+            checklistItems: [{ id: 'old-item', summary: 'Take ID', completed: true }],
+        });
+
+        const copy = await copyTaskFromHistory(source, '2026-08-23');
+
+        expect(copy).toMatchObject({
+            summary: 'Pick up package',
+            description: 'Bring photo ID',
+            labelIds: ['errands'],
+            date: '2026-08-23',
+            completed: false,
+            completedAt: null,
+            generatorId: null,
+            parentTaskId: null,
+        });
+        expect(copy.id).not.toBe(source.id);
+        expect(copy.checklistItems).toEqual([{ id: expect.any(String), summary: 'Take ID', completed: false }]);
+        expect(copy.checklistItems[0].id).not.toBe('old-item');
+    });
+});
+
+describe('pruneCompletedTasks', () => {
+    beforeEach(() => resetDb());
+    afterEach(() => resetDb());
+
+    it('deletes completed tasks before the cutoff logical day', async () => {
+        await seedTask({
+            id: 'expired',
+            summary: 'Expired',
+            completed: true,
+            completedAt: new Date('2026-06-23T12:00:00').getTime(),
+        });
+        await seedTask({
+            id: 'boundary',
+            summary: 'Boundary',
+            completed: true,
+            completedAt: new Date('2026-06-24T12:00:00').getTime(),
+        });
+        await seedTask({
+            id: 'recent',
+            summary: 'Recent',
+            completed: true,
+            completedAt: new Date('2026-08-01T12:00:00').getTime(),
+        });
+        await seedTask({
+            id: 'incomplete',
+            summary: 'Incomplete',
+            completedAt: new Date('2026-05-01T12:00:00').getTime(),
+        });
+        await seedTask({
+            id: 'legacy',
+            summary: 'Legacy',
+            completed: true,
+            completedAt: null,
+        });
+
+        const deleted = await pruneCompletedTasks('2026-06-24');
+
+        expect(deleted).toBe(1);
+        expect((await db.tasks.toArray()).map((task) => task.id).sort()).toEqual([
+            'boundary',
+            'incomplete',
+            'legacy',
+            'recent',
+        ]);
+    });
+
+    it('is idempotent', async () => {
+        await seedTask({
+            id: 'expired',
+            summary: 'Expired',
+            completed: true,
+            completedAt: new Date('2026-01-01T12:00:00').getTime(),
+        });
+
+        expect(await pruneCompletedTasks('2026-06-24')).toBe(1);
+        expect(await pruneCompletedTasks('2026-06-24')).toBe(0);
+    });
+});
 
 describe('getVisibleTasks', () => {
     beforeEach(() => resetDb());

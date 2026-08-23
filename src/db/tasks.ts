@@ -26,12 +26,43 @@ async function createTask(
     return task;
 }
 
+/** Creates a fresh incomplete task from the reusable fields of a completed task. */
+async function copyTaskFromHistory(source: Task, date: string): Promise<Task> {
+    return createTask({
+        summary: source.summary.trim(),
+        description: source.description,
+        labelIds: [...source.labelIds],
+        checklistItems: source.checklistItems.map((item) => ({
+            id: generateId(),
+            summary: item.summary,
+            completed: false,
+        })),
+        date,
+    });
+}
+
 async function updateTask(id: string, changes: Partial<Omit<Task, 'id' | 'createdAt'>>): Promise<void> {
     await db.tasks.update(id, { ...changes, updatedAt: Date.now() });
 }
 
 async function deleteTask(id: string): Promise<void> {
     await db.tasks.delete(id);
+}
+
+/** Deletes completed tasks from logical days before the retention cutoff. */
+async function pruneCompletedTasks(cutoffDay: string): Promise<number> {
+    const expiredIds = await db.tasks
+        .filter(
+            (task) =>
+                task.completed && task.completedAt !== null && getLogicalDay(new Date(task.completedAt)) < cutoffDay
+        )
+        .primaryKeys();
+    if (expiredIds.length === 0) {
+        return 0;
+    }
+
+    await db.tasks.bulkDelete(expiredIds);
+    return expiredIds.length;
 }
 
 async function getTask(id: string): Promise<Task | undefined> {
@@ -191,6 +222,38 @@ async function getTasksForDateRange(start: string, end: string): Promise<Task[]>
     return tasks.sort((left, right) => left.date.localeCompare(right.date) || left.sortOrder - right.sortOrder);
 }
 
+/** Returns one recent completed task for each normalized summary. */
+async function getCompletedTaskCandidates(): Promise<Task[]> {
+    const tasks = await db.tasks.toArray();
+    const completed = tasks
+        .filter((task) => task.completed && task.completedAt !== null && task.summary.trim())
+        .sort((left, right) => (right.completedAt ?? 0) - (left.completedAt ?? 0));
+    const summaries = new Set<string>();
+
+    return completed.filter((task) => {
+        const key = normalizeTaskSummary(task.summary);
+        if (summaries.has(key)) {
+            return false;
+        }
+        summaries.add(key);
+        return true;
+    });
+}
+
+/** Filters reusable task candidates by a case-insensitive summary substring. */
+function filterTaskCandidates(candidates: Task[], query: string, limit = 5): Task[] {
+    const normalizedQuery = normalizeTaskSummary(query);
+    if (!normalizedQuery) {
+        return [];
+    }
+
+    return candidates.filter((task) => normalizeTaskSummary(task.summary).includes(normalizedQuery)).slice(0, limit);
+}
+
+function normalizeTaskSummary(summary: string): string {
+    return summary.trim().toLocaleLowerCase();
+}
+
 function wasCompletedOn(task: Task, day: string): boolean {
     return task.completedAt != null && getLogicalDay(new Date(task.completedAt)) === day;
 }
@@ -214,13 +277,17 @@ async function reorderTasks(orderedIds: string[]): Promise<void> {
 
 export {
     addChecklistItem,
+    copyTaskFromHistory,
     createTask,
     deleteChecklistItem,
     deleteTask,
+    filterTaskCandidates,
+    getCompletedTaskCandidates,
     getTask,
     getTasksForDay,
     getTasksForDateRange,
     getVisibleTasks,
+    pruneCompletedTasks,
     reorderChecklistItems,
     reorderTasks,
     toggleChecklistItemCompleted,
