@@ -5,6 +5,7 @@ import { resetDb, seedGenerator } from '../test/helpers.ts';
 const sync = vi.fn();
 const runGenerators = vi.fn();
 const commitGeneratorRuns = vi.fn();
+const advanceIncompleteTasks = vi.fn();
 const pruneCompletedTasks = vi.fn();
 const setPushPending = vi.fn();
 const isSyncRunning = vi.fn(() => false);
@@ -44,6 +45,7 @@ vi.mock('../scheduling/generate.ts', () => ({
 }));
 
 vi.mock('../db/tasks.ts', () => ({
+    advanceIncompleteTasks,
     pruneCompletedTasks,
 }));
 
@@ -72,6 +74,7 @@ describe('onAppResume', () => {
         sync.mockReset();
         runGenerators.mockReset();
         commitGeneratorRuns.mockReset();
+        advanceIncompleteTasks.mockReset();
         pruneCompletedTasks.mockReset();
         setPushPending.mockReset();
         invalidateLabels.mockReset();
@@ -84,6 +87,7 @@ describe('onAppResume', () => {
         isAuthenticated.mockReturnValue(true);
         syncIdleCallback = null;
         runGenerators.mockResolvedValue({ created: 0, generatorIds: [] });
+        advanceIncompleteTasks.mockResolvedValue(0);
         pruneCompletedTasks.mockResolvedValue(0);
         waitForDb.mockResolvedValue(undefined);
     });
@@ -266,6 +270,22 @@ describe('onAppResume', () => {
         await onAppResume();
 
         expect(commitGeneratorRuns).not.toHaveBeenCalled();
+        expect(setPushPending).toHaveBeenCalledWith(true);
+        expect(sync).toHaveBeenCalledTimes(2);
+    });
+
+    it('advances incomplete leftovers after generators and pushes the change', async () => {
+        sync.mockResolvedValue({ ok: true, pulled: false, pushed: true, dataChanged: false });
+        advanceIncompleteTasks.mockResolvedValue(3);
+
+        const { onAppResume } = await importResume();
+        await onAppResume();
+
+        expect(runGenerators).toHaveBeenCalled();
+        expect(advanceIncompleteTasks).toHaveBeenCalledWith('2026-05-23');
+        expect(runGenerators.mock.invocationCallOrder[0]).toBeLessThan(
+            advanceIncompleteTasks.mock.invocationCallOrder[0]
+        );
         expect(setPushPending).toHaveBeenCalledWith(true);
         expect(sync).toHaveBeenCalledTimes(2);
     });

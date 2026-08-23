@@ -36,7 +36,6 @@ describe('TaskCardView projected tasks', () => {
         expect(result.container.querySelector('.task-card__generator-indicator')?.getAttribute('aria-label')).toBe(
             'Projected by Weekly chores'
         );
-        expect(result.container.querySelector('.task-card__carried-badge')).toBeNull();
     });
 
     it('uses the global show-labels preference', () => {

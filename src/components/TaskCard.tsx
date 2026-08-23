@@ -3,7 +3,6 @@ import type { Task } from '../db/types.ts';
 import checkIcon from '../icons/check.svg?raw';
 import generatorIcon from '../icons/tab-generators.svg?raw';
 import { labels } from '../stores/labelStore.ts';
-import { today } from '../stores/taskStore.ts';
 import { showTaskLabels } from '../stores/viewPreferencesStore.ts';
 import { Icon } from './Icon.tsx';
 import { LabelChip, LabelRing } from './labels';
@@ -24,7 +23,6 @@ interface TaskCardViewProps {
     labelIds: string[];
     completed?: boolean;
     visualCompleted?: boolean;
-    carried?: boolean;
     showCheck?: boolean;
     onCheckClick?: (event: MouseEvent) => void;
     checkRef?: (el: HTMLButtonElement | undefined) => void;
@@ -53,7 +51,6 @@ function TaskCardView(props: TaskCardViewProps): JSX.Element {
             class="task-card"
             classList={{
                 'task-card--completed': showCompleted(),
-                'task-card--carried': props.carried,
                 'task-card--labels-visible': labelsVisible(),
                 'task-card--projected': props.variant === 'projected',
             }}
@@ -115,23 +112,17 @@ function TaskCardView(props: TaskCardViewProps): JSX.Element {
                     </span>
                 )}
             </Show>
-            <Show when={props.carried}>
-                <span class="task-card__carried-badge">carried</span>
-            </Show>
         </div>
     );
 }
 
 function TaskCard(props: TaskCardProps): JSX.Element {
-    const isCarriedOver = createMemo(() => props.task.date < today());
-
     return (
         <TaskCardView
             summary={props.task.summary}
             labelIds={props.task.labelIds}
             completed={props.task.completed}
             visualCompleted={props.visualCompleted}
-            carried={isCarriedOver()}
             showCheck={true}
             labelsVisible={props.labelsVisible}
             onCheckClick={props.onCheckClick}

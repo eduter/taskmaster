@@ -4,6 +4,7 @@ import { getLogicalDay } from '../utils/logicalDay.ts';
 import { db } from './database.ts';
 import {
     addChecklistItem,
+    advanceIncompleteTasks,
     copyTaskFromHistory,
     deleteChecklistItem,
     filterTaskCandidates,
@@ -165,22 +166,59 @@ describe('pruneCompletedTasks', () => {
     });
 });
 
+describe('advanceIncompleteTasks', () => {
+    beforeEach(() => resetDb());
+    afterEach(() => resetDb());
+
+    it('moves incomplete past tasks onto today', async () => {
+        await seedTask({ id: 'stale', summary: 'Leftover', date: '2026-05-20' });
+        await seedTask({ id: 'today', summary: 'Today', date: '2026-05-23' });
+        await seedTask({ id: 'future', summary: 'Later', date: '2026-05-24' });
+
+        expect(await advanceIncompleteTasks('2026-05-23')).toBe(1);
+
+        expect((await getTask('stale'))?.date).toBe('2026-05-23');
+        expect((await getTask('today'))?.date).toBe('2026-05-23');
+        expect((await getTask('future'))?.date).toBe('2026-05-24');
+    });
+
+    it('leaves completed past tasks on their original day', async () => {
+        await seedTask({
+            id: 'done',
+            summary: 'Done',
+            date: '2026-05-20',
+            completed: true,
+            completedAt: new Date('2026-05-20T12:00:00').getTime(),
+        });
+
+        expect(await advanceIncompleteTasks('2026-05-23')).toBe(0);
+        expect((await getTask('done'))?.date).toBe('2026-05-20');
+    });
+
+    it('is idempotent', async () => {
+        await seedTask({ id: 'stale', summary: 'Leftover', date: '2026-05-20' });
+
+        expect(await advanceIncompleteTasks('2026-05-23')).toBe(1);
+        expect(await advanceIncompleteTasks('2026-05-23')).toBe(0);
+    });
+});
+
 describe('getVisibleTasks', () => {
     beforeEach(() => resetDb());
     afterEach(() => resetDb());
 
-    it('shows a carried task completed today', async () => {
+    it('shows a past-dated task completed today', async () => {
         const completedAt = new Date('2026-05-23T14:00:00').getTime();
         await seedTask({
-            id: 'carried',
-            summary: 'Carried',
+            id: 'late-done',
+            summary: 'Finished late',
             date: '2026-05-20',
             completed: true,
             completedAt,
         });
 
         const visible = await getVisibleTasks('2026-05-23');
-        expect(visible.map((t) => t.id)).toContain('carried');
+        expect(visible.map((t) => t.id)).toContain('late-done');
     });
 
     it('hides a task completed on a prior day', async () => {
@@ -211,10 +249,10 @@ describe('getVisibleTasks', () => {
         expect(visible.map((t) => t.id)).toContain('today-done');
     });
 
-    it('orders by sortOrder across dates so carried tasks can sit below today', async () => {
+    it('orders by sortOrder across dates so leftover tasks can sit below today', async () => {
         await seedTask({
-            id: 'carried',
-            summary: 'Carried',
+            id: 'leftover',
+            summary: 'Leftover',
             date: '2026-05-20',
             sortOrder: 1,
         });
@@ -226,7 +264,7 @@ describe('getVisibleTasks', () => {
         });
 
         const visible = await getVisibleTasks('2026-05-23');
-        expect(visible.map((t) => t.id)).toEqual(['today', 'carried']);
+        expect(visible.map((t) => t.id)).toEqual(['today', 'leftover']);
     });
 });
 
