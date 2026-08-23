@@ -330,7 +330,7 @@ function GeneratorEditor(props: GeneratorEditorProps) {
 
             <div class="gen-editor__actions">
                 <button type="button" class="btn btn--primary btn--grow" onClick={handleSave}>
-                    {isEditing() ? 'Update' : 'Create'}
+                    {isEditing() ? 'Save' : 'Create'}
                 </button>
                 <Show when={isEditing()}>
                     <button type="button" class="btn btn--danger" onClick={handleDelete}>
