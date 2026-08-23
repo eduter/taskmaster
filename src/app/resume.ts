@@ -1,5 +1,5 @@
 import { waitForDb } from '../db/dbLifecycle.ts';
-import { pruneCompletedTasks } from '../db/tasks.ts';
+import { advanceIncompleteTasks, pruneCompletedTasks } from '../db/tasks.ts';
 import { commitGeneratorRuns, runGenerators } from '../scheduling/generate.ts';
 import { invalidateGenerators } from '../stores/generatorStore.ts';
 import { invalidateLabels } from '../stores/labelStore.ts';
@@ -35,8 +35,9 @@ async function onAppResume(): Promise<void> {
             }
         } else if (!import.meta.env.DEV) {
             await sync();
+            const advanced = await advanceIncompleteTasks(today());
             const pruned = await pruneCompletedTasks(addDays(today(), -TASK_RETENTION_DAYS));
-            if (pruned > 0) {
+            if (advanced > 0 || pruned > 0) {
                 invalidateTasks({ push: false });
             }
             return;
@@ -47,8 +48,10 @@ async function onAppResume(): Promise<void> {
             await commitGeneratorRuns(generatorIds, today());
         }
 
+        // Catch-up generator rows land on past dates; roll them onto today with leftovers
+        const advanced = await advanceIncompleteTasks(today());
         const pruned = await pruneCompletedTasks(addDays(today(), -TASK_RETENTION_DAYS));
-        if (created > 0 || pruned > 0) {
+        if (created > 0 || advanced > 0 || pruned > 0) {
             invalidateTasks({ push: false });
             if (isAuthenticated()) {
                 await setPushPending(true);

@@ -49,6 +49,25 @@ async function deleteTask(id: string): Promise<void> {
     await db.tasks.delete(id);
 }
 
+/**
+ * Moves incomplete tasks from earlier days onto today.
+ * Same end state as postponing them to today before the day rolled over.
+ */
+async function advanceIncompleteTasks(today: string): Promise<number> {
+    const stale = await db.tasks.where('date').below(today).filter((task) => !task.completed).toArray();
+    if (stale.length === 0) {
+        return 0;
+    }
+
+    const now = Date.now();
+    await db.transaction('rw', db.tasks, async () => {
+        for (const task of stale) {
+            await db.tasks.update(task.id, { date: today, updatedAt: now });
+        }
+    });
+    return stale.length;
+}
+
 /** Deletes completed tasks from logical days before the retention cutoff. */
 async function pruneCompletedTasks(cutoffDay: string): Promise<number> {
     const expiredIds = await db.tasks
@@ -277,6 +296,7 @@ async function reorderTasks(orderedIds: string[]): Promise<void> {
 
 export {
     addChecklistItem,
+    advanceIncompleteTasks,
     copyTaskFromHistory,
     createTask,
     deleteChecklistItem,
