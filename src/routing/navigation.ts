@@ -1,4 +1,4 @@
-import { createEffect, createMemo } from 'solid-js';
+import { createEffect, createMemo, onCleanup } from 'solid-js';
 import { useLocation, useNavigate, useResolvedPath, useSearchParams } from '@solidjs/router';
 import {
     hasLabelsModal,
@@ -80,9 +80,6 @@ function useAppNavigate() {
         closeCalendarDetail() {
             navigate(-1);
         },
-        toCalendar() {
-            navigate(pathKeepingOverlays(TAB_ROUTES.calendar), { replace: true });
-        },
         toGenerator(id: string | 'new') {
             navigate(generatorDetailPath(id));
         },
@@ -143,6 +140,10 @@ function useLabelsPanelOpen() {
         }
     });
 
+    onCleanup(() => {
+        labelsModalPushed = false;
+    });
+
     return open;
 }
 
@@ -171,6 +172,10 @@ function useSyncPanelOpen() {
         if (!open()) {
             syncModalPushed = false;
         }
+    });
+
+    onCleanup(() => {
+        syncModalPushed = false;
     });
 
     return open;
