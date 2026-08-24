@@ -1,5 +1,6 @@
 /** @vitest-environment jsdom */
 import { cleanup, fireEvent, render, screen } from '@solidjs/testing-library';
+import { createSignal } from 'solid-js';
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import type { Task } from '../db/types.ts';
 import { TaskEditorDialog } from './TaskEditorDialog.tsx';
@@ -242,6 +243,30 @@ describe('TaskEditorDialog field autosave', () => {
             summary: 'Milk run',
             description: 'Dont forget eggs',
         });
+    });
+
+    it('keeps the summary input focused when persistence refreshes the same task', async () => {
+        const [task, setTask] = createSignal(makeTask());
+        store.editTask.mockImplementation(async (_id: string, fields: Partial<Task>) => {
+            setTask((current) => ({ ...current, ...fields, updatedAt: current.updatedAt + 1 }));
+        });
+        render(() => (
+            <TaskEditorDialog
+                task={task()}
+                onClose={() => {}}
+                onOpenLabelsPicker={() => {}}
+                onOpenPostponePicker={() => {}}
+            />
+        ));
+
+        const input = beginSummaryEdit();
+        input.focus();
+        fireEvent.input(input, { target: { value: 'M' } });
+        await vi.advanceTimersByTimeAsync(400);
+
+        expect(screen.getByLabelText('Summary')).toBe(input);
+        expect(input.isConnected).toBe(true);
+        expect(document.activeElement).toBe(input);
     });
 
     it('flushes pending field edits when the dialog closes', async () => {

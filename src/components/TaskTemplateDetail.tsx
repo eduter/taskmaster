@@ -1,16 +1,20 @@
-import { createEffect, createSignal, on, Show, type JSX } from 'solid-js';
+import { createEffect, createMemo, createSignal, on, Show, type JSX } from 'solid-js';
 import type { ChecklistItemTemplate, TaskTemplate } from '../db/types.ts';
 import { generateId } from '../utils/id.ts';
 import { ChecklistEditor } from './ChecklistEditor.tsx';
 import { Dialog } from './Dialog.tsx';
+import { EditableSummaryHeading } from './EditableSummaryHeading.tsx';
 import { LabelsDialog } from './labels/LabelsDialog.tsx';
 import { TaskFields } from './TaskFields.tsx';
+import './TaskDetailEditor.css';
 import './TaskTemplateDetail.css';
 
+/** Task-template form data with its editor-only identity. */
 interface TaskTemplateDraft extends TaskTemplate {
     id: string;
 }
 
+/** Props for editing one task template inside a generator draft. */
 interface TaskTemplateDetailProps {
     open: boolean;
     template: TaskTemplateDraft | undefined;
@@ -26,31 +30,33 @@ function TaskTemplateDetail(props: TaskTemplateDetailProps): JSX.Element {
     const [labelIds, setLabelIds] = createSignal<string[]>([]);
     const [checklistItems, setChecklistItems] = createSignal<ChecklistItemTemplate[]>([]);
     const [labelsOpen, setLabelsOpen] = createSignal(false);
+    const [showDescription, setShowDescription] = createSignal(false);
+    const [showChecklist, setShowChecklist] = createSignal(false);
+    const templateId = createMemo(() => props.template?.id ?? '');
 
     createEffect(
-        on(
-            () => props.template?.id,
-            () => {
-                const template = props.template;
-                if (!template) {
-                    return;
-                }
-                setSummary(template.summary);
-                setDescription(template.description);
-                setLabelIds([...template.labelIds]);
-                setChecklistItems(template.checklistItems.map((item) => ({ ...item })));
-                setLabelsOpen(false);
+        on(templateId, () => {
+            const template = props.template;
+            if (!template) {
+                return;
             }
-        )
+            setSummary(template.summary);
+            setDescription(template.description);
+            setLabelIds([...template.labelIds]);
+            setChecklistItems(template.checklistItems.map((item) => ({ ...item })));
+            setLabelsOpen(false);
+            setShowDescription(template.description.trim().length > 0);
+            setShowChecklist(template.checklistItems.length > 0);
+        })
     );
 
-    function persistToParent(): void {
+    function persistToParent(summaryOverride = summary()): void {
         const template = props.template;
         if (!template) {
             return;
         }
 
-        const nextSummary = summary().trim();
+        const nextSummary = summaryOverride;
         props.onSave(template.id, {
             summary: nextSummary || template.summary,
             description: description(),
@@ -62,6 +68,29 @@ function TaskTemplateDetail(props: TaskTemplateDetailProps): JSX.Element {
     function handleSummaryChange(value: string): void {
         setSummary(value);
         persistToParent();
+    }
+
+    function commitSummaryEdit(): void {
+        const template = props.template;
+        if (!template) {
+            return;
+        }
+
+        const nextSummary = summary().trim();
+        if (!nextSummary) {
+            setSummary(template.summary);
+            return;
+        }
+
+        setSummary(nextSummary);
+        persistToParent(nextSummary);
+    }
+
+    function cancelSummaryEdit(): void {
+        const template = props.template;
+        if (template) {
+            setSummary(template.summary);
+        }
     }
 
     function handleDescriptionChange(value: string): void {
@@ -113,14 +142,34 @@ function TaskTemplateDetail(props: TaskTemplateDetailProps): JSX.Element {
     }
 
     function close() {
-        persistToParent();
+        commitSummaryEdit();
         setLabelsOpen(false);
         props.onClose();
     }
 
+    const hasLabels = () => labelIds().length > 0;
+    const descriptionVisible = () => showDescription() || description().trim().length > 0;
+    const checklistVisible = () => showChecklist() || checklistItems().length > 0;
+    const summaryHeading = (
+        <EditableSummaryHeading
+            summary={summary()}
+            inputId="task-template-detail-summary"
+            resetKey={templateId()}
+            onInput={handleSummaryChange}
+            onCommit={commitSummaryEdit}
+            onCancel={cancelSummaryEdit}
+        />
+    );
+
     return (
         <Show when={props.open && props.template}>
-            <Dialog open={true} onClose={close} title="Edit Task Template" stackLevel={1}>
+            <Dialog
+                open={true}
+                onClose={close}
+                title={summary() || 'Task Template'}
+                titleSlot={summaryHeading}
+                stackLevel={1}
+            >
                 <TaskFields
                     summary={summary()}
                     description={description()}
@@ -128,18 +177,52 @@ function TaskTemplateDetail(props: TaskTemplateDetailProps): JSX.Element {
                     summaryInputId="task-template-detail-summary"
                     descriptionInputId="task-template-detail-description"
                     labelsButtonLabel="Edit template labels"
+                    includeSummary={false}
+                    showDescription={descriptionVisible()}
+                    hideEmptyLabels={true}
                     onSummaryChange={handleSummaryChange}
                     onDescriptionChange={handleDescriptionChange}
                     onOpenLabelsPicker={() => setLabelsOpen(true)}
                 />
 
-                <ChecklistEditor
-                    items={checklistItems()}
-                    onAdd={addChecklistItem}
-                    onRename={renameChecklistItem}
-                    onDelete={deleteChecklistItem}
-                    onReorder={reorderChecklistItems}
-                />
+                <Show when={checklistVisible()}>
+                    <ChecklistEditor
+                        items={checklistItems()}
+                        startAdding={checklistItems().length === 0}
+                        onAdd={addChecklistItem}
+                        onRename={renameChecklistItem}
+                        onDelete={deleteChecklistItem}
+                        onReorder={reorderChecklistItems}
+                    />
+                </Show>
+
+                <Show when={!hasLabels() || !descriptionVisible() || !checklistVisible()}>
+                    <div class="task-detail-editor__extras">
+                        <Show when={!hasLabels()}>
+                            <button type="button" class="task-detail-editor__extra" onClick={() => setLabelsOpen(true)}>
+                                + Labels
+                            </button>
+                        </Show>
+                        <Show when={!descriptionVisible()}>
+                            <button
+                                type="button"
+                                class="task-detail-editor__extra"
+                                onClick={() => setShowDescription(true)}
+                            >
+                                + Description
+                            </button>
+                        </Show>
+                        <Show when={!checklistVisible()}>
+                            <button
+                                type="button"
+                                class="task-detail-editor__extra"
+                                onClick={() => setShowChecklist(true)}
+                            >
+                                + Checklist
+                            </button>
+                        </Show>
+                    </div>
+                </Show>
 
                 <div class="task-template-detail__actions">
                     <button type="button" class="btn btn--danger" onClick={deleteTemplate}>
