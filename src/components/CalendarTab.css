@@ -36,9 +36,6 @@
 .calendar-toolbar__today {
     min-height: 36px;
     padding: 0 var(--space-sm);
-    border: 1px solid var(--border);
-    color: var(--text-secondary);
-    background: var(--bg-secondary);
 }
 
 .calendar-toolbar__controls {
@@ -311,8 +308,12 @@
     max-width: 600px;
 }
 
+.calendar-day-dialog .dialog__body {
+    gap: var(--space-md);
+}
+
 .calendar-day-dialog .add-task {
-    padding: 0 0 var(--space-md);
+    padding: 0;
 }
 
 .calendar-day-dialog__tasks {

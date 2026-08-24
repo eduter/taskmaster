@@ -1,11 +1,21 @@
 import { createEffect, createMemo } from 'solid-js';
 import { useLocation, useNavigate, useResolvedPath, useSearchParams } from '@solidjs/router';
-import { hasLabelsModal, hasOverlayModal, hasSyncModal, LABELS_MODAL, MODAL_PARAM, SYNC_MODAL } from './modalParams.ts';
+import {
+    hasLabelsModal,
+    hasOverlayModal,
+    hasPostponeModal,
+    hasSyncModal,
+    LABELS_MODAL,
+    MODAL_PARAM,
+    POSTPONE_MODAL,
+    SYNC_MODAL,
+} from './modalParams.ts';
 
 type AppTab = 'today' | 'calendar' | 'generators';
 
 let syncModalPushed = false;
 let labelsModalPushed = false;
+let postponeModalPushed = false;
 
 const TAB_ROUTES: Record<AppTab, string> = {
     today: '/tasks',
@@ -106,6 +116,18 @@ function useAppNavigate() {
             }
             setSearchParams({ [MODAL_PARAM]: null }, { replace: true });
         },
+        openPostponePicker() {
+            setSearchParams({ [MODAL_PARAM]: POSTPONE_MODAL });
+            postponeModalPushed = true;
+        },
+        closePostponePicker() {
+            if (postponeModalPushed) {
+                postponeModalPushed = false;
+                navigate(-1);
+                return;
+            }
+            setSearchParams({ [MODAL_PARAM]: null }, { replace: true });
+        },
     };
 }
 
@@ -118,6 +140,21 @@ function useLabelsPanelOpen() {
     createEffect(() => {
         if (!open()) {
             labelsModalPushed = false;
+        }
+    });
+
+    return open;
+}
+
+/** Whether the postpone picker overlay is open for the current location. */
+function usePostponePanelOpen() {
+    const location = useLocation();
+
+    const open = createMemo(() => hasPostponeModal(location.search));
+
+    createEffect(() => {
+        if (!open()) {
+            postponeModalPushed = false;
         }
     });
 
@@ -167,6 +204,16 @@ export {
     useActiveTab,
     useAppNavigate,
     useLabelsPanelOpen,
+    usePostponePanelOpen,
     useSyncPanelOpen,
 };
-export { hasLabelsModal, hasOverlayModal, hasSyncModal, LABELS_MODAL, MODAL_PARAM, SYNC_MODAL } from './modalParams.ts';
+export {
+    hasLabelsModal,
+    hasOverlayModal,
+    hasPostponeModal,
+    hasSyncModal,
+    LABELS_MODAL,
+    MODAL_PARAM,
+    POSTPONE_MODAL,
+    SYNC_MODAL,
+} from './modalParams.ts';

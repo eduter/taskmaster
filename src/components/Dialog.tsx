@@ -33,6 +33,8 @@ interface DialogProps {
     closeLabel?: string;
     /** Stacking order when multiple dialogs are open; higher values render on top. */
     stackLevel?: number;
+    /** Replaces the heading; `title` is still used as the dialog's accessible name. */
+    titleSlot?: JSX.Element;
     children: JSX.Element;
 }
 
@@ -82,7 +84,8 @@ function Dialog(props: DialogProps) {
             ref={dialogRef}
             class="dialog"
             style={{ 'z-index': `${DIALOG_BASE_Z_INDEX + stackLevel()}` }}
-            aria-labelledby={titleId}
+            aria-label={props.title}
+            aria-labelledby={props.titleSlot ? undefined : titleId}
             onCancel={handleCancel}
         >
             <button
@@ -93,9 +96,13 @@ function Dialog(props: DialogProps) {
             />
             <div class={`dialog__panel${props.panelClass ? ` ${props.panelClass}` : ''}`}>
                 <div class="dialog__header">
-                    <h2 id={titleId} class="dialog__title">
-                        {props.title}
-                    </h2>
+                    <div class="dialog__title-slot">
+                        {props.titleSlot ?? (
+                            <h2 id={titleId} class="dialog__title">
+                                {props.title}
+                            </h2>
+                        )}
+                    </div>
                     <button
                         type="button"
                         class="dialog__close"

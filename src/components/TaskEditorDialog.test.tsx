@@ -12,18 +12,19 @@ const store = vi.hoisted(() => ({
     reorderChecklistItems: vi.fn(),
     toggleChecklistItemCompleted: vi.fn(),
     updateChecklistItemSummary: vi.fn(),
+    today: () => '2026-08-22',
+}));
+
+const labelsMock = vi.hoisted(() => ({
+    list: [] as { id: string; name: string; color: string }[],
 }));
 
 vi.mock('../stores/taskStore.ts', () => store);
-vi.mock('./PostponeMenu.tsx', () => ({
-    PostponeMenu: (props: { onDone?: () => void }) => (
-        <button type="button" onClick={() => props.onDone?.()}>
-            Tomorrow
-        </button>
-    ),
+vi.mock('../stores/labelStore.ts', () => ({
+    labels: () => labelsMock.list,
 }));
 
-function makeTask(): Task {
+function makeTask(overrides: Partial<Task> = {}): Task {
     return {
         id: 'groceries',
         summary: 'Groceries',
@@ -38,22 +39,38 @@ function makeTask(): Task {
         generatorId: null,
         parentTaskId: null,
         checklistItems: [{ id: 'milk', summary: 'Milk', completed: false }],
+        ...overrides,
     };
 }
 
+function stubDialog(): void {
+    HTMLDialogElement.prototype.showModal = function showModal(): void {
+        this.open = true;
+    };
+}
+
+function beginSummaryEdit(): HTMLElement {
+    fireEvent.click(screen.getByRole('button', { name: 'Groceries' }));
+    return screen.getByLabelText('Summary');
+}
+
 describe('TaskEditorDialog checklist', () => {
-    beforeEach(() => {
-        HTMLDialogElement.prototype.showModal = function showModal(): void {
-            this.open = true;
-        };
-    });
+    beforeEach(stubDialog);
     afterEach(() => {
         cleanup();
         vi.clearAllMocks();
+        labelsMock.list = [];
     });
 
     it('persists concrete task checklist changes immediately', () => {
-        render(() => <TaskEditorDialog task={makeTask()} onClose={() => {}} onOpenLabelsPicker={() => {}} />);
+        render(() => (
+            <TaskEditorDialog
+                task={makeTask()}
+                onClose={() => {}}
+                onOpenLabelsPicker={() => {}}
+                onOpenPostponePicker={() => {}}
+            />
+        ));
 
         fireEvent.click(screen.getByRole('button', { name: 'Mark Milk complete' }));
         expect(store.toggleChecklistItemCompleted).toHaveBeenCalledWith('groceries', 'milk');
@@ -69,30 +86,154 @@ describe('TaskEditorDialog checklist', () => {
     });
 });
 
+describe('TaskEditorDialog layout', () => {
+    beforeEach(stubDialog);
+    afterEach(() => {
+        cleanup();
+        vi.clearAllMocks();
+        labelsMock.list = [];
+    });
+
+    it('has no Save or Delete footer buttons', () => {
+        render(() => (
+            <TaskEditorDialog
+                task={makeTask()}
+                onClose={() => {}}
+                onOpenLabelsPicker={() => {}}
+                onOpenPostponePicker={() => {}}
+            />
+        ));
+
+        expect(screen.queryByRole('button', { name: 'Save' })).toBeNull();
+        expect(screen.queryByRole('button', { name: 'Delete' })).toBeNull();
+    });
+
+    it('hides empty description and checklist behind add actions', () => {
+        render(() => (
+            <TaskEditorDialog
+                task={makeTask({ checklistItems: [] })}
+                onClose={() => {}}
+                onOpenLabelsPicker={() => {}}
+                onOpenPostponePicker={() => {}}
+            />
+        ));
+
+        expect(screen.queryByLabelText('Description')).toBeNull();
+        expect(screen.queryByRole('region', { name: 'Checklist' })).toBeNull();
+        expect(screen.getByRole('button', { name: '+ Labels' })).toBeTruthy();
+        expect(screen.getByRole('button', { name: '+ Description' })).toBeTruthy();
+        expect(screen.getByRole('button', { name: '+ Checklist' })).toBeTruthy();
+    });
+
+    it('reveals description and checklist when requested', () => {
+        render(() => (
+            <TaskEditorDialog
+                task={makeTask({ checklistItems: [] })}
+                onClose={() => {}}
+                onOpenLabelsPicker={() => {}}
+                onOpenPostponePicker={() => {}}
+            />
+        ));
+
+        fireEvent.click(screen.getByRole('button', { name: '+ Description' }));
+        expect(screen.getByLabelText('Description')).toBeTruthy();
+        expect(screen.queryByRole('button', { name: '+ Description' })).toBeNull();
+
+        fireEvent.click(screen.getByRole('button', { name: '+ Checklist' }));
+        expect(screen.getByRole('region', { name: 'Checklist' })).toBeTruthy();
+        expect(screen.getByRole('textbox', { name: 'New checklist item' })).toBeTruthy();
+        expect(screen.queryByRole('button', { name: '+ Checklist' })).toBeNull();
+    });
+
+    it('puts the labels plus immediately after the last chip', () => {
+        labelsMock.list = [{ id: 'home', name: 'Home', color: '#4363d8' }];
+        render(() => (
+            <TaskEditorDialog
+                task={makeTask({ labelIds: ['home'] })}
+                onClose={() => {}}
+                onOpenLabelsPicker={() => {}}
+                onOpenPostponePicker={() => {}}
+            />
+        ));
+
+        expect(screen.queryByRole('button', { name: '+ Labels' })).toBeNull();
+        const add = screen.getByRole('button', { name: 'Edit labels' });
+        const chips = add.parentElement;
+        expect(chips?.classList.contains('task-fields__labels')).toBe(true);
+        expect(chips?.textContent).toContain('Home');
+        expect(chips?.lastElementChild).toBe(add);
+        expect(add.classList.contains('add-icon-btn')).toBe(true);
+        expect(add.querySelector('svg')).toBeTruthy();
+    });
+
+    it('indents field values under their section labels', () => {
+        labelsMock.list = [{ id: 'home', name: 'Home', color: '#4363d8' }];
+        render(() => (
+            <TaskEditorDialog
+                task={makeTask({
+                    description: 'Dont forget eggs',
+                    labelIds: ['home'],
+                })}
+                onClose={() => {}}
+                onOpenLabelsPicker={() => {}}
+                onOpenPostponePicker={() => {}}
+            />
+        ));
+
+        const when = screen.getByRole('button', { name: 'When: Today' });
+        expect(when.closest('.form-field-body')).toBeTruthy();
+
+        const description = screen.getByLabelText('Description');
+        expect(description.closest('.form-field-body')).toBeTruthy();
+
+        const labelsAdd = screen.getByRole('button', { name: 'Edit labels' });
+        expect(labelsAdd.closest('.form-field-body')).toBeTruthy();
+
+        const checklistAdd = screen.getByRole('button', { name: 'Add checklist item' });
+        expect(checklistAdd.closest('.form-field-body')).toBeTruthy();
+        expect(checklistAdd.closest('.form-field-body')?.querySelector('.form-label')).toBeNull();
+    });
+
+    it('shows the scheduled day as a When field', () => {
+        const onOpenPostponePicker = vi.fn();
+        render(() => (
+            <TaskEditorDialog
+                task={makeTask()}
+                onClose={() => {}}
+                onOpenLabelsPicker={() => {}}
+                onOpenPostponePicker={onOpenPostponePicker}
+            />
+        ));
+
+        fireEvent.click(screen.getByRole('button', { name: 'When: Today' }));
+        expect(onOpenPostponePicker).toHaveBeenCalledOnce();
+    });
+});
+
 describe('TaskEditorDialog field autosave', () => {
     beforeEach(() => {
-        HTMLDialogElement.prototype.showModal = function showModal(): void {
-            this.open = true;
-        };
+        stubDialog();
         vi.useFakeTimers({ toFake: ['setTimeout', 'clearTimeout', 'Date'] });
     });
     afterEach(() => {
         cleanup();
         vi.useRealTimers();
         vi.clearAllMocks();
-    });
-
-    it('has no Save or Delete footer buttons', () => {
-        render(() => <TaskEditorDialog task={makeTask()} onClose={() => {}} onOpenLabelsPicker={() => {}} />);
-
-        expect(screen.queryByRole('button', { name: 'Save' })).toBeNull();
-        expect(screen.queryByRole('button', { name: 'Delete' })).toBeNull();
+        labelsMock.list = [];
     });
 
     it('persists summary and description after a short debounce', async () => {
-        render(() => <TaskEditorDialog task={makeTask()} onClose={() => {}} onOpenLabelsPicker={() => {}} />);
+        render(() => (
+            <TaskEditorDialog
+                task={makeTask()}
+                onClose={() => {}}
+                onOpenLabelsPicker={() => {}}
+                onOpenPostponePicker={() => {}}
+            />
+        ));
 
-        fireEvent.input(screen.getByLabelText('Summary'), { target: { value: 'Milk run' } });
+        fireEvent.input(beginSummaryEdit(), { target: { value: 'Milk run' } });
+        fireEvent.click(screen.getByRole('button', { name: '+ Description' }));
         fireEvent.input(screen.getByLabelText('Description'), { target: { value: 'Dont forget eggs' } });
         expect(store.editTask).not.toHaveBeenCalled();
 
@@ -105,10 +246,17 @@ describe('TaskEditorDialog field autosave', () => {
 
     it('flushes pending field edits when the dialog closes', async () => {
         const onClose = vi.fn();
-        render(() => <TaskEditorDialog task={makeTask()} onClose={onClose} onOpenLabelsPicker={() => {}} />);
+        render(() => (
+            <TaskEditorDialog
+                task={makeTask()}
+                onClose={onClose}
+                onOpenLabelsPicker={() => {}}
+                onOpenPostponePicker={() => {}}
+            />
+        ));
 
         await vi.advanceTimersByTimeAsync(500);
-        fireEvent.input(screen.getByLabelText('Summary'), { target: { value: 'Milk run' } });
+        fireEvent.input(beginSummaryEdit(), { target: { value: 'Milk run' } });
         expect(store.editTask).not.toHaveBeenCalled();
 
         fireEvent.click(screen.getAllByRole('button', { name: 'Close' })[1]);
@@ -121,32 +269,55 @@ describe('TaskEditorDialog field autosave', () => {
         expect(onClose).toHaveBeenCalled();
     });
 
-    it('flushes pending field edits when postponing', async () => {
+    it('flushes pending field edits when opening the When picker', async () => {
         const onClose = vi.fn();
-        render(() => <TaskEditorDialog task={makeTask()} onClose={onClose} onOpenLabelsPicker={() => {}} />);
+        const onOpenPostponePicker = vi.fn();
+        render(() => (
+            <TaskEditorDialog
+                task={makeTask()}
+                onClose={onClose}
+                onOpenLabelsPicker={() => {}}
+                onOpenPostponePicker={onOpenPostponePicker}
+            />
+        ));
 
-        fireEvent.input(screen.getByLabelText('Summary'), { target: { value: 'Milk run' } });
-        fireEvent.click(screen.getByRole('button', { name: 'Tomorrow' }));
+        fireEvent.input(beginSummaryEdit(), { target: { value: 'Milk run' } });
+        fireEvent.click(screen.getByRole('button', { name: 'When: Today' }));
         await Promise.resolve();
 
         expect(store.editTask).toHaveBeenCalledWith('groceries', {
             summary: 'Milk run',
             description: '',
         });
-        expect(onClose).toHaveBeenCalled();
+        expect(onOpenPostponePicker).toHaveBeenCalledOnce();
+        expect(onClose).not.toHaveBeenCalled();
     });
 
     it('does not persist a blank summary', async () => {
-        render(() => <TaskEditorDialog task={makeTask()} onClose={() => {}} onOpenLabelsPicker={() => {}} />);
+        render(() => (
+            <TaskEditorDialog
+                task={makeTask()}
+                onClose={() => {}}
+                onOpenLabelsPicker={() => {}}
+                onOpenPostponePicker={() => {}}
+            />
+        ));
 
-        fireEvent.input(screen.getByLabelText('Summary'), { target: { value: '   ' } });
+        fireEvent.input(beginSummaryEdit(), { target: { value: '   ' } });
         await vi.advanceTimersByTimeAsync(400);
         expect(store.editTask).not.toHaveBeenCalled();
     });
 
     it('does not persist when fields are unchanged', async () => {
         const onClose = vi.fn();
-        render(() => <TaskEditorDialog task={makeTask()} onClose={onClose} onOpenLabelsPicker={() => {}} />);
+        render(() => (
+            <TaskEditorDialog
+                task={makeTask()}
+                onClose={onClose}
+                onOpenLabelsPicker={() => {}}
+                onOpenPostponePicker={() => {}}
+            />
+        ));
 
         await vi.advanceTimersByTimeAsync(500);
         fireEvent.click(screen.getAllByRole('button', { name: 'Close' })[1]);

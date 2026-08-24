@@ -14,6 +14,7 @@ import { SyncStatusBar } from './components/SyncStatusBar.tsx';
 import { TaskDetail } from './components/TaskDetail.tsx';
 import { TaskLabelToggle } from './components/TaskLabelToggle.tsx';
 import { LabelsPicker } from './components/labels';
+import { PostponePicker } from './components/PostponePicker.tsx';
 import { TaskList } from './components/TaskList.tsx';
 import { markConnected, refreshAuthState } from './stores/syncStore.ts';
 import { handleAuthRedirect } from './sync/dropboxAuth.ts';
@@ -63,6 +64,7 @@ function TasksSection() {
             <TaskList />
             <TaskDetail />
             <LabelsPicker />
+            <PostponePicker />
         </>
     );
 }

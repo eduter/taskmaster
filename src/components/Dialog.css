@@ -75,8 +75,14 @@
 .dialog__header {
     display: flex;
     justify-content: space-between;
-    align-items: center;
+    align-items: flex-start;
+    gap: var(--space-sm);
     flex-shrink: 0;
+}
+
+.dialog__title-slot {
+    flex: 1;
+    min-width: 0;
 }
 
 .dialog__body {
@@ -86,6 +92,9 @@
     overflow-x: hidden;
     overflow-y: auto;
     overscroll-behavior: contain;
+    display: flex;
+    flex-direction: column;
+    gap: var(--space-sm);
 }
 
 .dialog__title {

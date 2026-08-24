@@ -1,0 +1,94 @@
+.postpone-dialog {
+    max-width: 400px;
+}
+
+.postpone-dialog__presets {
+    display: flex;
+    flex-wrap: wrap;
+    gap: var(--space-xs);
+}
+
+.postpone-dialog__preset {
+    padding: var(--space-xs) var(--space-sm);
+    border-radius: var(--radius-md);
+    border: 1px solid var(--border);
+    background: transparent;
+    color: var(--text-primary);
+    font-size: 13px;
+}
+
+.postpone-dialog__preset:hover {
+    background: var(--bg-surface-hover);
+    border-color: var(--accent);
+}
+
+.postpone-dialog__cal {
+    display: flex;
+    flex-direction: column;
+    gap: var(--space-sm);
+}
+
+.postpone-dialog__caption {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    font-size: 13px;
+    font-weight: 600;
+    color: var(--text-heading);
+}
+
+.postpone-dialog__nav {
+    width: 32px;
+    height: 32px;
+    padding: 0;
+    border: none;
+    border-radius: var(--radius-sm);
+    background: transparent;
+    color: var(--text-secondary);
+    font-size: 20px;
+    line-height: 1;
+}
+
+.postpone-dialog__nav:hover {
+    background: var(--bg-surface-hover);
+    color: var(--text-primary);
+}
+
+.postpone-dialog__grid {
+    display: grid;
+    grid-template-columns: repeat(7, 1fr);
+    gap: 2px;
+}
+
+.postpone-dialog__dow {
+    text-align: center;
+    font-size: 11px;
+    color: var(--text-muted);
+    padding: var(--space-xs) 0;
+}
+
+.postpone-dialog__day {
+    aspect-ratio: 1;
+    border: none;
+    border-radius: var(--radius-sm);
+    background: transparent;
+    color: var(--text-primary);
+    font-size: 13px;
+}
+
+.postpone-dialog__day:hover {
+    background: var(--bg-surface-hover);
+}
+
+.postpone-dialog__day--muted {
+    color: var(--text-muted);
+}
+
+.postpone-dialog__day--today {
+    box-shadow: inset 0 0 0 1px var(--accent);
+}
+
+.postpone-dialog__day--selected {
+    background: var(--accent);
+    color: #fff;
+}

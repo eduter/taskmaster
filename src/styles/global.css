@@ -181,12 +181,40 @@ select {
     gap: var(--space-xs);
 }
 
+.form-field-body {
+    display: flex;
+    flex-direction: column;
+    min-width: 0;
+    padding-left: var(--space-md);
+}
+
 .form-label {
     font-size: 13px;
     font-weight: 600;
     color: var(--text-secondary);
     text-transform: uppercase;
     letter-spacing: 0.5px;
+}
+
+.add-icon-btn {
+    flex-shrink: 0;
+    align-self: flex-start;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    width: 32px;
+    height: 32px;
+    padding: 0;
+    border: 1px solid var(--border-light);
+    border-radius: var(--radius-sm);
+    background: var(--bg-surface);
+    color: var(--text-secondary);
+    cursor: pointer;
+}
+
+.add-icon-btn:hover {
+    background: var(--bg-surface-hover);
+    color: var(--text-primary);
 }
 
 .form-input {

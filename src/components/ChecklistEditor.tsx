@@ -1,5 +1,6 @@
-import { createSignal, Show, type JSX } from 'solid-js';
+import { createSignal, onMount, Show, type JSX } from 'solid-js';
 import checkIcon from '../icons/check.svg?raw';
+import plusIcon from '../icons/plus.svg?raw';
 import { GestureRow } from './GestureRow.tsx';
 import { Icon } from './Icon.tsx';
 import { TaskLikeSortableList } from './TaskLikeSortableList.tsx';
@@ -13,6 +14,7 @@ interface ChecklistEditorItem {
 
 interface ChecklistEditorProps {
     items: ChecklistEditorItem[];
+    startAdding?: boolean;
     onAdd: (summary: string) => void | Promise<void>;
     onRename: (id: string, summary: string) => void | Promise<void>;
     onToggle?: (id: string) => void | Promise<void>;
@@ -26,6 +28,12 @@ function ChecklistEditor(props: ChecklistEditorProps): JSX.Element {
     const [editingSummary, setEditingSummary] = createSignal('');
     const [adding, setAdding] = createSignal(false);
     const [newSummary, setNewSummary] = createSignal('');
+
+    onMount(() => {
+        if (props.startAdding) {
+            beginAdd();
+        }
+    });
 
     function beginAdd(): void {
         setEditingId(null);
@@ -84,80 +92,83 @@ function ChecklistEditor(props: ChecklistEditorProps): JSX.Element {
 
     return (
         <section class="checklist-editor" aria-label="Checklist">
-            <div class="checklist-editor__header">
-                <span class="form-label">Checklist</span>
-                <button type="button" class="checklist-editor__add" aria-label="Add checklist item" onClick={beginAdd}>
-                    +
-                </button>
-            </div>
-
-            <Show when={props.items.length > 0}>
-                <TaskLikeSortableList
-                    items={props.items}
-                    onReorder={props.onReorder}
-                    renderRow={(item, row) => (
-                        <GestureRow
-                            id={item.id}
-                            deleteRevealed={row.deleteRevealed}
-                            deleteLabel={`Delete ${item.summary} from checklist`}
-                            completed={item.completed}
-                            allowCheckSwipe={editingId() !== item.id && !item.completed && !!props.onToggle}
-                            onRevealChange={row.onRevealChange}
-                            onRowTouchStart={row.onRowTouchStart}
-                            onOpen={() => beginEdit(item)}
-                            onDelete={() => props.onDelete(item.id)}
-                            onComplete={props.onToggle ? () => props.onToggle?.(item.id) : undefined}
-                            renderContent={(state) => (
-                                <>
-                                    <ChecklistItemContent
-                                        item={item}
-                                        editing={editingId() === item.id}
-                                        editingSummary={editingSummary()}
-                                        visualCompleted={state.visualCompleted}
-                                        showCheck={!!props.onToggle}
-                                        onEditingSummaryChange={setEditingSummary}
-                                        onCommitEdit={commitEdit}
-                                        onCancel={cancelInput}
-                                        onToggle={props.onToggle}
-                                    />
-                                    {state.showStrike && (
-                                        <div
-                                            class="task-row__strike checklist-editor__strike"
-                                            style={{ width: state.strikeWidth }}
-                                            aria-hidden="true"
+            <span class="form-label">Checklist</span>
+            <div class="form-field-body checklist-editor__body">
+                <Show when={props.items.length > 0}>
+                    <TaskLikeSortableList
+                        items={props.items}
+                        onReorder={props.onReorder}
+                        renderRow={(item, row) => (
+                            <GestureRow
+                                id={item.id}
+                                deleteRevealed={row.deleteRevealed}
+                                deleteLabel={`Delete ${item.summary} from checklist`}
+                                completed={item.completed}
+                                allowCheckSwipe={editingId() !== item.id && !item.completed && !!props.onToggle}
+                                onRevealChange={row.onRevealChange}
+                                onRowTouchStart={row.onRowTouchStart}
+                                onOpen={() => beginEdit(item)}
+                                onDelete={() => props.onDelete(item.id)}
+                                onComplete={props.onToggle ? () => props.onToggle?.(item.id) : undefined}
+                                renderContent={(state) => (
+                                    <>
+                                        <ChecklistItemContent
+                                            item={item}
+                                            editing={editingId() === item.id}
+                                            editingSummary={editingSummary()}
+                                            visualCompleted={state.visualCompleted}
+                                            showCheck={!!props.onToggle}
+                                            onEditingSummaryChange={setEditingSummary}
+                                            onCommitEdit={commitEdit}
+                                            onCancel={cancelInput}
+                                            onToggle={props.onToggle}
                                         />
-                                    )}
-                                </>
-                            )}
-                        />
-                    )}
-                    renderOverlay={(item) => (
-                        <ChecklistItemContent
-                            item={item}
-                            editing={false}
-                            editingSummary=""
-                            visualCompleted={item.completed ?? false}
-                            showCheck={!!props.onToggle}
-                            onEditingSummaryChange={() => {}}
-                            onCommitEdit={() => {}}
-                            onCancel={() => {}}
-                            onToggle={props.onToggle}
-                        />
-                    )}
-                />
-            </Show>
+                                        {state.showStrike && (
+                                            <div
+                                                class="task-row__strike checklist-editor__strike"
+                                                style={{ width: state.strikeWidth }}
+                                                aria-hidden="true"
+                                            />
+                                        )}
+                                    </>
+                                )}
+                            />
+                        )}
+                        renderOverlay={(item) => (
+                            <ChecklistItemContent
+                                item={item}
+                                editing={false}
+                                editingSummary=""
+                                visualCompleted={item.completed ?? false}
+                                showCheck={!!props.onToggle}
+                                onEditingSummaryChange={() => {}}
+                                onCommitEdit={() => {}}
+                                onCancel={() => {}}
+                                onToggle={props.onToggle}
+                            />
+                        )}
+                    />
+                </Show>
 
-            <Show when={adding()}>
-                <input
-                    ref={focusInput}
-                    class="checklist-editor__input checklist-editor__new-input"
-                    aria-label="New checklist item"
-                    value={newSummary()}
-                    onInput={(event) => setNewSummary(event.currentTarget.value)}
-                    onKeyDown={(event) => handleInputKeyDown(event, commitAdd)}
-                    onBlur={commitAdd}
-                />
-            </Show>
+                <Show
+                    when={adding()}
+                    fallback={
+                        <button type="button" class="add-icon-btn" aria-label="Add checklist item" onClick={beginAdd}>
+                            <Icon src={plusIcon} width={16} height={16} />
+                        </button>
+                    }
+                >
+                    <input
+                        ref={focusInput}
+                        class="checklist-editor__input checklist-editor__new-input"
+                        aria-label="New checklist item"
+                        value={newSummary()}
+                        onInput={(event) => setNewSummary(event.currentTarget.value)}
+                        onKeyDown={(event) => handleInputKeyDown(event, commitAdd)}
+                        onBlur={commitAdd}
+                    />
+                </Show>
+            </div>
         </section>
     );
 }

@@ -1,26 +1,30 @@
 import { useParams } from '@solidjs/router';
-import { createEffect, Show } from 'solid-js';
-import type { Task } from '../db/types.ts';
+import { createEffect, createResource, Show } from 'solid-js';
 import { useAppNavigate } from '../routing/navigation.ts';
-import { tasks } from '../stores/taskStore.ts';
+import { loadTask, taskVersion } from '../stores/taskStore.ts';
 import { TaskEditorDialog } from './TaskEditorDialog.tsx';
 
+/** Looks up a concrete task by route id, including postponed items. */
 function TaskDetail() {
     const params = useParams();
-    const { closeTaskDetail, openLabelsPicker, toTasksList } = useAppNavigate();
+    const { closeTaskDetail, openLabelsPicker, openPostponePicker, toTasksList } = useAppNavigate();
     const taskId = () => params.id;
 
-    const selectedTask = (): Task | undefined => {
-        const id = taskId();
-        if (!id) {
-            return undefined;
-        }
-        return (tasks() ?? []).find((t) => t.id === id);
-    };
+    const [selectedTask] = createResource(
+        () => {
+            const id = taskId();
+            const version = taskVersion();
+            if (!id) {
+                return null;
+            }
+            return { id, version };
+        },
+        ({ id }) => loadTask(id)
+    );
 
     createEffect(() => {
         const id = taskId();
-        if (!id || tasks.loading) {
+        if (!id || selectedTask.loading) {
             return;
         }
         if (!selectedTask()) {
@@ -31,7 +35,12 @@ function TaskDetail() {
     return (
         <Show when={selectedTask()}>
             {(task) => (
-                <TaskEditorDialog task={task()} onClose={closeTaskDetail} onOpenLabelsPicker={openLabelsPicker} />
+                <TaskEditorDialog
+                    task={task()}
+                    onClose={closeTaskDetail}
+                    onOpenLabelsPicker={openLabelsPicker}
+                    onOpenPostponePicker={openPostponePicker}
+                />
             )}
         </Show>
     );
