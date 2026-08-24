@@ -1,4 +1,4 @@
-import { createEffect, createSignal, on, onCleanup, Show, type JSX } from 'solid-js';
+import { createEffect, createMemo, createSignal, on, onCleanup, Show, type JSX } from 'solid-js';
 import type { Task } from '../db/types.ts';
 import {
     addChecklistItem,
@@ -12,7 +12,9 @@ import {
 import { formatRelativeDay } from '../utils/formatLogicalDay.ts';
 import { ChecklistEditor } from './ChecklistEditor.tsx';
 import { Dialog } from './Dialog.tsx';
+import { EditableSummaryHeading } from './EditableSummaryHeading.tsx';
 import { TaskFields } from './TaskFields.tsx';
+import './TaskDetailEditor.css';
 import './TaskEditorDialog.css';
 
 const FIELD_AUTOSAVE_MS = 300;
@@ -30,25 +32,21 @@ interface TaskEditorDialogProps {
 function TaskEditorDialog(props: TaskEditorDialogProps): JSX.Element {
     const [summary, setSummary] = createSignal('');
     const [description, setDescription] = createSignal('');
-    const [editingSummary, setEditingSummary] = createSignal(false);
     const [showDescription, setShowDescription] = createSignal(false);
     const [showChecklist, setShowChecklist] = createSignal(false);
+    const taskId = createMemo(() => props.task.id);
     let dismissGuardUntil = Date.now() + 500;
     let autosaveTimer: ReturnType<typeof setTimeout> | undefined;
 
     createEffect(
-        on(
-            () => props.task.id,
-            () => {
-                setSummary(props.task.summary);
-                setDescription(props.task.description);
-                setEditingSummary(false);
-                setShowDescription(props.task.description.trim().length > 0);
-                setShowChecklist(props.task.checklistItems.length > 0);
-                dismissGuardUntil = Date.now() + 500;
-                clearAutosaveTimer();
-            }
-        )
+        on(taskId, () => {
+            setSummary(props.task.summary);
+            setDescription(props.task.description);
+            setShowDescription(props.task.description.trim().length > 0);
+            setShowChecklist(props.task.checklistItems.length > 0);
+            dismissGuardUntil = Date.now() + 500;
+            clearAutosaveTimer();
+        })
     );
 
     onCleanup(() => {
@@ -153,43 +151,26 @@ function TaskEditorDialog(props: TaskEditorDialogProps): JSX.Element {
         if (!next) {
             clearAutosaveTimer();
             setSummary(props.task.summary);
+            return;
         }
-        setEditingSummary(false);
+        setSummary(next);
     }
 
-    function summarySlot(): JSX.Element {
-        return (
-            <Show
-                when={editingSummary()}
-                fallback={
-                    <button type="button" class="task-editor__summary" onClick={() => setEditingSummary(true)}>
-                        {summary()}
-                    </button>
-                }
-            >
-                <input
-                    id={`task-detail-summary-${props.task.id}`}
-                    class="task-editor__summary-input"
-                    aria-label="Summary"
-                    value={summary()}
-                    onInput={(e) => handleSummaryChange(e.currentTarget.value)}
-                    onBlur={commitSummaryEdit}
-                    onKeyDown={(e) => {
-                        if (e.key === 'Enter') {
-                            e.preventDefault();
-                            commitSummaryEdit();
-                        } else if (e.key === 'Escape') {
-                            e.preventDefault();
-                            clearAutosaveTimer();
-                            setSummary(props.task.summary);
-                            setEditingSummary(false);
-                        }
-                    }}
-                    ref={focusAndSelectInput}
-                />
-            </Show>
-        );
+    function cancelSummaryEdit(): void {
+        clearAutosaveTimer();
+        setSummary(props.task.summary);
     }
+
+    const summaryHeading = (
+        <EditableSummaryHeading
+            summary={summary()}
+            inputId={`task-detail-summary-${props.task.id}`}
+            resetKey={taskId()}
+            onInput={handleSummaryChange}
+            onCommit={commitSummaryEdit}
+            onCancel={cancelSummaryEdit}
+        />
+    );
 
     return (
         <Dialog
@@ -197,7 +178,7 @@ function TaskEditorDialog(props: TaskEditorDialogProps): JSX.Element {
             onClose={tryDismiss}
             canClose={canClose}
             title={summary() || 'Task'}
-            titleSlot={summarySlot()}
+            titleSlot={summaryHeading}
             stackLevel={props.stackLevel}
         >
             <div class="form-field">
@@ -241,19 +222,23 @@ function TaskEditorDialog(props: TaskEditorDialogProps): JSX.Element {
             </Show>
 
             <Show when={!hasLabels() || !descriptionVisible() || !checklistVisible()}>
-                <div class="task-editor__extras">
+                <div class="task-detail-editor__extras">
                     <Show when={!hasLabels()}>
-                        <button type="button" class="task-editor__extra" onClick={props.onOpenLabelsPicker}>
+                        <button type="button" class="task-detail-editor__extra" onClick={props.onOpenLabelsPicker}>
                             + Labels
                         </button>
                     </Show>
                     <Show when={!descriptionVisible()}>
-                        <button type="button" class="task-editor__extra" onClick={() => setShowDescription(true)}>
+                        <button
+                            type="button"
+                            class="task-detail-editor__extra"
+                            onClick={() => setShowDescription(true)}
+                        >
                             + Description
                         </button>
                     </Show>
                     <Show when={!checklistVisible()}>
-                        <button type="button" class="task-editor__extra" onClick={() => setShowChecklist(true)}>
+                        <button type="button" class="task-detail-editor__extra" onClick={() => setShowChecklist(true)}>
                             + Checklist
                         </button>
                     </Show>
@@ -261,13 +246,6 @@ function TaskEditorDialog(props: TaskEditorDialogProps): JSX.Element {
             </Show>
         </Dialog>
     );
-}
-
-function focusAndSelectInput(element: HTMLInputElement): void {
-    queueMicrotask(() => {
-        element.focus();
-        element.select();
-    });
 }
 
 export type { TaskEditorDialogProps };

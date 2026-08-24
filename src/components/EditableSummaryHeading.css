@@ -1,0 +1,30 @@
+.editable-summary-heading {
+    display: block;
+    width: 100%;
+    margin: 0;
+    padding: 0;
+    border: none;
+    background: none;
+    text-align: left;
+    font-size: 18px;
+    font-weight: 600;
+    color: var(--text-heading);
+    overflow-wrap: anywhere;
+}
+
+.editable-summary-heading:hover {
+    color: #fff;
+}
+
+.editable-summary-heading__input {
+    width: 100%;
+    margin: 0;
+    padding: var(--space-xs) var(--space-sm);
+    border: 1px solid var(--accent);
+    border-radius: var(--radius-sm);
+    background: var(--bg-input);
+    color: var(--text-heading);
+    font-size: 18px;
+    font-weight: 600;
+    outline: none;
+}

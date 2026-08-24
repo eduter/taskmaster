@@ -130,6 +130,9 @@ describe('ChecklistEditor', () => {
         const surfaces = container.querySelectorAll<HTMLElement>('.task-row__surface');
         tapRow(surfaces[0], 1);
         const input = await screen.findByRole('textbox', { name: 'Edit Milk' });
+        await vi.waitFor(() => expect(document.activeElement).toBe(input));
+        expect((input as HTMLInputElement).selectionStart).toBe('Milk'.length);
+        expect((input as HTMLInputElement).selectionEnd).toBe('Milk'.length);
         fireEvent.input(input, { target: { value: 'Oat milk' } });
         fireEvent.blur(input);
         expect(onRename).toHaveBeenCalledWith('milk', 'Oat milk');
@@ -139,6 +142,57 @@ describe('ChecklistEditor', () => {
         fireEvent.input(emptyInput, { target: { value: '' } });
         fireEvent.blur(emptyInput);
         expect(onRename).toHaveBeenCalledTimes(1);
+    });
+
+    it('keeps the end caret through a retargeted touch click but allows a later input tap', async () => {
+        const { container } = render(() => (
+            <ChecklistEditor
+                items={items}
+                onAdd={() => {}}
+                onRename={() => {}}
+                onDelete={() => {}}
+                onReorder={() => {}}
+            />
+        ));
+        const surface = container.querySelector<HTMLElement>('.task-row__surface');
+        if (!surface) {
+            throw new Error('expected a checklist row');
+        }
+
+        surface.dispatchEvent(
+            new PointerEvent('pointerdown', {
+                bubbles: true,
+                pointerId: 3,
+                pointerType: 'touch',
+                button: 0,
+                clientX: 20,
+                clientY: 20,
+            })
+        );
+        document.dispatchEvent(
+            new PointerEvent('pointerup', {
+                bubbles: true,
+                pointerId: 3,
+                pointerType: 'touch',
+                button: 0,
+                clientX: 20,
+                clientY: 20,
+            })
+        );
+
+        const input = await screen.findByRole<HTMLInputElement>('textbox', { name: 'Edit Milk' });
+        await vi.waitFor(() => expect(input.selectionStart).toBe('Milk'.length));
+
+        input.setSelectionRange(1, 1);
+        fireEvent.click(input);
+        expect(input.selectionStart).toBe('Milk'.length);
+        expect(input.selectionEnd).toBe('Milk'.length);
+
+        fireEvent.pointerDown(input, { pointerId: 4, pointerType: 'touch', button: 0 });
+        input.setSelectionRange(2, 2);
+        fireEvent.click(input);
+        expect(input.selectionStart).toBe(2);
+        expect(input.selectionEnd).toBe(2);
     });
 
     it('toggles and deletes checklist items', () => {

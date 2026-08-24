@@ -1,0 +1,19 @@
+.task-detail-editor__extras {
+    display: flex;
+    flex-wrap: wrap;
+    gap: var(--space-sm);
+}
+
+.task-detail-editor__extra {
+    background: none;
+    border: 1px solid var(--border-light);
+    border-radius: var(--radius-sm);
+    color: var(--text-muted);
+    font-size: 13px;
+    padding: var(--space-xs) var(--space-sm);
+}
+
+.task-detail-editor__extra:hover {
+    background: var(--bg-surface-hover);
+    color: var(--text-primary);
+}

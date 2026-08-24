@@ -1,5 +1,0 @@
-.task-template-detail__actions {
-    display: flex;
-    gap: var(--space-sm);
-    padding-top: var(--space-sm);
-}
