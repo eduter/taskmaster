@@ -22,7 +22,10 @@ const pwa = VitePWA({
         background_color: '#181818',
         display: 'standalone',
         scope: '/taskmaster/',
-        start_url: '/taskmaster/',
+        // Launch on the Today tab so the PWA's first history entry is already a
+        // tab root. Redirecting from `/` during startup can leave a history
+        // entry that traps Android back inside the app.
+        start_url: '/taskmaster/tasks',
         icons: [
             {
                 src: 'pwa-64x64.png',
