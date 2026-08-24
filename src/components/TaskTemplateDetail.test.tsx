@@ -23,14 +23,7 @@ describe('TaskTemplateDetail', () => {
             labelIds: [],
             checklistItems: [{ id: 'milk', summary: 'Milk' }],
         };
-        render(() => (
-            <TaskTemplateDetail
-                open={true}
-                template={template}
-                onClose={() => {}}
-                onSave={onSave}
-            />
-        ));
+        render(() => <TaskTemplateDetail open={true} template={template} onClose={() => {}} onSave={onSave} />);
 
         expect(screen.queryByRole('button', { name: 'Mark Milk complete' })).toBeNull();
         fireEvent.click(screen.getByRole('button', { name: 'Add checklist item' }));
@@ -103,14 +96,7 @@ describe('TaskTemplateDetail', () => {
         const onSave = vi.fn((id: string, draft: Omit<TaskTemplateDraft, 'id'>) => {
             setTemplate({ id, ...draft });
         });
-        render(() => (
-            <TaskTemplateDetail
-                open={true}
-                template={template()}
-                onClose={() => {}}
-                onSave={onSave}
-            />
-        ));
+        render(() => <TaskTemplateDetail open={true} template={template()} onClose={() => {}} onSave={onSave} />);
 
         fireEvent.click(screen.getByRole('button', { name: 'Groceries' }));
         await Promise.resolve();
