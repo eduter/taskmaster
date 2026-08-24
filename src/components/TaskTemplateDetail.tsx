@@ -7,7 +7,6 @@ import { EditableSummaryHeading } from './EditableSummaryHeading.tsx';
 import { LabelsDialog } from './labels/LabelsDialog.tsx';
 import { TaskFields } from './TaskFields.tsx';
 import './TaskDetailEditor.css';
-import './TaskTemplateDetail.css';
 
 /** Task-template form data with its editor-only identity. */
 interface TaskTemplateDraft extends TaskTemplate {
@@ -20,7 +19,6 @@ interface TaskTemplateDetailProps {
     template: TaskTemplateDraft | undefined;
     onClose: () => void;
     onSave: (id: string, template: TaskTemplate) => void;
-    onDelete: (id: string) => void;
 }
 
 /** Nested editor for the task fields stored on a generator template draft. */
@@ -131,16 +129,6 @@ function TaskTemplateDetail(props: TaskTemplateDetailProps): JSX.Element {
         persistToParent();
     }
 
-    function deleteTemplate() {
-        const template = props.template;
-        if (!template) {
-            return;
-        }
-
-        props.onDelete(template.id);
-        props.onClose();
-    }
-
     function close() {
         commitSummaryEdit();
         setLabelsOpen(false);
@@ -223,12 +211,6 @@ function TaskTemplateDetail(props: TaskTemplateDetailProps): JSX.Element {
                         </Show>
                     </div>
                 </Show>
-
-                <div class="task-template-detail__actions">
-                    <button type="button" class="btn btn--danger" onClick={deleteTemplate}>
-                        Delete
-                    </button>
-                </div>
 
                 <LabelsDialog
                     open={labelsOpen()}

@@ -29,7 +29,6 @@ describe('TaskTemplateDetail', () => {
                 template={template}
                 onClose={() => {}}
                 onSave={onSave}
-                onDelete={() => {}}
             />
         ));
 
@@ -47,49 +46,7 @@ describe('TaskTemplateDetail', () => {
         );
     });
 
-    it('does not retarget a touch checklist deletion to the template delete action', () => {
-        const onDelete = vi.fn();
-        const template: TaskTemplateDraft = {
-            id: 'template',
-            summary: 'Groceries',
-            description: '',
-            labelIds: [],
-            checklistItems: [{ id: 'milk', summary: 'Milk' }],
-        };
-        render(() => (
-            <TaskTemplateDetail
-                open={true}
-                template={template}
-                onClose={() => {}}
-                onSave={() => {}}
-                onDelete={onDelete}
-            />
-        ));
-
-        const checklistDelete = screen.getByRole('button', { name: 'Delete Milk from checklist' });
-        const templateDelete = screen.getByRole('button', { name: 'Delete' });
-        document.elementFromPoint = () => templateDelete;
-        fireEvent.pointerDown(checklistDelete, {
-            pointerId: 1,
-            pointerType: 'touch',
-            button: 0,
-            clientX: 0,
-            clientY: 0,
-        });
-        fireEvent.pointerUp(checklistDelete, {
-            pointerId: 1,
-            pointerType: 'touch',
-            button: 0,
-            clientX: 0,
-            clientY: 0,
-        });
-        fireEvent.click(templateDelete);
-
-        expect(screen.queryByRole('button', { name: 'Delete Milk from checklist' })).toBeNull();
-        expect(onDelete).not.toHaveBeenCalled();
-    });
-
-    it('has no Save button', () => {
+    it('has no Save or Delete buttons', () => {
         render(() => (
             <TaskTemplateDetail
                 open={true}
@@ -102,12 +59,11 @@ describe('TaskTemplateDetail', () => {
                 }}
                 onClose={() => {}}
                 onSave={() => {}}
-                onDelete={() => {}}
             />
         ));
 
         expect(screen.queryByRole('button', { name: 'Save' })).toBeNull();
-        expect(screen.getByRole('button', { name: 'Delete' })).toBeTruthy();
+        expect(screen.queryByRole('button', { name: 'Delete' })).toBeNull();
     });
 
     it('matches the task editor structure while retaining template-specific actions', () => {
@@ -123,7 +79,6 @@ describe('TaskTemplateDetail', () => {
                 }}
                 onClose={() => {}}
                 onSave={() => {}}
-                onDelete={() => {}}
             />
         ));
 
@@ -134,7 +89,7 @@ describe('TaskTemplateDetail', () => {
         expect(screen.getByRole('button', { name: '+ Labels' })).toBeTruthy();
         expect(screen.getByRole('button', { name: '+ Description' })).toBeTruthy();
         expect(screen.getByRole('button', { name: '+ Checklist' })).toBeTruthy();
-        expect(screen.getByRole('button', { name: 'Delete' })).toBeTruthy();
+        expect(screen.queryByRole('button', { name: 'Delete' })).toBeNull();
     });
 
     it('preserves in-progress spaces when parent draft persistence feeds back', async () => {
@@ -154,7 +109,6 @@ describe('TaskTemplateDetail', () => {
                 template={template()}
                 onClose={() => {}}
                 onSave={onSave}
-                onDelete={() => {}}
             />
         ));
 
@@ -183,7 +137,6 @@ describe('TaskTemplateDetail', () => {
                 }}
                 onClose={onClose}
                 onSave={onSave}
-                onDelete={() => {}}
             />
         ));
 
