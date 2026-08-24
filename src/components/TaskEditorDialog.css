@@ -1,0 +1,64 @@
+.task-editor__summary {
+    display: block;
+    width: 100%;
+    margin: 0;
+    padding: 0;
+    border: none;
+    background: none;
+    text-align: left;
+    font-size: 18px;
+    font-weight: 600;
+    color: var(--text-heading);
+    overflow-wrap: anywhere;
+}
+
+.task-editor__summary:hover {
+    color: #fff;
+}
+
+.task-editor__summary-input {
+    width: 100%;
+    margin: 0;
+    padding: var(--space-xs) var(--space-sm);
+    border: 1px solid var(--accent);
+    border-radius: var(--radius-sm);
+    background: var(--bg-input);
+    color: var(--text-heading);
+    font-size: 18px;
+    font-weight: 600;
+    outline: none;
+}
+
+.task-editor__when {
+    display: block;
+    width: 100%;
+    margin: 0;
+    padding: 0;
+    border: none;
+    background: none;
+    text-align: left;
+    color: var(--text-primary);
+    font-size: 16px;
+}
+
+.task-editor__when:hover {
+    color: var(--text-heading);
+}
+
+.task-editor__extras {
+    display: flex;
+    flex-wrap: wrap;
+    gap: var(--space-xs);
+}
+
+.task-editor__extra {
+    background: none;
+    border: none;
+    color: var(--text-muted);
+    font-size: 13px;
+    padding: var(--space-xs) var(--space-sm);
+}
+
+.task-editor__extra:hover {
+    color: var(--text-primary);
+}

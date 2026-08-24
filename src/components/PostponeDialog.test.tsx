@@ -17,9 +17,7 @@ describe('PostponeDialog', () => {
     afterEach(cleanup);
 
     it('offers postpone presets and a month grid', () => {
-        render(() => (
-            <PostponeDialog open={true} selectedDate="2026-08-24" onClose={() => {}} onPick={() => {}} />
-        ));
+        render(() => <PostponeDialog open={true} selectedDate="2026-08-24" onClose={() => {}} onPick={() => {}} />);
 
         expect(screen.getByRole('heading', { name: 'When' })).toBeTruthy();
         expect(screen.getByRole('button', { name: 'Tomorrow' })).toBeTruthy();
@@ -31,9 +29,7 @@ describe('PostponeDialog', () => {
 
     it('picks a preset date', () => {
         const onPick = vi.fn();
-        render(() => (
-            <PostponeDialog open={true} selectedDate="2026-08-24" onClose={() => {}} onPick={onPick} />
-        ));
+        render(() => <PostponeDialog open={true} selectedDate="2026-08-24" onClose={() => {}} onPick={onPick} />);
 
         fireEvent.click(screen.getByRole('button', { name: 'Tomorrow' }));
         expect(onPick).toHaveBeenCalledWith('2026-08-25');
@@ -41,9 +37,7 @@ describe('PostponeDialog', () => {
 
     it('picks a calendar day on or after today', () => {
         const onPick = vi.fn();
-        render(() => (
-            <PostponeDialog open={true} selectedDate="2026-08-24" onClose={() => {}} onPick={onPick} />
-        ));
+        render(() => <PostponeDialog open={true} selectedDate="2026-08-24" onClose={() => {}} onPick={onPick} />);
 
         fireEvent.click(screen.getByRole('button', { name: '2026-08-28' }));
         expect(onPick).toHaveBeenCalledWith('2026-08-28');
@@ -51,9 +45,7 @@ describe('PostponeDialog', () => {
 
     it('does not pick days before today', () => {
         const onPick = vi.fn();
-        render(() => (
-            <PostponeDialog open={true} selectedDate="2026-08-24" onClose={() => {}} onPick={onPick} />
-        ));
+        render(() => <PostponeDialog open={true} selectedDate="2026-08-24" onClose={() => {}} onPick={onPick} />);
 
         expect(screen.getByRole('button', { name: '2026-08-23' })).toHaveProperty('disabled', true);
         expect(onPick).not.toHaveBeenCalled();

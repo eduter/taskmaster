@@ -5,7 +5,7 @@ import { loadCalendarRange } from '../calendar/calendarData.ts';
 import type { ProjectedTask } from '../calendar/project.ts';
 import { indexCalendarItemsByDate, shouldRenderCalendarPage } from '../calendar/calendarViewModel.ts';
 import type { Task } from '../db/types.ts';
-import { useAppNavigate, useLabelsPanelOpen } from '../routing/navigation.ts';
+import { useAppNavigate, useLabelsPanelOpen, usePostponePanelOpen } from '../routing/navigation.ts';
 import { genVersion } from '../stores/generatorStore.ts';
 import { editTask, reorder, taskVersion, today } from '../stores/taskStore.ts';
 import {
@@ -20,6 +20,7 @@ import { AddTask } from './AddTask.tsx';
 import { Dialog } from './Dialog.tsx';
 import { SegmentedControl, type SegmentedOption } from './SegmentedControl.tsx';
 import { TaskCardView } from './TaskCard.tsx';
+import { PostponeDialog } from './PostponeDialog.tsx';
 import { TaskEditorDialog } from './TaskEditorDialog.tsx';
 import { TaskRows } from './TaskRows.tsx';
 import { LabelsDialog } from './labels/LabelsDialog.tsx';
@@ -40,6 +41,7 @@ const WEEKDAY_LABELS = ['Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat', 'Sun'];
 function CalendarTab(): JSX.Element {
     const params = useParams();
     const labelsOpen = useLabelsPanelOpen();
+    const postponeOpen = usePostponePanelOpen();
     const navigation = useAppNavigate();
     const [monthIndex, setMonthIndex] = createSignal(MONTH_MIDDLE_INDEX);
     const [weekIndex, setWeekIndex] = createSignal(WEEK_MIDDLE_INDEX);
@@ -153,6 +155,15 @@ function CalendarTab(): JSX.Element {
         await editTask(task.id, { labelIds });
     }
 
+    async function pickPostponeDate(date: string): Promise<void> {
+        const task = selectedTask();
+        if (!task) {
+            return;
+        }
+        await editTask(task.id, { date });
+        navigation.closePostponePicker();
+    }
+
     return (
         <section class="calendar-tab">
             <header class="calendar-toolbar">
@@ -236,6 +247,7 @@ function CalendarTab(): JSX.Element {
                         task={task()}
                         onClose={navigation.closeCalendarDetail}
                         onOpenLabelsPicker={navigation.openLabelsPicker}
+                        onOpenPostponePicker={navigation.openPostponePicker}
                         stackLevel={1}
                     />
                 )}
@@ -246,6 +258,14 @@ function CalendarTab(): JSX.Element {
                 onClose={navigation.closeLabelsPicker}
                 selectedLabelIds={selectedTask()?.labelIds ?? []}
                 onToggleLabel={toggleTaskLabel}
+                stackLevel={2}
+            />
+
+            <PostponeDialog
+                open={postponeOpen() && !!selectedTask()}
+                selectedDate={selectedTask()?.date ?? ''}
+                onClose={navigation.closePostponePicker}
+                onPick={pickPostponeDate}
                 stackLevel={2}
             />
         </section>

@@ -1,9 +1,10 @@
 import { useParams } from '@solidjs/router';
-import { createMemo } from 'solid-js';
+import { createMemo, createResource } from 'solid-js';
 import { useAppNavigate, useLabelsPanelOpen } from '../../routing/navigation.ts';
-import { editTask, tasks } from '../../stores/taskStore.ts';
+import { editTask, loadTask, taskVersion } from '../../stores/taskStore.ts';
 import { LabelsDialog } from './LabelsDialog.tsx';
 
+/** Route-backed labels overlay for the Today task editor. */
 function LabelsPicker() {
     const params = useParams();
     const labelsOpen = useLabelsPanelOpen();
@@ -11,13 +12,19 @@ function LabelsPicker() {
 
     const taskId = () => params.id;
 
-    const task = createMemo(() => {
-        const id = taskId();
-        if (!id) {
-            return undefined;
-        }
-        return (tasks() ?? []).find((t) => t.id === id);
-    });
+    const [task] = createResource(
+        () => {
+            const id = taskId();
+            const version = taskVersion();
+            if (!labelsOpen() || !id) {
+                return null;
+            }
+            return { id, version };
+        },
+        ({ id }) => loadTask(id)
+    );
+
+    const selectedLabelIds = createMemo(() => task()?.labelIds ?? []);
 
     async function toggleTaskLabel(labelId: string) {
         const current = task();
@@ -33,7 +40,7 @@ function LabelsPicker() {
         <LabelsDialog
             open={labelsOpen() && !!taskId()}
             onClose={closeLabelsPicker}
-            selectedLabelIds={task()?.labelIds ?? []}
+            selectedLabelIds={selectedLabelIds()}
             onToggleLabel={toggleTaskLabel}
             stackLevel={1}
         />

@@ -1,4 +1,4 @@
-import { createSignal, Show, type JSX } from 'solid-js';
+import { createSignal, onMount, Show, type JSX } from 'solid-js';
 import checkIcon from '../icons/check.svg?raw';
 import { GestureRow } from './GestureRow.tsx';
 import { Icon } from './Icon.tsx';
@@ -13,6 +13,7 @@ interface ChecklistEditorItem {
 
 interface ChecklistEditorProps {
     items: ChecklistEditorItem[];
+    startAdding?: boolean;
     onAdd: (summary: string) => void | Promise<void>;
     onRename: (id: string, summary: string) => void | Promise<void>;
     onToggle?: (id: string) => void | Promise<void>;
@@ -26,6 +27,12 @@ function ChecklistEditor(props: ChecklistEditorProps): JSX.Element {
     const [editingSummary, setEditingSummary] = createSignal('');
     const [adding, setAdding] = createSignal(false);
     const [newSummary, setNewSummary] = createSignal('');
+
+    onMount(() => {
+        if (props.startAdding) {
+            beginAdd();
+        }
+    });
 
     function beginAdd(): void {
         setEditingId(null);

@@ -1,8 +1,8 @@
 import { useParams } from '@solidjs/router';
 import { createMemo, createResource } from 'solid-js';
-import { useAppNavigate, usePostponePanelOpen } from '../../routing/navigation.ts';
-import { editTask, loadTask, taskVersion } from '../../stores/taskStore.ts';
-import { PostponeDialog } from '../PostponeDialog.tsx';
+import { useAppNavigate, usePostponePanelOpen } from '../routing/navigation.ts';
+import { editTask, loadTask, taskVersion } from '../stores/taskStore.ts';
+import { PostponeDialog } from './PostponeDialog.tsx';
 
 /** Route-backed postpone overlay for the Today task editor. */
 function PostponePicker() {
