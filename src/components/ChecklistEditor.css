@@ -1,34 +1,14 @@
 .checklist-editor {
     display: flex;
     flex-direction: column;
-    gap: var(--space-sm);
+    gap: var(--space-xs);
     min-width: 0;
 }
 
-.checklist-editor__header {
+.checklist-editor__body {
     display: flex;
-    align-items: center;
-    justify-content: space-between;
-}
-
-.checklist-editor__add {
-    display: inline-flex;
-    align-items: center;
-    justify-content: center;
-    width: 32px;
-    height: 32px;
-    padding: 0;
-    border: 1px solid var(--border-light);
-    border-radius: var(--radius-sm);
-    background: var(--bg-surface);
-    color: var(--text-primary);
-    font-size: 1.4rem;
-    line-height: 1;
-    cursor: pointer;
-}
-
-.checklist-editor__add:hover {
-    background: var(--bg-surface-hover);
+    flex-direction: column;
+    gap: var(--space-sm);
 }
 
 .checklist-editor__item {

@@ -145,7 +145,7 @@ describe('TaskEditorDialog layout', () => {
         expect(screen.queryByRole('button', { name: '+ Checklist' })).toBeNull();
     });
 
-    it('puts label chips left of the add button', () => {
+    it('puts the labels plus immediately after the last chip', () => {
         labelsMock.list = [{ id: 'home', name: 'Home', color: '#4363d8' }];
         render(() => (
             <TaskEditorDialog
@@ -158,9 +158,40 @@ describe('TaskEditorDialog layout', () => {
 
         expect(screen.queryByRole('button', { name: '+ Labels' })).toBeNull();
         const add = screen.getByRole('button', { name: 'Edit labels' });
-        const row = add.parentElement;
-        expect(row?.textContent).toContain('Home');
-        expect(row?.lastElementChild).toBe(add);
+        const chips = add.parentElement;
+        expect(chips?.classList.contains('task-fields__labels')).toBe(true);
+        expect(chips?.textContent).toContain('Home');
+        expect(chips?.lastElementChild).toBe(add);
+        expect(add.classList.contains('add-icon-btn')).toBe(true);
+        expect(add.querySelector('svg')).toBeTruthy();
+    });
+
+    it('indents field values under their section labels', () => {
+        labelsMock.list = [{ id: 'home', name: 'Home', color: '#4363d8' }];
+        render(() => (
+            <TaskEditorDialog
+                task={makeTask({
+                    description: 'Dont forget eggs',
+                    labelIds: ['home'],
+                })}
+                onClose={() => {}}
+                onOpenLabelsPicker={() => {}}
+                onOpenPostponePicker={() => {}}
+            />
+        ));
+
+        const when = screen.getByRole('button', { name: 'When: Today' });
+        expect(when.closest('.form-field-body')).toBeTruthy();
+
+        const description = screen.getByLabelText('Description');
+        expect(description.closest('.form-field-body')).toBeTruthy();
+
+        const labelsAdd = screen.getByRole('button', { name: 'Edit labels' });
+        expect(labelsAdd.closest('.form-field-body')).toBeTruthy();
+
+        const checklistAdd = screen.getByRole('button', { name: 'Add checklist item' });
+        expect(checklistAdd.closest('.form-field-body')).toBeTruthy();
+        expect(checklistAdd.closest('.form-field-body')?.querySelector('.form-label')).toBeNull();
     });
 
     it('shows the scheduled day as a When field', () => {

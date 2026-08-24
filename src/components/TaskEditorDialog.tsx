@@ -202,14 +202,16 @@ function TaskEditorDialog(props: TaskEditorDialogProps): JSX.Element {
         >
             <div class="form-field">
                 <span class="form-label">When</span>
-                <button
-                    type="button"
-                    class="task-editor__when"
-                    aria-label={`When: ${whenLabel()}`}
-                    onClick={() => void openWhen()}
-                >
-                    {whenLabel()}
-                </button>
+                <div class="form-field-body">
+                    <button
+                        type="button"
+                        class="task-editor__when"
+                        aria-label={`When: ${whenLabel()}`}
+                        onClick={() => void openWhen()}
+                    >
+                        {whenLabel()}
+                    </button>
+                </div>
             </div>
 
             <TaskFields

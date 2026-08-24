@@ -61,6 +61,44 @@ function dispatchMousePointer(target: EventTarget, type: string, clientY: number
 describe('ChecklistEditor', () => {
     afterEach(cleanup);
 
+    it('places a matching plus button below the last item', () => {
+        const { container } = render(() => (
+            <ChecklistEditor
+                items={items}
+                onAdd={() => {}}
+                onRename={() => {}}
+                onDelete={() => {}}
+                onReorder={() => {}}
+            />
+        ));
+
+        const add = screen.getByRole('button', { name: 'Add checklist item' });
+        const lastItem = screen.getByText('Bread');
+        expect(add.compareDocumentPosition(lastItem) & Node.DOCUMENT_POSITION_PRECEDING).toBe(
+            Node.DOCUMENT_POSITION_PRECEDING
+        );
+        expect(add.closest('.form-field-body')).toBeTruthy();
+        expect(container.querySelector('.form-label')?.closest('.form-field-body')).toBeNull();
+        expect(add.classList.contains('add-icon-btn')).toBe(true);
+        expect(add.querySelector('svg')).toBeTruthy();
+    });
+
+    it('replaces the plus with the new-item input while adding', () => {
+        render(() => (
+            <ChecklistEditor
+                items={items}
+                onAdd={() => {}}
+                onRename={() => {}}
+                onDelete={() => {}}
+                onReorder={() => {}}
+            />
+        ));
+
+        fireEvent.click(screen.getByRole('button', { name: 'Add checklist item' }));
+        expect(screen.queryByRole('button', { name: 'Add checklist item' })).toBeNull();
+        expect(screen.getByRole('textbox', { name: 'New checklist item' })).toBeTruthy();
+    });
+
     it('adds a focused checklist item inline', async () => {
         const onAdd = vi.fn();
         render(() => (

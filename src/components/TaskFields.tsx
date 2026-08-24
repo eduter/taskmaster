@@ -54,13 +54,15 @@ function TaskFields(props: TaskFieldsProps): JSX.Element {
                     <label class="form-label" for={props.summaryInputId}>
                         Summary
                     </label>
-                    <input
-                        id={props.summaryInputId}
-                        class="form-input"
-                        type="text"
-                        value={props.summary}
-                        onInput={(e) => props.onSummaryChange(e.currentTarget.value)}
-                    />
+                    <div class="form-field-body">
+                        <input
+                            id={props.summaryInputId}
+                            class="form-input"
+                            type="text"
+                            value={props.summary}
+                            onInput={(e) => props.onSummaryChange(e.currentTarget.value)}
+                        />
+                    </div>
                 </div>
             </Show>
 
@@ -69,33 +71,35 @@ function TaskFields(props: TaskFieldsProps): JSX.Element {
                     <label class="form-label" for={props.descriptionInputId}>
                         Description
                     </label>
-                    <textarea
-                        id={props.descriptionInputId}
-                        class="form-textarea"
-                        value={props.description}
-                        onInput={(e) => props.onDescriptionChange(e.currentTarget.value)}
-                        rows={4}
-                    />
+                    <div class="form-field-body">
+                        <textarea
+                            id={props.descriptionInputId}
+                            class="form-textarea"
+                            value={props.description}
+                            onInput={(e) => props.onDescriptionChange(e.currentTarget.value)}
+                            rows={4}
+                        />
+                    </div>
                 </div>
             </Show>
 
             <Show when={showLabelsRow()}>
                 <div class="form-field">
                     <span class="form-label">Labels</span>
-                    <div class="task-fields__labels-row">
+                    <div class="form-field-body">
                         <div class="task-fields__labels">
                             <For each={selectedLabels()}>
                                 {(label) => <LabelChip name={label.name} color={label.color} />}
                             </For>
+                            <button
+                                type="button"
+                                class="add-icon-btn"
+                                aria-label={props.labelsButtonLabel ?? 'Edit labels'}
+                                onClick={props.onOpenLabelsPicker}
+                            >
+                                <Icon src={plusIcon} width={16} height={16} />
+                            </button>
                         </div>
-                        <button
-                            type="button"
-                            class="task-fields__labels-btn"
-                            aria-label={props.labelsButtonLabel ?? 'Edit labels'}
-                            onClick={props.onOpenLabelsPicker}
-                        >
-                            <Icon src={plusIcon} width={16} height={16} />
-                        </button>
                     </div>
                 </div>
             </Show>
