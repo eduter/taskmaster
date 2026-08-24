@@ -180,11 +180,18 @@
                 pointer-events: none;
             }
 
+            .phone {
+                position: relative;
+                width: min(400px, 100%);
+                height: min(680px, calc(100dvh - 170px));
+                pointer-events: none;
+            }
+
             .panel {
                 pointer-events: auto;
                 width: 100%;
-                max-width: 400px;
-                max-height: calc(100dvh - 170px);
+                max-width: none;
+                max-height: 100%;
                 overflow: auto;
                 background: var(--bg-secondary);
                 border-radius: 0 0 var(--radius-lg) var(--radius-lg);
@@ -199,7 +206,6 @@
             .closed {
                 pointer-events: auto;
                 width: 100%;
-                max-width: 400px;
                 margin-top: 48px;
                 padding: 24px;
                 background: var(--bg-secondary);
@@ -614,12 +620,13 @@
             /* Overlays inside the panel */
 
             .overlay {
-                position: fixed;
+                position: absolute;
                 inset: 0;
                 background: rgba(0, 0, 0, 0.45);
                 display: flex;
                 align-items: end;
                 z-index: 30;
+                pointer-events: auto;
             }
 
             .overlay--center {
@@ -630,9 +637,9 @@
 
             .sheet {
                 width: 100%;
-                max-width: 400px;
-                margin: 0 auto;
-                max-height: min(85dvh, 640px);
+                max-width: none;
+                margin: 0;
+                max-height: min(85%, 560px);
                 overflow: auto;
                 background: var(--bg-surface);
                 border-radius: var(--radius-lg) var(--radius-lg) 0 0;
@@ -756,7 +763,7 @@
                 <div class="fake-row"><span class="fake-check"></span> Anki review</div>
             </div>
             <div class="scrim"></div>
-            <div class="dialog-wrap" id="mount"></div>
+            <div class="dialog-wrap"><div class="phone" id="mount"></div></div>
         </main>
 
         <script>
@@ -995,7 +1002,7 @@
                     postponeChips("toggle-picker") + picker +
                     '<div class="actions"><button type="button" class="btn btn--primary" data-act="dismiss">Save</button>' +
                     '<button type="button" class="btn btn--danger" data-act="delete">Delete</button></div>' +
-                    labelsOverlay() + "</article>";
+                    "</article>" + labelsOverlay();
             }
 
             function renderA() {
@@ -1007,7 +1014,7 @@
                     : "";
                 return '<article class="panel">' + summaryHeader() + labelsField() +
                     descriptionBlock(false) + checklistBlock(false) +
-                    postponeChips("open-date-popover") + pop + extrasRow(true) + labelsOverlay() + "</article>";
+                    postponeChips("open-date-popover") + pop + extrasRow(true) + "</article>" + labelsOverlay();
             }
 
             function renderB() {
@@ -1026,7 +1033,7 @@
                     ICONS.cal + "</button>" + extrasRow(false) +
                     '<div class="actions"><button type="button" class="btn btn--primary" data-act="dismiss">Save</button>' +
                     '<button type="button" class="btn btn--danger" data-act="delete">Delete</button></div>' +
-                    sheet + labelsOverlay() + "</article>";
+                    "</article>" + sheet + labelsOverlay();
             }
 
             function renderC() {
@@ -1042,7 +1049,7 @@
                     moved + "</div>" + descriptionBlock(false) + checklistBlock(false) + extrasRow(false) +
                     '<div class="actions"><button type="button" class="btn btn--primary" data-act="dismiss">Done</button>' +
                     '<button type="button" class="btn btn--danger" data-act="delete">Delete</button></div>' +
-                    labelsOverlay() + "</article>";
+                    "</article>" + labelsOverlay();
             }
 
             function renderD() {
@@ -1052,7 +1059,7 @@
                     '<button type="button" data-act="postpone" data-date="' + addDays(1) + '">Tomorrow</button>' +
                     '<button type="button" data-act="postpone" data-date="' + nextMonday() + '">Mon</button>' +
                     '<button type="button" data-act="postpone" data-date="' + addDays(7) + '">Week</button></div></div>' +
-                    calendarHtml("") + extrasRow(true) + labelsOverlay() + "</article>";
+                    calendarHtml("") + extrasRow(true) + "</article>" + labelsOverlay();
             }
 
             function renderE() {
@@ -1073,7 +1080,7 @@
                     (state.rich || state.descOpen ? "" : '<button type="button" class="icon-btn" data-act="add-desc" aria-label="Add description">' + ICONS.note + "</button>") +
                     (state.rich || state.listOpen ? "" : '<button type="button" class="icon-btn" data-act="add-list" aria-label="Add checklist">' + ICONS.plus + "</button>") +
                     '<button type="button" class="icon-btn" data-act="delete" aria-label="Delete">' + ICONS.trash + "</button></div>" +
-                    pop + labelsOverlay() + "</article>";
+                    pop + "</article>" + labelsOverlay();
             }
 
             const renderers = { current: renderCurrent, a: renderA, b: renderB, c: renderC, d: renderD, e: renderE };
