@@ -17,7 +17,6 @@
     background: var(--bg-surface);
     color: var(--text-secondary);
     cursor: pointer;
-    margin-left: auto;
 }
 
 .task-fields__labels-btn:hover {

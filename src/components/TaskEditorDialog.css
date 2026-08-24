@@ -31,7 +31,8 @@
 
 .task-editor__when {
     display: block;
-    width: 100%;
+    width: fit-content;
+    max-width: 100%;
     margin: 0;
     padding: 0;
     border: none;
@@ -39,6 +40,8 @@
     text-align: left;
     color: var(--text-primary);
     font-size: 16px;
+    font-weight: 400;
+    text-transform: none;
 }
 
 .task-editor__when:hover {
