@@ -347,7 +347,6 @@ function GeneratorEditor(props: GeneratorEditorProps) {
                 template={editingTemplate()}
                 onClose={() => setEditingTemplateId(null)}
                 onSave={updateTemplate}
-                onDelete={removeTemplate}
             />
         </div>
     );

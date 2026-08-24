@@ -186,6 +186,8 @@ interface ChecklistItemContentProps {
 }
 
 function ChecklistItemContent(props: ChecklistItemContentProps): JSX.Element {
+    let editInputPointerStarted = false;
+
     function stopRowGesture(event: Event): void {
         event.stopPropagation();
     }
@@ -210,12 +212,28 @@ function ChecklistItemContent(props: ChecklistItemContentProps): JSX.Element {
 
             <Show when={props.editing} fallback={<span class="checklist-editor__summary">{props.item.summary}</span>}>
                 <input
-                    ref={focusAndSelectInput}
+                    ref={focusAtEnd}
                     class="checklist-editor__input"
                     aria-label={`Edit ${props.item.summary}`}
                     value={props.editingSummary}
-                    onPointerDown={stopRowGesture}
-                    onClick={stopRowGesture}
+                    onPointerDown={(event) => {
+                        stopRowGesture(event);
+                        editInputPointerStarted = true;
+                    }}
+                    onPointerCancel={(event) => {
+                        stopRowGesture(event);
+                        editInputPointerStarted = false;
+                    }}
+                    onClick={(event) => {
+                        stopRowGesture(event);
+                        const input = event.currentTarget;
+                        if (!editInputPointerStarted) {
+                            event.preventDefault();
+                            const end = input.value.length;
+                            input.setSelectionRange(end, end);
+                        }
+                        editInputPointerStarted = false;
+                    }}
                     onInput={(event) => props.onEditingSummaryChange(event.currentTarget.value)}
                     onKeyDown={(event) => {
                         if (event.key === 'Enter') {
@@ -237,10 +255,11 @@ function focusInput(element: HTMLInputElement): void {
     queueMicrotask(() => element.focus());
 }
 
-function focusAndSelectInput(element: HTMLInputElement): void {
+function focusAtEnd(element: HTMLInputElement): void {
     queueMicrotask(() => {
         element.focus();
-        element.select();
+        const end = element.value.length;
+        element.setSelectionRange(end, end);
     });
 }
 
