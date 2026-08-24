@@ -144,6 +144,57 @@ describe('ChecklistEditor', () => {
         expect(onRename).toHaveBeenCalledTimes(1);
     });
 
+    it('keeps the end caret through a retargeted touch click but allows a later input tap', async () => {
+        const { container } = render(() => (
+            <ChecklistEditor
+                items={items}
+                onAdd={() => {}}
+                onRename={() => {}}
+                onDelete={() => {}}
+                onReorder={() => {}}
+            />
+        ));
+        const surface = container.querySelector<HTMLElement>('.task-row__surface');
+        if (!surface) {
+            throw new Error('expected a checklist row');
+        }
+
+        surface.dispatchEvent(
+            new PointerEvent('pointerdown', {
+                bubbles: true,
+                pointerId: 3,
+                pointerType: 'touch',
+                button: 0,
+                clientX: 20,
+                clientY: 20,
+            })
+        );
+        document.dispatchEvent(
+            new PointerEvent('pointerup', {
+                bubbles: true,
+                pointerId: 3,
+                pointerType: 'touch',
+                button: 0,
+                clientX: 20,
+                clientY: 20,
+            })
+        );
+
+        const input = await screen.findByRole<HTMLInputElement>('textbox', { name: 'Edit Milk' });
+        await vi.waitFor(() => expect(input.selectionStart).toBe('Milk'.length));
+
+        input.setSelectionRange(1, 1);
+        fireEvent.click(input);
+        expect(input.selectionStart).toBe('Milk'.length);
+        expect(input.selectionEnd).toBe('Milk'.length);
+
+        fireEvent.pointerDown(input, { pointerId: 4, pointerType: 'touch', button: 0 });
+        input.setSelectionRange(2, 2);
+        fireEvent.click(input);
+        expect(input.selectionStart).toBe(2);
+        expect(input.selectionEnd).toBe(2);
+    });
+
     it('toggles and deletes checklist items', () => {
         const onToggle = vi.fn();
         const onDelete = vi.fn();

@@ -186,6 +186,8 @@ interface ChecklistItemContentProps {
 }
 
 function ChecklistItemContent(props: ChecklistItemContentProps): JSX.Element {
+    let editInputPointerStarted = false;
+
     function stopRowGesture(event: Event): void {
         event.stopPropagation();
     }
@@ -214,8 +216,24 @@ function ChecklistItemContent(props: ChecklistItemContentProps): JSX.Element {
                     class="checklist-editor__input"
                     aria-label={`Edit ${props.item.summary}`}
                     value={props.editingSummary}
-                    onPointerDown={stopRowGesture}
-                    onClick={stopRowGesture}
+                    onPointerDown={(event) => {
+                        stopRowGesture(event);
+                        editInputPointerStarted = true;
+                    }}
+                    onPointerCancel={(event) => {
+                        stopRowGesture(event);
+                        editInputPointerStarted = false;
+                    }}
+                    onClick={(event) => {
+                        stopRowGesture(event);
+                        const input = event.currentTarget;
+                        if (!editInputPointerStarted) {
+                            event.preventDefault();
+                            const end = input.value.length;
+                            input.setSelectionRange(end, end);
+                        }
+                        editInputPointerStarted = false;
+                    }}
                     onInput={(event) => props.onEditingSummaryChange(event.currentTarget.value)}
                     onKeyDown={(event) => {
                         if (event.key === 'Enter') {
