@@ -15,7 +15,7 @@ interface PostponeDialogProps {
 
 const WEEKDAYS = ['M', 'T', 'W', 'T', 'F', 'S', 'S'];
 
-/** Postpone picker: presets plus a month grid. Dismiss with ×, backdrop, ESC, or back. */
+/** When picker: presets plus a month grid. Any day is selectable, including today and the past. */
 function PostponeDialog(props: PostponeDialogProps): JSX.Element {
     const initialMonth = () => startOfMonth(props.selectedDate || today());
     const [month, setMonth] = createSignal(initialMonth());
@@ -44,6 +44,9 @@ function PostponeDialog(props: PostponeDialogProps): JSX.Element {
             panelClass="postpone-dialog"
         >
             <div class="postpone-dialog__presets">
+                <button type="button" class="postpone-dialog__preset" onClick={() => pick(today())}>
+                    Today
+                </button>
                 <button type="button" class="postpone-dialog__preset" onClick={() => pick(addDays(today(), 1))}>
                     Tomorrow
                 </button>
@@ -105,8 +108,6 @@ interface PostponeDayButtonProps {
 }
 
 function PostponeDayButton(props: PostponeDayButtonProps): JSX.Element {
-    const disabled = () => props.date < today();
-
     return (
         <button
             type="button"
@@ -116,7 +117,6 @@ function PostponeDayButton(props: PostponeDayButtonProps): JSX.Element {
                 'postpone-dialog__day--today': props.date === today(),
                 'postpone-dialog__day--selected': props.selected,
             }}
-            disabled={disabled()}
             aria-label={props.date}
             onClick={() => props.onPick(props.date)}
         >

@@ -76,7 +76,7 @@
     font-size: 13px;
 }
 
-.postpone-dialog__day:hover:not(:disabled) {
+.postpone-dialog__day:hover {
     background: var(--bg-surface-hover);
 }
 
@@ -91,9 +91,4 @@
 .postpone-dialog__day--selected {
     background: var(--accent);
     color: #fff;
-}
-
-.postpone-dialog__day:disabled {
-    opacity: 0.4;
-    cursor: default;
 }

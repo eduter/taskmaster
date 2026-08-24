@@ -16,15 +16,24 @@ describe('PostponeDialog', () => {
 
     afterEach(cleanup);
 
-    it('offers postpone presets and a month grid', () => {
+    it('offers When presets and a month grid', () => {
         render(() => <PostponeDialog open={true} selectedDate="2026-08-24" onClose={() => {}} onPick={() => {}} />);
 
         expect(screen.getByRole('heading', { name: 'When' })).toBeTruthy();
+        expect(screen.getByRole('button', { name: 'Today' })).toBeTruthy();
         expect(screen.getByRole('button', { name: 'Tomorrow' })).toBeTruthy();
         expect(screen.getByRole('button', { name: 'Next Monday' })).toBeTruthy();
         expect(screen.getByRole('button', { name: 'Next week' })).toBeTruthy();
         expect(screen.getByRole('button', { name: '2026-08-24' })).toBeTruthy();
         expect(screen.getByRole('button', { name: '2026-08-25' })).toBeTruthy();
+    });
+
+    it('picks today from a future task', () => {
+        const onPick = vi.fn();
+        render(() => <PostponeDialog open={true} selectedDate="2026-09-15" onClose={() => {}} onPick={onPick} />);
+
+        fireEvent.click(screen.getByRole('button', { name: 'Today' }));
+        expect(onPick).toHaveBeenCalledWith('2026-08-24');
     });
 
     it('picks a preset date', () => {
@@ -35,19 +44,15 @@ describe('PostponeDialog', () => {
         expect(onPick).toHaveBeenCalledWith('2026-08-25');
     });
 
-    it('picks a calendar day on or after today', () => {
+    it('picks any calendar day, including today and the past', () => {
         const onPick = vi.fn();
         render(() => <PostponeDialog open={true} selectedDate="2026-08-24" onClose={() => {}} onPick={onPick} />);
 
-        fireEvent.click(screen.getByRole('button', { name: '2026-08-28' }));
-        expect(onPick).toHaveBeenCalledWith('2026-08-28');
-    });
+        fireEvent.click(screen.getByRole('button', { name: '2026-08-24' }));
+        expect(onPick).toHaveBeenCalledWith('2026-08-24');
 
-    it('does not pick days before today', () => {
-        const onPick = vi.fn();
-        render(() => <PostponeDialog open={true} selectedDate="2026-08-24" onClose={() => {}} onPick={onPick} />);
-
-        expect(screen.getByRole('button', { name: '2026-08-23' })).toHaveProperty('disabled', true);
-        expect(onPick).not.toHaveBeenCalled();
+        fireEvent.click(screen.getByRole('button', { name: '2026-08-23' }));
+        expect(onPick).toHaveBeenCalledWith('2026-08-23');
+        expect(screen.getByRole('button', { name: '2026-08-23' })).toHaveProperty('disabled', false);
     });
 });
