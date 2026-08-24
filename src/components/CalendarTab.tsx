@@ -169,7 +169,11 @@ function CalendarTab(): JSX.Element {
             <header class="calendar-toolbar">
                 <div class="calendar-toolbar__headline">
                     <h1>{calendarView() === 'month' ? formatMonth(visibleMonth()) : formatWeek(visibleWeek())}</h1>
-                    <button type="button" class="btn calendar-toolbar__today" onClick={() => scrollToCurrent(true)}>
+                    <button
+                        type="button"
+                        class="btn btn--secondary calendar-toolbar__today"
+                        onClick={() => scrollToCurrent(true)}
+                    >
                         Today
                     </button>
                 </div>
