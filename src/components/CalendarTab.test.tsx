@@ -31,11 +31,14 @@ const nav = vi.hoisted(() => ({
     closeSyncPanel: vi.fn(),
     openLabelsPicker: vi.fn(),
     closeLabelsPicker: vi.fn(),
+    openPostponePicker: vi.fn(),
+    closePostponePicker: vi.fn(),
 }));
 
 vi.mock('../routing/navigation.ts', () => ({
     useAppNavigate: () => nav,
     useLabelsPanelOpen: () => () => false,
+    usePostponePanelOpen: () => () => false,
 }));
 
 afterEach(() => {

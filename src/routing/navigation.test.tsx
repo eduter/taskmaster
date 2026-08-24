@@ -5,7 +5,7 @@ import type { JSX } from 'solid-js';
 import { afterEach, describe, expect, it } from 'vitest';
 import { RedirectToTasks } from '../App.tsx';
 import { AppTabs } from '../components/AppTabs.tsx';
-import { useAppNavigate, useLabelsPanelOpen, useSyncPanelOpen } from './navigation.ts';
+import { useAppNavigate, useLabelsPanelOpen, usePostponePanelOpen, useSyncPanelOpen } from './navigation.ts';
 
 interface HistorySnapshot {
     path: string;
@@ -77,6 +77,7 @@ function HistoryHarness(props: { children?: JSX.Element }) {
     const location = useLocation();
     useSyncPanelOpen();
     useLabelsPanelOpen();
+    usePostponePanelOpen();
 
     return (
         <div>
@@ -115,6 +116,12 @@ function HistoryHarness(props: { children?: JSX.Element }) {
             </button>
             <button type="button" onClick={() => nav.closeLabelsPicker()}>
                 Close labels
+            </button>
+            <button type="button" onClick={() => nav.openPostponePicker()}>
+                Open postpone
+            </button>
+            <button type="button" onClick={() => nav.closePostponePicker()}>
+                Close postpone
             </button>
         </div>
     );
@@ -225,6 +232,47 @@ describe('dialog history', () => {
         fireEvent.click(screen.getByRole('button', { name: 'Close calendar detail' }));
         await pathIs('/calendar/2026-08-24');
         fireEvent.click(screen.getByRole('button', { name: 'Close calendar detail' }));
+        await pathIs('/calendar');
+        expect(inspectable.snapshot().atRoot).toBe(true);
+    });
+
+    it('pops postpone, then the task, then the day, without returning to Today', async () => {
+        const { inspectable } = renderApp('/tasks');
+
+        fireEvent.click(screen.getByRole('button', { name: 'Calendar' }));
+        await pathIs('/calendar');
+        expect(inspectable.snapshot().atRoot).toBe(true);
+
+        fireEvent.click(screen.getByRole('button', { name: 'Open day' }));
+        await pathIs('/calendar/2026-08-24');
+        fireEvent.click(screen.getByRole('button', { name: 'Open calendar task' }));
+        await pathIs('/calendar/2026-08-24/tasks/task-1');
+        fireEvent.click(screen.getByRole('button', { name: 'Open postpone' }));
+        await pathIs('/calendar/2026-08-24/tasks/task-1?modal=postpone');
+        expect(inspectable.snapshot()).toEqual({
+            path: '/calendar/2026-08-24/tasks/task-1?modal=postpone',
+            stack: [
+                '/calendar',
+                '/calendar/2026-08-24',
+                '/calendar/2026-08-24/tasks/task-1',
+                '/calendar/2026-08-24/tasks/task-1?modal=postpone',
+            ],
+            atRoot: false,
+        });
+
+        fireEvent.click(screen.getByRole('button', { name: 'Close postpone' }));
+        await pathIs('/calendar/2026-08-24/tasks/task-1');
+        fireEvent.click(screen.getByRole('button', { name: 'Close calendar detail' }));
+        await pathIs('/calendar/2026-08-24');
+        fireEvent.click(screen.getByRole('button', { name: 'Close calendar detail' }));
+        await pathIs('/calendar');
+        expect(inspectable.snapshot()).toEqual({
+            path: '/calendar',
+            stack: ['/calendar'],
+            atRoot: true,
+        });
+
+        inspectable.history.go(-1);
         await pathIs('/calendar');
         expect(inspectable.snapshot().atRoot).toBe(true);
     });

@@ -159,6 +159,10 @@ function usePostponePanelOpen() {
         }
     });
 
+    onCleanup(() => {
+        postponeModalPushed = false;
+    });
+
     return open;
 }
 
