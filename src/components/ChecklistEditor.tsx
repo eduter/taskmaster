@@ -210,7 +210,7 @@ function ChecklistItemContent(props: ChecklistItemContentProps): JSX.Element {
 
             <Show when={props.editing} fallback={<span class="checklist-editor__summary">{props.item.summary}</span>}>
                 <input
-                    ref={focusAndSelectInput}
+                    ref={focusAtEnd}
                     class="checklist-editor__input"
                     aria-label={`Edit ${props.item.summary}`}
                     value={props.editingSummary}
@@ -237,10 +237,11 @@ function focusInput(element: HTMLInputElement): void {
     queueMicrotask(() => element.focus());
 }
 
-function focusAndSelectInput(element: HTMLInputElement): void {
+function focusAtEnd(element: HTMLInputElement): void {
     queueMicrotask(() => {
         element.focus();
-        element.select();
+        const end = element.value.length;
+        element.setSelectionRange(end, end);
     });
 }
 

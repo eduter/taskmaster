@@ -260,7 +260,9 @@ describe('TaskEditorDialog field autosave', () => {
         ));
 
         const input = beginSummaryEdit();
-        input.focus();
+        await Promise.resolve();
+        expect((input as HTMLInputElement).selectionStart).toBe('Groceries'.length);
+        expect((input as HTMLInputElement).selectionEnd).toBe('Groceries'.length);
         fireEvent.input(input, { target: { value: 'M' } });
         await vi.advanceTimersByTimeAsync(400);
 

@@ -32,13 +32,14 @@ function EditableSummaryHeading(props: EditableSummaryHeadingProps): JSX.Element
         setEditing(false);
     }
 
-    function focusAndSelect(input: HTMLInputElement): void {
+    function focusAtEnd(input: HTMLInputElement): void {
         queueMicrotask(() => {
             if (!input.isConnected) {
                 return;
             }
             input.focus();
-            input.select();
+            const end = input.value.length;
+            input.setSelectionRange(end, end);
         });
     }
 
@@ -52,7 +53,7 @@ function EditableSummaryHeading(props: EditableSummaryHeadingProps): JSX.Element
             }
         >
             <input
-                ref={focusAndSelect}
+                ref={focusAtEnd}
                 id={props.inputId}
                 class="editable-summary-heading__input"
                 aria-label="Summary"

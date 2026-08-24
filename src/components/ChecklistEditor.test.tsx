@@ -130,6 +130,9 @@ describe('ChecklistEditor', () => {
         const surfaces = container.querySelectorAll<HTMLElement>('.task-row__surface');
         tapRow(surfaces[0], 1);
         const input = await screen.findByRole('textbox', { name: 'Edit Milk' });
+        await vi.waitFor(() => expect(document.activeElement).toBe(input));
+        expect((input as HTMLInputElement).selectionStart).toBe('Milk'.length);
+        expect((input as HTMLInputElement).selectionEnd).toBe('Milk'.length);
         fireEvent.input(input, { target: { value: 'Oat milk' } });
         fireEvent.blur(input);
         expect(onRename).toHaveBeenCalledWith('milk', 'Oat milk');
