@@ -140,10 +140,6 @@ function CalendarTab(): JSX.Element {
         return projectedByDate().get(date) ?? [];
     }
 
-    function closeDay(): void {
-        navigation.toCalendar();
-    }
-
     async function toggleTaskLabel(labelId: string): Promise<void> {
         const task = selectedTask();
         if (!task) {
@@ -238,7 +234,7 @@ function CalendarTab(): JSX.Element {
                         projected={projectedFor(date())}
                         loading={loadedData() == null && calendarData.loading}
                         loadFailed={loadedData() == null && calendarData.error != null}
-                        onClose={closeDay}
+                        onClose={navigation.closeCalendarDetail}
                         onTask={(id) => navigation.toCalendarTask(date(), id)}
                         onGenerator={navigation.toGenerator}
                     />
