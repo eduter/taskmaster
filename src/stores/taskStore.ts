@@ -8,6 +8,7 @@ import {
     deleteTask,
     filterTaskCandidates,
     getCompletedTaskCandidates,
+    getTask as getTaskRecord,
     getVisibleTasks,
     reorderChecklistItems as reorderChecklistItemRecords,
     reorderTasks,
@@ -36,6 +37,14 @@ function invalidateTasks(options?: { push?: boolean }) {
     if (options?.push !== false) {
         schedulePush();
     }
+}
+
+/** Loads one task by id, including items hidden from Today after postpone. */
+async function loadTask(id: string): Promise<Task | undefined> {
+    if (dbStatus() === 'blocked') {
+        return undefined;
+    }
+    return withDbRead(() => getTaskRecord(id));
 }
 
 async function fetchTasks(): Promise<Task[]> {
@@ -124,6 +133,7 @@ export {
     filterTaskCandidates,
     invalidateTasks,
     loadCompletedTaskCandidates,
+    loadTask,
     refetchTasks,
     refreshTodayIfNeeded,
     removeTask,
