@@ -14,6 +14,7 @@ import {
     setCalendarFilter,
     type CalendarFilter,
 } from '../stores/viewPreferencesStore.ts';
+import { formatFullDate } from '../utils/formatLogicalDay.ts';
 import { addDays } from '../utils/logicalDay.ts';
 import { AddTask } from './AddTask.tsx';
 import { Dialog } from './Dialog.tsx';
@@ -585,15 +586,6 @@ function formatWeek(date: string): string {
 
 function formatShortDate(date: string): string {
     return new Intl.DateTimeFormat(undefined, { month: 'short', day: 'numeric' }).format(parseDate(date));
-}
-
-function formatFullDate(date: string): string {
-    return new Intl.DateTimeFormat(undefined, {
-        weekday: 'long',
-        month: 'long',
-        day: 'numeric',
-        year: 'numeric',
-    }).format(parseDate(date));
 }
 
 function parseDate(date: string): Date {
