@@ -1,0 +1,1242 @@
+<!DOCTYPE html>
+<html lang="en">
+    <head>
+        <meta charset="utf-8" />
+        <meta name="viewport" content="width=device-width, initial-scale=1" />
+        <title>Edit task mockups</title>
+        <style>
+            :root {
+                --bg-primary: #181818;
+                --bg-secondary: #1f1f1f;
+                --bg-surface: #252526;
+                --bg-surface-hover: #2d2d2d;
+                --bg-surface-active: #333333;
+                --bg-input: #1f1f1f;
+                --text-primary: #cccccc;
+                --text-secondary: #a0a0a0;
+                --text-muted: #6e6e6e;
+                --text-heading: #e8e8e8;
+                --accent: #7630b9;
+                --accent-hover: #9333ea;
+                --accent-subtle: rgba(168, 85, 247, 0.15);
+                --success: #34d399;
+                --danger: #f87171;
+                --danger-subtle: rgba(248, 113, 113, 0.15);
+                --border: #3c3c3c;
+                --border-light: #4a4a4a;
+                --radius-sm: 4px;
+                --radius-md: 8px;
+                --radius-lg: 12px;
+                --shadow-lg: 0 10px 15px rgba(0, 0, 0, 0.5);
+                --font-sans: system-ui, -apple-system, "Segoe UI", Roboto, sans-serif;
+                --space-xs: 4px;
+                --space-sm: 8px;
+                --space-md: 16px;
+                --space-lg: 24px;
+                color-scheme: dark;
+            }
+
+            * {
+                box-sizing: border-box;
+            }
+
+            html,
+            body {
+                margin: 0;
+                min-height: 100dvh;
+            }
+
+            body {
+                font-family: var(--font-sans);
+                font-size: 16px;
+                line-height: 1.5;
+                color: var(--text-primary);
+                background: var(--bg-primary);
+            }
+
+            button,
+            input,
+            textarea {
+                font: inherit;
+            }
+
+            button {
+                cursor: pointer;
+            }
+
+            /* Gallery chrome */
+
+            .gallery {
+                position: sticky;
+                top: 0;
+                z-index: 20;
+                background: var(--bg-secondary);
+                border-bottom: 1px solid var(--border);
+                padding: 12px 16px 14px;
+            }
+
+            .gallery h1 {
+                margin: 0 0 4px;
+                font-size: 16px;
+                font-weight: 600;
+                color: var(--text-heading);
+            }
+
+            .gallery__notes {
+                margin: 0 0 12px;
+                max-width: 72rem;
+                font-size: 13px;
+                color: var(--text-secondary);
+            }
+
+            .gallery__row {
+                display: flex;
+                flex-wrap: wrap;
+                gap: 12px;
+                align-items: center;
+                justify-content: space-between;
+            }
+
+            .tabs,
+            .toggle {
+                display: flex;
+                flex-wrap: wrap;
+                gap: 4px;
+            }
+
+            .tabs button,
+            .toggle button {
+                padding: 6px 12px;
+                border: 1px solid var(--border);
+                border-radius: var(--radius-md);
+                background: transparent;
+                color: var(--text-primary);
+                font-size: 13px;
+            }
+
+            .tabs button[aria-selected="true"],
+            .toggle button[aria-pressed="true"] {
+                background: var(--accent);
+                border-color: var(--accent);
+                color: #fff;
+                font-weight: 600;
+            }
+
+            /* Stage: fake today list + dialog */
+
+            .stage {
+                position: relative;
+                min-height: calc(100dvh - 140px);
+                padding: 16px;
+            }
+
+            .fake-app {
+                max-width: 600px;
+                margin: 0 auto;
+                opacity: 0.45;
+                pointer-events: none;
+            }
+
+            .fake-app__title {
+                margin: 0 0 12px;
+                font-size: 20px;
+                font-weight: 600;
+                color: var(--text-heading);
+            }
+
+            .fake-row {
+                display: flex;
+                align-items: center;
+                gap: 12px;
+                min-height: 48px;
+                padding: 8px 12px;
+                margin-bottom: 8px;
+                border: 1px solid var(--border-light);
+                border-radius: var(--radius-md);
+                background: var(--bg-surface);
+            }
+
+            .fake-check {
+                width: 22px;
+                height: 22px;
+                border: 2px solid var(--text-muted);
+                border-radius: 50%;
+                flex-shrink: 0;
+            }
+
+            .scrim {
+                position: absolute;
+                inset: 0;
+                background: rgba(0, 0, 0, 0.6);
+            }
+
+            .dialog-wrap {
+                position: absolute;
+                inset: 0;
+                display: flex;
+                justify-content: center;
+                align-items: start;
+                padding: 12px;
+                pointer-events: none;
+            }
+
+            .panel {
+                pointer-events: auto;
+                width: 100%;
+                max-width: 400px;
+                max-height: calc(100dvh - 170px);
+                overflow: auto;
+                background: var(--bg-secondary);
+                border-radius: 0 0 var(--radius-lg) var(--radius-lg);
+                padding: var(--space-lg);
+                display: flex;
+                flex-direction: column;
+                gap: var(--space-md);
+                box-shadow: var(--shadow-lg);
+                position: relative;
+            }
+
+            .closed {
+                pointer-events: auto;
+                width: 100%;
+                max-width: 400px;
+                margin-top: 48px;
+                padding: 24px;
+                background: var(--bg-secondary);
+                border-radius: var(--radius-lg);
+                text-align: center;
+            }
+
+            .closed p {
+                margin: 0 0 16px;
+                color: var(--text-heading);
+            }
+
+            /* Shared form bits */
+
+            .header {
+                display: flex;
+                justify-content: space-between;
+                align-items: flex-start;
+                gap: 8px;
+                flex-shrink: 0;
+            }
+
+            .title {
+                margin: 0;
+                font-size: 18px;
+                font-weight: 600;
+                color: var(--text-heading);
+                overflow-wrap: anywhere;
+            }
+
+            .title--btn {
+                display: block;
+                width: 100%;
+                text-align: left;
+                background: none;
+                border: none;
+                padding: 0;
+                border-radius: var(--radius-sm);
+            }
+
+            .title--btn:hover {
+                color: #fff;
+            }
+
+            .title-input {
+                width: 100%;
+                margin: 0;
+                padding: 4px 8px;
+                font-size: 18px;
+                font-weight: 600;
+                color: var(--text-heading);
+                background: var(--bg-input);
+                border: 1px solid var(--accent);
+                border-radius: var(--radius-sm);
+                outline: none;
+            }
+
+            .close {
+                background: none;
+                border: none;
+                color: var(--text-muted);
+                font-size: 24px;
+                line-height: 1;
+                padding: 0 4px;
+                flex-shrink: 0;
+            }
+
+            .close:hover {
+                color: var(--text-primary);
+            }
+
+            .field {
+                display: flex;
+                flex-direction: column;
+                gap: 4px;
+            }
+
+            .label {
+                font-size: 13px;
+                font-weight: 600;
+                color: var(--text-secondary);
+                text-transform: uppercase;
+                letter-spacing: 0.5px;
+            }
+
+            .input,
+            .textarea {
+                padding: 8px 16px;
+                border-radius: var(--radius-md);
+                border: 1px solid var(--border);
+                background: var(--bg-input);
+                color: var(--text-primary);
+                outline: none;
+            }
+
+            .input:focus,
+            .textarea:focus {
+                border-color: var(--accent);
+            }
+
+            .textarea {
+                resize: vertical;
+                min-height: 80px;
+            }
+
+            .labels-row {
+                display: flex;
+                align-items: flex-start;
+                gap: 8px;
+            }
+
+            .icon-btn {
+                flex-shrink: 0;
+                display: flex;
+                align-items: center;
+                justify-content: center;
+                width: 32px;
+                height: 32px;
+                padding: 0;
+                border: 1px solid var(--border-light);
+                border-radius: var(--radius-sm);
+                background: var(--bg-surface);
+                color: var(--text-secondary);
+            }
+
+            .icon-btn:hover,
+            .icon-btn[aria-pressed="true"] {
+                background: var(--bg-surface-hover);
+                color: var(--text-primary);
+            }
+
+            .chips {
+                display: flex;
+                flex-wrap: wrap;
+                gap: 4px;
+                align-items: center;
+                min-height: 32px;
+            }
+
+            .chip {
+                display: inline-flex;
+                align-items: center;
+                height: 16px;
+                min-width: 30px;
+                font-size: 11px;
+                padding: 0 6px;
+                border-radius: var(--radius-sm);
+                border: none;
+            }
+
+            .chip--home {
+                background: #4363d8;
+                color: #fff;
+            }
+
+            .chip--errand {
+                background: #f58231;
+                color: #111;
+            }
+
+            .chip--work {
+                background: #3cb44b;
+                color: #111;
+            }
+
+            .chip--kid {
+                background: #911eb4;
+                color: #fff;
+            }
+
+            .postpone-options,
+            .extras {
+                display: flex;
+                flex-wrap: wrap;
+                gap: 4px;
+            }
+
+            .chip-btn {
+                padding: 4px 8px;
+                border-radius: var(--radius-md);
+                border: 1px solid var(--border);
+                background: transparent;
+                color: var(--text-primary);
+                font-size: 13px;
+            }
+
+            .chip-btn:hover,
+            .chip-btn[aria-pressed="true"] {
+                background: var(--bg-surface-hover);
+                border-color: var(--accent);
+            }
+
+            .extras {
+                padding-top: 4px;
+            }
+
+            .text-btn {
+                background: none;
+                border: none;
+                color: var(--text-muted);
+                font-size: 13px;
+                padding: 4px 6px;
+            }
+
+            .text-btn:hover {
+                color: var(--text-primary);
+            }
+
+            .text-btn--danger:hover {
+                color: var(--danger);
+            }
+
+            .actions {
+                display: flex;
+                gap: 8px;
+                padding-top: 8px;
+            }
+
+            .btn {
+                border-radius: var(--radius-md);
+                font-size: 14px;
+                padding: 8px 16px;
+            }
+
+            .btn--primary {
+                border: none;
+                background: var(--accent);
+                color: #fff;
+                font-weight: 600;
+                flex: 1;
+            }
+
+            .btn--primary:hover:not(:disabled) {
+                background: var(--accent-hover);
+            }
+
+            .btn--primary:disabled {
+                opacity: 0.5;
+                cursor: default;
+            }
+
+            .btn--primary.btn--sm {
+                padding: 4px 16px;
+                font-size: 13px;
+                flex: 0;
+            }
+
+            .btn--danger {
+                border: 1px solid var(--danger-subtle);
+                background: transparent;
+                color: var(--danger);
+            }
+
+            .btn--danger:hover {
+                background: var(--danger-subtle);
+            }
+
+            .btn--secondary {
+                border: 1px solid var(--border);
+                background: transparent;
+                color: var(--text-secondary);
+            }
+
+            .picker-row {
+                display: flex;
+                gap: 8px;
+                align-items: center;
+            }
+
+            .date-input {
+                color-scheme: dark;
+            }
+
+            .checklist-head {
+                display: flex;
+                align-items: center;
+                justify-content: space-between;
+            }
+
+            .check-item {
+                display: flex;
+                align-items: center;
+                gap: 8px;
+                min-height: 44px;
+                padding: 4px 8px;
+                border: 1px solid var(--border-light);
+                border-radius: var(--radius-md);
+                background: var(--bg-surface);
+            }
+
+            .check-circle {
+                width: 22px;
+                height: 22px;
+                border: 2px solid var(--text-muted);
+                border-radius: 50%;
+                flex-shrink: 0;
+                background: none;
+                padding: 0;
+            }
+
+            .check-circle.is-done {
+                border-color: var(--success);
+                background: var(--success);
+            }
+
+            .moved {
+                font-size: 13px;
+                color: var(--success);
+                margin: 0;
+            }
+
+            /* Segmented */
+
+            .seg {
+                display: flex;
+                min-width: 0;
+                padding: 2px;
+                border: 1px solid var(--border);
+                border-radius: var(--radius-md);
+                background: var(--bg-primary);
+            }
+
+            .seg button {
+                flex: 1;
+                min-height: 36px;
+                padding: 0 8px;
+                border: 0;
+                border-radius: 6px;
+                color: var(--text-muted);
+                background: transparent;
+                font-size: 13px;
+            }
+
+            .seg button.is-on {
+                color: var(--text-primary);
+                background: var(--bg-surface);
+                box-shadow: 0 0 0 1px var(--border);
+            }
+
+            .postpone-cta {
+                display: flex;
+                align-items: center;
+                justify-content: space-between;
+                width: 100%;
+                padding: 10px 12px;
+                border: 1px solid var(--border);
+                border-radius: var(--radius-md);
+                background: var(--bg-surface);
+                color: var(--text-primary);
+                text-align: left;
+            }
+
+            .postpone-cta small {
+                display: block;
+                color: var(--text-muted);
+                font-size: 12px;
+            }
+
+            /* Calendar grid */
+
+            .cal {
+                display: grid;
+                grid-template-columns: repeat(7, 1fr);
+                gap: 2px;
+            }
+
+            .cal__dow {
+                text-align: center;
+                font-size: 11px;
+                color: var(--text-muted);
+                padding: 4px 0;
+            }
+
+            .cal__day {
+                aspect-ratio: 1;
+                border: none;
+                border-radius: var(--radius-sm);
+                background: transparent;
+                color: var(--text-primary);
+                font-size: 13px;
+            }
+
+            .cal__day:hover:not(:disabled) {
+                background: var(--bg-surface-hover);
+            }
+
+            .cal__day.is-today {
+                box-shadow: inset 0 0 0 1px var(--accent);
+            }
+
+            .cal__day.is-selected {
+                background: var(--accent);
+                color: #fff;
+            }
+
+            .cal__day:disabled {
+                color: var(--text-muted);
+                opacity: 0.4;
+                cursor: default;
+            }
+
+            .cal-caption {
+                display: flex;
+                justify-content: space-between;
+                align-items: center;
+                font-size: 13px;
+                font-weight: 600;
+                color: var(--text-heading);
+                margin-bottom: 8px;
+            }
+
+            /* Overlays inside the panel */
+
+            .overlay {
+                position: absolute;
+                inset: 0;
+                background: rgba(0, 0, 0, 0.45);
+                display: flex;
+                align-items: end;
+                z-index: 5;
+            }
+
+            .overlay--center {
+                align-items: center;
+                justify-content: center;
+                padding: 16px;
+            }
+
+            .sheet {
+                width: 100%;
+                background: var(--bg-surface);
+                border-radius: var(--radius-lg) var(--radius-lg) 0 0;
+                padding: 16px;
+                display: flex;
+                flex-direction: column;
+                gap: 12px;
+            }
+
+            .sheet h3,
+            .mini h3 {
+                margin: 0;
+                font-size: 16px;
+                color: var(--text-heading);
+            }
+
+            .mini {
+                width: min(100%, 280px);
+                background: var(--bg-surface);
+                border: 1px solid var(--border);
+                border-radius: var(--radius-md);
+                padding: 12px;
+                display: flex;
+                flex-direction: column;
+                gap: 10px;
+                box-shadow: var(--shadow-lg);
+            }
+
+            .popover {
+                background: var(--bg-surface);
+                border: 1px solid var(--border);
+                border-radius: var(--radius-md);
+                padding: 12px;
+                box-shadow: var(--shadow-lg);
+                display: flex;
+                flex-direction: column;
+                gap: 10px;
+            }
+
+            .labels-card {
+                width: 100%;
+                max-width: 320px;
+                background: var(--bg-secondary);
+                border-radius: var(--radius-lg);
+                padding: 16px;
+                display: flex;
+                flex-direction: column;
+                gap: 8px;
+            }
+
+            .labels-item {
+                display: flex;
+                align-items: stretch;
+                gap: 8px;
+                cursor: pointer;
+            }
+
+            .labels-item input {
+                flex-shrink: 0;
+                align-self: center;
+            }
+
+            .icon-row {
+                display: flex;
+                gap: 8px;
+                justify-content: flex-start;
+            }
+
+            .when-row {
+                display: flex;
+                flex-wrap: wrap;
+                gap: 4px;
+                align-items: center;
+            }
+
+            .date-chip {
+                position: relative;
+                display: inline-flex;
+                align-items: center;
+            }
+
+            .date-chip input[type="date"] {
+                position: absolute;
+                inset: 0;
+                opacity: 0;
+                cursor: pointer;
+            }
+
+            .hint {
+                margin: 0;
+                font-size: 12px;
+                color: var(--text-muted);
+            }
+        </style>
+    </head>
+    <body>
+        <header class="gallery">
+            <h1>Edit task mockups</h1>
+            <p class="gallery__notes" id="notes"></p>
+            <div class="gallery__row">
+                <div class="tabs" role="tablist">
+                    <button type="button" role="tab" data-tab="current" aria-selected="true">Current</button>
+                    <button type="button" role="tab" data-tab="a" aria-selected="false">A</button>
+                    <button type="button" role="tab" data-tab="b" aria-selected="false">B</button>
+                    <button type="button" role="tab" data-tab="c" aria-selected="false">C</button>
+                    <button type="button" role="tab" data-tab="d" aria-selected="false">D</button>
+                    <button type="button" role="tab" data-tab="e" aria-selected="false">E</button>
+                </div>
+                <div class="toggle">
+                    <button type="button" data-rich="0" aria-pressed="true">Typical</button>
+                    <button type="button" data-rich="1" aria-pressed="false">Rich</button>
+                </div>
+            </div>
+        </header>
+
+        <main class="stage">
+            <div class="fake-app" aria-hidden="true">
+                <h2 class="fake-app__title">Today</h2>
+                <div class="fake-row"><span class="fake-check"></span> Buy birthday cake</div>
+                <div class="fake-row"><span class="fake-check"></span> Duolingo</div>
+                <div class="fake-row"><span class="fake-check"></span> Anki review</div>
+            </div>
+            <div class="scrim"></div>
+            <div class="dialog-wrap" id="mount"></div>
+        </main>
+
+        <script>
+            const TODAY = new Date(2026, 7, 24);
+            const MIN = new Date(2026, 7, 25);
+
+            const NOTES = {
+                current:
+                    "Today's editor. Summary and description are always text fields. Checklist is always on screen. Postpone presets apply immediately and close; Pick date reveals a native date field plus Go — closing without Go does nothing.",
+                a: "Closest to the sketch. Summary is the heading (click to edit, blur commits). Description and checklist stay behind + buttons. Postpone chips stay visible. Pick date opens a popover: choosing a date, or dismissing after a date is set, postpones and closes. No Go, no Save.",
+                b: "Identity stays in the main dialog; postpone is a bottom sheet with presets and a month grid. Tap a day or preset to persist and close. Dismiss the sheet to cancel. Save/Delete remain, so text still has an explicit commit.",
+                c: "Smallest fix for the Go trap, and you can still add labels after postponing. Native date chip (Android's system picker) applies on change. Editor stays open with a “Moved to …” note. Done just closes.",
+                d: "Postpone is the body of the dialog: presets plus an always-visible month grid. No hidden second step. Tapping a future day postpones and closes. Taller on a phone — that is the tradeoff.",
+                e: "Most chrome removed. Labels sit under the title. Tight postpone segments plus a calendar icon that opens a month-grid popover (tap a day to persist and close). Note / checklist / delete are icons.",
+            };
+
+            const LABELS = [
+                { id: "home", name: "Home", cls: "chip--home" },
+                { id: "errand", name: "Errand", cls: "chip--errand" },
+                { id: "work", name: "Work", cls: "chip--work" },
+                { id: "kid", name: "Kid", cls: "chip--kid" },
+            ];
+
+            const ICONS = {
+                label: '<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 20 20" width="18" height="18" fill="none"><path d="M3 10.5 9.5 4H14v4.5L7.5 15 3 10.5Z" stroke="currentColor" stroke-width="1.5" stroke-linejoin="round"/><circle cx="12" cy="7" r="1.25" fill="currentColor"/></svg>',
+                plus: '<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 20 20" width="16" height="16" fill="none"><path d="M10 3v14M3 10h14" stroke="currentColor" stroke-width="2" stroke-linecap="round"/></svg>',
+                trash: '<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 20 20" width="18" height="18" fill="none"><path d="M5 6h10M8 6V4.5A1.5 1.5 0 0 1 9.5 3h1A1.5 1.5 0 0 1 12 4.5V6m2 0v9.5a1.5 1.5 0 0 1-1.5 1.5h-5A1.5 1.5 0 0 1 6 15.5V6" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/></svg>',
+                cal: '<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 20 20" width="18" height="18" fill="none"><rect x="3" y="4.5" width="14" height="12" rx="1.5" stroke="currentColor" stroke-width="1.5"/><path d="M3 8h14M7 3v3M13 3v3" stroke="currentColor" stroke-width="1.5" stroke-linecap="round"/></svg>',
+                note: '<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 20 20" width="18" height="18" fill="none"><path d="M5 4h10v12H5z" stroke="currentColor" stroke-width="1.5"/><path d="M7 8h6M7 11h6M7 14h4" stroke="currentColor" stroke-width="1.5" stroke-linecap="round"/></svg>',
+            };
+
+            const state = {
+                tab: "current",
+                rich: false,
+                summary: "Buy birthday cake",
+                editingSummary: false,
+                selected: new Set(["home", "errand"]),
+                descOpen: false,
+                listOpen: false,
+                labelsOpen: false,
+                showPicker: false,
+                customDate: "",
+                popover: null,
+                sheet: false,
+                outcome: null,
+                closedDate: "",
+                moved: "",
+            };
+
+            function iso(d) {
+                const y = d.getFullYear();
+                const m = String(d.getMonth() + 1).padStart(2, "0");
+                const day = String(d.getDate()).padStart(2, "0");
+                return y + "-" + m + "-" + day;
+            }
+
+            function parseIso(s) {
+                const parts = s.split("-").map(Number);
+                return new Date(parts[0], parts[1] - 1, parts[2]);
+            }
+
+            function pretty(s) {
+                return parseIso(s).toLocaleDateString("en-GB", {
+                    weekday: "short",
+                    day: "numeric",
+                    month: "short",
+                });
+            }
+
+            function addDays(n) {
+                const d = new Date(TODAY);
+                d.setDate(d.getDate() + n);
+                return iso(d);
+            }
+
+            function nextMonday() {
+                return addDays(7);
+            }
+
+            function escapeHtml(s) {
+                return s.replace(/[&<>"']/g, function (c) {
+                    return { "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;", "'": "&#39;" }[c];
+                });
+            }
+
+            function chipsHtml() {
+                return Array.from(state.selected)
+                    .map(function (id) {
+                        const l = LABELS.find(function (x) { return x.id === id; });
+                        return '<span class="chip ' + l.cls + '">' + l.name + "</span>";
+                    })
+                    .join("");
+            }
+
+            function labelsField() {
+                return '<div class="field"><span class="label">Labels</span><div class="labels-row">' +
+                    '<button type="button" class="icon-btn" data-act="labels" aria-label="Edit labels">' + ICONS.label + "</button>" +
+                    '<div class="chips">' + chipsHtml() + "</div></div></div>";
+            }
+
+            function labelsLoose() {
+                return '<div class="labels-row">' +
+                    '<button type="button" class="icon-btn" data-act="labels" aria-label="Edit labels">' + ICONS.label + "</button>" +
+                    '<div class="chips">' + chipsHtml() + "</div></div>";
+            }
+
+            function summaryHeader() {
+                if (state.editingSummary) {
+                    return '<div class="header"><input class="title-input" id="summary-edit" value="' +
+                        escapeHtml(state.summary) +
+                        '" /><button type="button" class="close" data-act="dismiss" aria-label="Close">&times;</button></div>';
+                }
+                return '<div class="header"><button type="button" class="title title--btn" data-act="edit-summary">' +
+                    escapeHtml(state.summary) +
+                    '</button><button type="button" class="close" data-act="dismiss" aria-label="Close">&times;</button></div>';
+            }
+
+            function descriptionBlock(force) {
+                if (!(force || state.rich || state.descOpen)) return "";
+                const value = state.rich ? "Ask bakery if they can write the name in chocolate." : "";
+                return '<div class="field"><label class="label" for="desc">Description</label>' +
+                    '<textarea class="textarea" id="desc" rows="4">' + value + "</textarea></div>";
+            }
+
+            function checklistBlock(force) {
+                if (!(force || state.rich || state.listOpen)) return "";
+                const items = state.rich
+                    ? [["Call bakery", true], ["Pick up balloons", false], ["Confirm guest count", false]]
+                    : [];
+                const rows = items
+                    .map(function (pair) {
+                        return '<div class="check-item"><button type="button" class="check-circle' +
+                            (pair[1] ? " is-done" : "") +
+                            '" aria-label="Toggle"></button><span>' + pair[0] + "</span></div>";
+                    })
+                    .join("");
+                return '<div class="field"><div class="checklist-head"><span class="label">Checklist</span>' +
+                    '<button type="button" class="icon-btn" aria-label="Add item">' + ICONS.plus + "</button></div>" +
+                    rows +
+                    (items.length === 0 ? '<input class="input" placeholder="New item" />' : "") +
+                    "</div>";
+            }
+
+            function extrasRow(withDelete) {
+                const bits = [];
+                if (!state.rich && !state.descOpen) {
+                    bits.push('<button type="button" class="text-btn" data-act="add-desc">+ Description</button>');
+                }
+                if (!state.rich && !state.listOpen) {
+                    bits.push('<button type="button" class="text-btn" data-act="add-list">+ Checklist</button>');
+                }
+                if (withDelete) {
+                    bits.push('<button type="button" class="text-btn text-btn--danger" data-act="delete">Delete</button>');
+                }
+                return bits.length ? '<div class="extras">' + bits.join("") + "</div>" : "";
+            }
+
+            function postponeChips(pickAct) {
+                return '<div class="field"><span class="label">Postpone to</span><div class="postpone-options">' +
+                    '<button type="button" class="chip-btn" data-act="postpone" data-date="' + addDays(1) + '">Tomorrow</button>' +
+                    '<button type="button" class="chip-btn" data-act="postpone" data-date="' + nextMonday() + '">Next Monday</button>' +
+                    '<button type="button" class="chip-btn" data-act="postpone" data-date="' + addDays(7) + '">Next week</button>' +
+                    '<button type="button" class="chip-btn" data-act="' + pickAct + '" aria-pressed="' +
+                    (state.popover === "date" || state.showPicker) + '">Pick date…</button>' +
+                    "</div></div>";
+            }
+
+            function calendarHtml(selected) {
+                const year = 2026;
+                const month = 7;
+                const first = new Date(year, month, 1);
+                const startPad = (first.getDay() + 6) % 7;
+                const lastDate = new Date(year, month + 1, 0).getDate();
+                const todayIso = iso(TODAY);
+                let cells = ["M", "T", "W", "T", "F", "S", "S"]
+                    .map(function (d) { return '<div class="cal__dow">' + d + "</div>"; })
+                    .join("");
+                for (let i = 0; i < startPad; i++) cells += "<div></div>";
+                for (let day = 1; day <= lastDate; day++) {
+                    const d = new Date(year, month, day);
+                    const id = iso(d);
+                    const disabled = d < MIN;
+                    const cls = ["cal__day", id === todayIso ? "is-today" : "", id === selected ? "is-selected" : ""]
+                        .filter(Boolean)
+                        .join(" ");
+                    cells += '<button type="button" class="' + cls + '" data-act="postpone" data-date="' + id + '"' +
+                        (disabled ? " disabled" : "") + ">" + day + "</button>";
+                }
+                return '<div><div class="cal-caption"><span>August 2026</span></div><div class="cal">' + cells + "</div></div>";
+            }
+
+            function labelsOverlay() {
+                if (!state.labelsOpen) return "";
+                const items = LABELS.map(function (l) {
+                    const on = state.selected.has(l.id);
+                    return '<label class="labels-item" data-act="toggle-label" data-id="' + l.id + '">' +
+                        '<input type="checkbox"' + (on ? " checked" : "") + " />" +
+                        '<span class="chip ' + l.cls + '">' + l.name + "</span></label>";
+                }).join("");
+                return '<div class="overlay overlay--center" data-act="close-labels">' +
+                    '<div class="labels-card" data-stop><div class="header">' +
+                    '<h2 class="title">Labels</h2>' +
+                    '<button type="button" class="close" data-act="close-labels" aria-label="Close">&times;</button>' +
+                    "</div>" + items + "</div></div>";
+            }
+
+            function closedPanel() {
+                let msg = "Dialog closed.";
+                let hint = "Nothing was postponed.";
+                if (state.outcome === "delete") {
+                    msg = "Task deleted.";
+                    hint = "";
+                } else if (state.outcome === "postpone") {
+                    msg = "Postponed to " + pretty(state.closedDate) + ".";
+                    hint = "Editor would close; the date is already saved.";
+                } else if (state.outcome === "dismiss") {
+                    msg = "Dialog closed.";
+                    hint = "Summary / description would save only if you pressed Save (current &amp; B). A/D/E commit the summary on blur.";
+                }
+                return '<div class="closed"><p>' + msg +
+                    (hint ? '<br /><span class="hint">' + hint + "</span>" : "") +
+                    '</p><button type="button" class="btn btn--secondary" data-act="reset">Show dialog again</button></div>';
+            }
+
+            function renderCurrent() {
+                const picker = state.showPicker
+                    ? '<form class="picker-row" data-act="go">' +
+                      '<input class="input date-input" type="date" min="' + iso(MIN) + '" value="' + state.customDate + '" data-act="custom-date" />' +
+                      '<button class="btn btn--primary btn--sm" type="submit"' + (state.customDate ? "" : " disabled") + ">Go</button></form>"
+                    : "";
+                return '<article class="panel"><div class="header"><h2 class="title">Edit Task</h2>' +
+                    '<button type="button" class="close" data-act="dismiss" aria-label="Close">&times;</button></div>' +
+                    '<div class="field"><label class="label" for="sum">Summary</label>' +
+                    '<input class="input" id="sum" value="' + escapeHtml(state.summary) + '" /></div>' +
+                    descriptionBlock(true) + labelsField() + checklistBlock(true) +
+                    postponeChips("toggle-picker") + picker +
+                    '<div class="actions"><button type="button" class="btn btn--primary" data-act="dismiss">Save</button>' +
+                    '<button type="button" class="btn btn--danger" data-act="delete">Delete</button></div>' +
+                    labelsOverlay() + "</article>";
+            }
+
+            function renderA() {
+                const pop = state.popover === "date"
+                    ? '<div class="popover" data-stop><span class="label">Pick a date</span>' +
+                      '<input class="input date-input" type="date" min="' + iso(MIN) + '" value="' + state.customDate + '" data-act="popover-date" />' +
+                      '<p class="hint">Choosing a date, or closing after one is set, postpones and closes. No Go.</p>' +
+                      '<button type="button" class="btn btn--secondary" data-act="dismiss-popover">Close</button></div>'
+                    : "";
+                return '<article class="panel">' + summaryHeader() + labelsField() +
+                    descriptionBlock(false) + checklistBlock(false) +
+                    postponeChips("open-date-popover") + extrasRow(true) + pop + labelsOverlay() + "</article>";
+            }
+
+            function renderB() {
+                const sheet = state.sheet
+                    ? '<div class="overlay" data-act="close-sheet"><div class="sheet" data-stop>' +
+                      "<h3>Postpone to</h3><div class=\"postpone-options\">" +
+                      '<button type="button" class="chip-btn" data-act="postpone" data-date="' + addDays(1) + '">Tomorrow</button>' +
+                      '<button type="button" class="chip-btn" data-act="postpone" data-date="' + nextMonday() + '">Next Monday</button>' +
+                      '<button type="button" class="chip-btn" data-act="postpone" data-date="' + addDays(7) + '">Next week</button></div>' +
+                      calendarHtml("") +
+                      '<p class="hint">Tap a day to save and close. Dismiss the sheet to cancel.</p></div></div>'
+                    : "";
+                return '<article class="panel">' + summaryHeader() + labelsField() +
+                    descriptionBlock(false) + checklistBlock(false) +
+                    '<button type="button" class="postpone-cta" data-act="open-sheet"><span>Postpone<small>Scheduled for today</small></span>' +
+                    ICONS.cal + "</button>" + extrasRow(false) +
+                    '<div class="actions"><button type="button" class="btn btn--primary" data-act="dismiss">Save</button>' +
+                    '<button type="button" class="btn btn--danger" data-act="delete">Delete</button></div>' +
+                    sheet + labelsOverlay() + "</article>";
+            }
+
+            function renderC() {
+                const moved = state.moved ? '<p class="moved">Moved to ' + pretty(state.moved) + "</p>" : "";
+                return '<article class="panel">' + summaryHeader() + labelsField() +
+                    '<div class="field"><span class="label">When</span><div class="when-row">' +
+                    '<span class="chip-btn" style="pointer-events:none">' + (state.moved ? pretty(state.moved) : "Today") + "</span>" +
+                    '<button type="button" class="chip-btn" data-act="stay-postpone" data-date="' + addDays(1) + '">Tomorrow</button>' +
+                    '<button type="button" class="chip-btn" data-act="stay-postpone" data-date="' + nextMonday() + '">Mon</button>' +
+                    '<button type="button" class="chip-btn" data-act="stay-postpone" data-date="' + addDays(7) + '">+7</button>' +
+                    '<label class="date-chip"><span class="chip-btn">Pick date…</span>' +
+                    '<input type="date" min="' + iso(MIN) + '" data-act="stay-date" /></label></div>' +
+                    moved + "</div>" + descriptionBlock(false) + checklistBlock(false) + extrasRow(false) +
+                    '<div class="actions"><button type="button" class="btn btn--primary" data-act="dismiss">Done</button>' +
+                    '<button type="button" class="btn btn--danger" data-act="delete">Delete</button></div>' +
+                    labelsOverlay() + "</article>";
+            }
+
+            function renderD() {
+                return '<article class="panel">' + summaryHeader() + labelsField() +
+                    descriptionBlock(false) + checklistBlock(false) +
+                    '<div class="field"><span class="label">Postpone to</span><div class="seg">' +
+                    '<button type="button" data-act="postpone" data-date="' + addDays(1) + '">Tomorrow</button>' +
+                    '<button type="button" data-act="postpone" data-date="' + nextMonday() + '">Mon</button>' +
+                    '<button type="button" data-act="postpone" data-date="' + addDays(7) + '">Week</button></div></div>' +
+                    calendarHtml("") + extrasRow(true) + labelsOverlay() + "</article>";
+            }
+
+            function renderE() {
+                const pop = state.popover === "cal"
+                    ? '<div class="popover" data-stop><span class="label">Pick a date</span>' +
+                      calendarHtml("") +
+                      '<p class="hint">Tap a day to save and close. Dismiss to cancel.</p>' +
+                      '<button type="button" class="btn btn--secondary" data-act="close-cal-popover">Close</button></div>'
+                    : "";
+                return '<article class="panel">' + summaryHeader() + labelsLoose() +
+                    '<div class="seg">' +
+                    '<button type="button" data-act="postpone" data-date="' + addDays(1) + '">Tomorrow</button>' +
+                    '<button type="button" data-act="postpone" data-date="' + nextMonday() + '">Mon</button>' +
+                    '<button type="button" data-act="postpone" data-date="' + addDays(7) + '">Week</button>' +
+                    '<button type="button" data-act="open-cal-popover" aria-label="Pick date" style="flex:0 0 40px">' + ICONS.cal + "</button></div>" +
+                    descriptionBlock(false) + checklistBlock(false) +
+                    '<div class="icon-row">' +
+                    (state.rich || state.descOpen ? "" : '<button type="button" class="icon-btn" data-act="add-desc" aria-label="Add description">' + ICONS.note + "</button>") +
+                    (state.rich || state.listOpen ? "" : '<button type="button" class="icon-btn" data-act="add-list" aria-label="Add checklist">' + ICONS.plus + "</button>") +
+                    '<button type="button" class="icon-btn" data-act="delete" aria-label="Delete">' + ICONS.trash + "</button></div>" +
+                    pop + labelsOverlay() + "</article>";
+            }
+
+            const renderers = { current: renderCurrent, a: renderA, b: renderB, c: renderC, d: renderD, e: renderE };
+
+            function render() {
+                document.getElementById("notes").textContent = NOTES[state.tab];
+                document.querySelectorAll(".tabs button").forEach(function (b) {
+                    b.setAttribute("aria-selected", b.dataset.tab === state.tab ? "true" : "false");
+                });
+                document.querySelectorAll(".toggle button").forEach(function (b) {
+                    b.setAttribute("aria-pressed", String(Boolean(Number(b.dataset.rich)) === state.rich));
+                });
+                const mount = document.getElementById("mount");
+                if (state.outcome) {
+                    mount.innerHTML = closedPanel();
+                    return;
+                }
+                mount.innerHTML = renderers[state.tab]();
+                if (state.editingSummary) {
+                    const el = document.getElementById("summary-edit");
+                    el.focus();
+                    el.select();
+                    el.addEventListener("blur", commitSummary);
+                    el.addEventListener("keydown", function (e) {
+                        if (e.key === "Enter") {
+                            e.preventDefault();
+                            el.blur();
+                        }
+                        if (e.key === "Escape") {
+                            state.editingSummary = false;
+                            render();
+                        }
+                    });
+                }
+            }
+
+            function commitSummary() {
+                const el = document.getElementById("summary-edit");
+                if (el && el.value.trim()) state.summary = el.value.trim();
+                state.editingSummary = false;
+                render();
+            }
+
+            function postponeAndClose(date) {
+                state.outcome = "postpone";
+                state.closedDate = date;
+                state.popover = null;
+                state.sheet = false;
+                render();
+            }
+
+            function resetDialog() {
+                state.outcome = null;
+                state.closedDate = "";
+                state.moved = "";
+                state.descOpen = false;
+                state.listOpen = false;
+                state.labelsOpen = false;
+                state.showPicker = false;
+                state.customDate = "";
+                state.popover = null;
+                state.sheet = false;
+                state.editingSummary = false;
+                render();
+            }
+
+            function actFromEvent(e) {
+                const stop = e.target.closest("[data-stop]");
+                let t = e.target.closest("[data-act]");
+                if (stop && t && !stop.contains(t)) t = null;
+                return t;
+            }
+
+            document.querySelector(".tabs").addEventListener("click", function (e) {
+                const b = e.target.closest("[data-tab]");
+                if (!b) return;
+                state.tab = b.dataset.tab;
+                resetDialog();
+            });
+
+            document.querySelector(".toggle").addEventListener("click", function (e) {
+                const b = e.target.closest("[data-rich]");
+                if (!b) return;
+                state.rich = b.dataset.rich === "1";
+                state.descOpen = false;
+                state.listOpen = false;
+                render();
+            });
+
+            document.getElementById("mount").addEventListener("click", function (e) {
+                const t = actFromEvent(e);
+                if (!t) {
+                    if (state.popover === "date") {
+                        if (state.customDate) postponeAndClose(state.customDate);
+                        else { state.popover = null; render(); }
+                    } else if (state.popover === "cal") {
+                        state.popover = null;
+                        render();
+                    }
+                    return;
+                }
+                const act = t.dataset.act;
+                if (act === "dismiss") { state.outcome = "dismiss"; render(); return; }
+                if (act === "reset") { resetDialog(); return; }
+                if (act === "delete") { state.outcome = "delete"; render(); return; }
+                if (act === "edit-summary") { state.editingSummary = true; render(); return; }
+                if (act === "labels") { state.labelsOpen = true; render(); return; }
+                if (act === "close-labels") { state.labelsOpen = false; render(); return; }
+                if (act === "toggle-label") {
+                    e.preventDefault();
+                    const id = t.dataset.id;
+                    if (state.selected.has(id)) state.selected.delete(id);
+                    else state.selected.add(id);
+                    render();
+                    return;
+                }
+                if (act === "add-desc") { state.descOpen = true; render(); return; }
+                if (act === "add-list") { state.listOpen = true; render(); return; }
+                if (act === "postpone") { postponeAndClose(t.dataset.date); return; }
+                if (act === "stay-postpone") { state.moved = t.dataset.date; render(); return; }
+                if (act === "toggle-picker") { state.showPicker = !state.showPicker; render(); return; }
+                if (act === "open-date-popover") { state.popover = "date"; render(); return; }
+                if (act === "dismiss-popover") {
+                    if (state.customDate) postponeAndClose(state.customDate);
+                    else { state.popover = null; render(); }
+                    return;
+                }
+                if (act === "open-sheet") { state.sheet = true; render(); return; }
+                if (act === "close-sheet") { state.sheet = false; render(); return; }
+                if (act === "open-cal-popover") { state.popover = state.popover === "cal" ? null : "cal"; render(); return; }
+                if (act === "close-cal-popover") { state.popover = null; render(); return; }
+            });
+
+            document.getElementById("mount").addEventListener("change", function (e) {
+                const t = e.target.closest("[data-act]");
+                if (!t) return;
+                if (t.dataset.act === "custom-date") {
+                    state.customDate = t.value;
+                    const go = document.querySelector('button[type="submit"]');
+                    if (go) go.disabled = !t.value;
+                }
+                if (t.dataset.act === "popover-date") {
+                    state.customDate = t.value;
+                    if (t.value) postponeAndClose(t.value);
+                }
+                if (t.dataset.act === "stay-date" && t.value) {
+                    state.moved = t.value;
+                    render();
+                }
+            });
+
+            document.getElementById("mount").addEventListener("submit", function (e) {
+                e.preventDefault();
+                if (state.customDate) postponeAndClose(state.customDate);
+            });
+
+            document.addEventListener("keydown", function (e) {
+                if (e.key !== "Escape") return;
+                if (state.labelsOpen) { state.labelsOpen = false; render(); }
+                else if (state.sheet) { state.sheet = false; render(); }
+                else if (state.popover === "date") {
+                    if (state.customDate) postponeAndClose(state.customDate);
+                    else { state.popover = null; render(); }
+                } else if (state.popover) { state.popover = null; render(); }
+            });
+
+            render();
+        </script>
+    </body>
+</html>
