@@ -89,15 +89,25 @@ function TaskFields(props: TaskFieldsProps): JSX.Element {
                     <div class="form-field-body">
                         <div class="task-fields__labels">
                             <For each={selectedLabels()}>
-                                {(label) => <LabelChip name={label.name} color={label.color} />}
+                                {(label) => (
+                                    <LabelChip
+                                        name={label.name}
+                                        color={label.color}
+                                        onClick={props.onOpenLabelsPicker}
+                                    />
+                                )}
                             </For>
                             <button
                                 type="button"
                                 class="add-icon-btn"
                                 aria-label={props.labelsButtonLabel ?? 'Edit labels'}
                                 onClick={props.onOpenLabelsPicker}
+                                style={{
+                                    height: '22px',
+                                    width: '22px',
+                                }}
                             >
-                                <Icon src={plusIcon} width={16} height={16} />
+                                <Icon src={plusIcon} width={18} height={18} />
                             </button>
                         </div>
                     </div>
