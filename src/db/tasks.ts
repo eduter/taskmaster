@@ -54,7 +54,11 @@ async function deleteTask(id: string): Promise<void> {
  * Same end state as postponing them to today before the day rolled over.
  */
 async function advanceIncompleteTasks(today: string): Promise<number> {
-    const stale = await db.tasks.where('date').below(today).filter((task) => !task.completed).toArray();
+    const stale = await db.tasks
+        .where('date')
+        .below(today)
+        .filter((task) => !task.completed)
+        .toArray();
     if (stale.length === 0) {
         return 0;
     }
