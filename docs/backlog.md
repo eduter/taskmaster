@@ -4,6 +4,8 @@ Backlog is for open work only. Don't add completed items — history is in git. 
 If the work reveals follow-up tasks, add those as new items. If something is worth documenting permanently, it belongs
 in code comments, or other doc files — not the backlog.
 
+* Rework the whole postpone UI. Also make it possible to move a future task to today.
+* Rethink the whole edit task UI
 * Implement filters by label and name substring
 * improve and re-enable calendar week view
 * Create multiple tasks/task templates when pasting multiple lines
