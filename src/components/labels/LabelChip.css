@@ -9,3 +9,9 @@
     border-radius: var(--radius-sm);
     box-sizing: border-box;
 }
+
+button.label-chip {
+    border: none;
+    font: inherit;
+    cursor: pointer;
+}

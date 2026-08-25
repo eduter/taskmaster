@@ -4,4 +4,5 @@
     gap: var(--space-xs);
     align-items: center;
     min-height: 32px;
+    align-content: center;
 }
