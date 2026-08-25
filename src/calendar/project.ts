@@ -73,7 +73,8 @@ function latestDate(...dates: string[]): string {
 }
 
 function parseDate(date: string): Date {
-    return new Date(`${date}T12:00:00`);
+    // Match rrule DTSTART/occurrence instants (UTC noon), not local noon
+    return new Date(`${date}T12:00:00Z`);
 }
 
 export { projectGeneratorTasks };
