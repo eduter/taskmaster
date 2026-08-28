@@ -5,7 +5,7 @@ import generatorIcon from '../icons/tab-generators.svg?raw';
 import { labels } from '../stores/labelStore.ts';
 import { showTaskLabels } from '../stores/viewPreferencesStore.ts';
 import { Icon } from './Icon.tsx';
-import { LabelChip, LabelRing } from './labels';
+import { LabelChip, LabelMarks, LabelRing } from './labels';
 import './TaskCard.css';
 
 interface TaskCardProps {
@@ -31,13 +31,16 @@ interface TaskCardViewProps {
     generatorName?: string;
     /** When set, overrides the device task-label display preference. */
     labelsVisible?: boolean;
+    /** `marks` always shows thin color bars and ignores the show-labels preference. */
+    labelsMode?: 'toggle' | 'marks';
 }
 
 /** Shared task-like card display for persisted tasks and generator templates. */
 function TaskCardView(props: TaskCardViewProps): JSX.Element {
     const showCheck = () => props.showCheck ?? false;
     const showCompleted = createMemo(() => props.visualCompleted ?? props.completed ?? false);
-    const labelsVisible = () => props.labelsVisible ?? showTaskLabels();
+    const labelsMode = () => props.labelsMode ?? 'toggle';
+    const labelsVisible = () => labelsMode() === 'toggle' && (props.labelsVisible ?? showTaskLabels());
 
     const cardLabels = createMemo(() => {
         const byId = new Map((labels() ?? []).map((l) => [l.id, l]));
@@ -57,7 +60,7 @@ function TaskCardView(props: TaskCardViewProps): JSX.Element {
         >
             <Show when={showCheck()}>
                 <span class="task-card__check-shell">
-                    <Show when={cardLabels().length > 0}>
+                    <Show when={labelsMode() === 'toggle' && cardLabels().length > 0}>
                         <LabelRing labels={cardLabels()} />
                     </Show>
                     <Show
@@ -80,7 +83,10 @@ function TaskCardView(props: TaskCardViewProps): JSX.Element {
             </Show>
             <div class="task-card__content">
                 <span class="task-card__summary">{props.summary}</span>
-                <Show when={cardLabels().length > 0}>
+                <Show when={labelsMode() === 'marks'}>
+                    <LabelMarks labelIds={props.labelIds} />
+                </Show>
+                <Show when={labelsMode() === 'toggle' && cardLabels().length > 0}>
                     <div class="task-card__labels">
                         <div class="task-card__labels-inner">
                             <For each={cardLabels()}>
