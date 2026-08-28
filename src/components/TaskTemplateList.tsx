@@ -27,10 +27,14 @@ function TaskTemplateList(props: TaskTemplateListProps): JSX.Element {
                     onRowTouchStart={row.onRowTouchStart}
                     onOpen={() => props.onOpen(template.id)}
                     onDelete={() => props.onDelete(template.id)}
-                    renderContent={() => <TaskCardView summary={template.summary} labelIds={template.labelIds} />}
+                    renderContent={() => (
+                        <TaskCardView summary={template.summary} labelIds={template.labelIds} labelsMode="marks" />
+                    )}
                 />
             )}
-            renderOverlay={(template) => <TaskCardView summary={template.summary} labelIds={template.labelIds} />}
+            renderOverlay={(template) => (
+                <TaskCardView summary={template.summary} labelIds={template.labelIds} labelsMode="marks" />
+            )}
         />
     );
 }
