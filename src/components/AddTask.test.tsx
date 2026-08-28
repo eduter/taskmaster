@@ -22,12 +22,16 @@ vi.mock('../stores/taskStore.ts', () => ({
     },
 }));
 
-function task(id: string, summary: string): Task {
+vi.mock('../stores/labelStore.ts', () => ({
+    labels: () => [{ id: 'home', name: 'Home', color: '#4f46e5' }],
+}));
+
+function task(id: string, summary: string, labelIds: string[] = []): Task {
     return {
         id,
         summary,
         description: '',
-        labelIds: [],
+        labelIds,
         date: '2026-08-01',
         sortOrder: 0,
         completed: true,
@@ -138,5 +142,19 @@ describe('AddTask', () => {
         await vi.waitFor(() => expect(loadCompletedTaskCandidates).toHaveBeenCalled());
 
         expect(screen.queryByRole('option')).toBeNull();
+    });
+
+    it('shows nameless label marks on previous-task suggestions', async () => {
+        const previous = task('package', 'Pick up package at the post office', ['home']);
+        loadCompletedTaskCandidates.mockResolvedValue([previous]);
+        render(() => <AddTask />);
+        const input = screen.getByPlaceholderText('Add a task…');
+
+        fireEvent.focus(input);
+        fireEvent.input(input, { target: { value: 'package' } });
+        const option = await screen.findByRole('option', { name: previous.summary });
+
+        expect((option.querySelector('.label-marks__bar') as HTMLElement).style.background).toBe('rgb(79, 70, 229)');
+        expect(screen.queryByText('Home')).toBeNull();
     });
 });
