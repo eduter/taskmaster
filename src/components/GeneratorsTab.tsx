@@ -5,6 +5,7 @@ import { parseGeneratorRule } from '../scheduling/rruleHelpers.ts';
 import { useAppNavigate } from '../routing/navigation.ts';
 import { generators } from '../stores/generatorStore.ts';
 import { Icon } from './Icon.tsx';
+import { LabelMarks, uniqueLabelIds } from './labels';
 import './GeneratorsTab.css';
 
 function scheduleLabel(gen: Generator): string {
@@ -48,6 +49,9 @@ function GeneratorsTab() {
                                 <span class="generators-tab__item-main">
                                     <span class="generators-tab__item-name">{gen.name}</span>
                                     <span class="generators-tab__item-schedule">{scheduleLabel(gen)}</span>
+                                    <LabelMarks
+                                        labelIds={uniqueLabelIds(gen.templates.map((template) => template.labelIds))}
+                                    />
                                 </span>
                                 <span class="generators-tab__item-count">
                                     {gen.templates.length} task{gen.templates.length !== 1 ? 's' : ''}

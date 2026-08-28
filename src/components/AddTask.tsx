@@ -1,6 +1,7 @@
 import { createMemo, createSignal, createUniqueId, For, onCleanup, onMount, Show } from 'solid-js';
 import type { Task } from '../db/types.ts';
 import { addTask, copyPreviousTask, filterTaskCandidates, loadCompletedTaskCandidates } from '../stores/taskStore.ts';
+import { LabelMarks } from './labels';
 import './AddTask.css';
 
 const MIN_SUGGESTION_QUERY_LENGTH = 2;
@@ -170,7 +171,8 @@ function AddTask(props: AddTaskProps) {
                                     onPointerEnter={() => setActiveIndex(index())}
                                     onClick={() => void selectSuggestion(task)}
                                 >
-                                    {task.summary.trim()}
+                                    <span class="add-task__suggestion-summary">{task.summary.trim()}</span>
+                                    <LabelMarks labelIds={task.labelIds} />
                                 </button>
                             )}
                         </For>

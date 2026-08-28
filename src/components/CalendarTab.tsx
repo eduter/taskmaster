@@ -23,6 +23,7 @@ import { TaskCardView } from './TaskCard.tsx';
 import { PostponeDialog } from './PostponeDialog.tsx';
 import { TaskEditorDialog } from './TaskEditorDialog.tsx';
 import { TaskRows } from './TaskRows.tsx';
+import { LabelMarks } from './labels';
 import { LabelsDialog } from './labels/LabelsDialog.tsx';
 import './CalendarTab.css';
 
@@ -387,11 +388,13 @@ function MonthPage(props: MonthPagerProps & { month: string }): JSX.Element {
                                             id: task.id,
                                             summary: task.summary,
                                             projected: false,
+                                            labelIds: task.labelIds,
                                         })),
                                         ...props.projectedFor(day.date).map((task) => ({
                                             id: task.id,
                                             summary: task.summary,
                                             projected: true,
+                                            labelIds: task.labelIds,
                                         })),
                                     ];
                                     return (
@@ -423,6 +426,7 @@ interface MonthCellItem {
     id: string;
     summary: string;
     projected: boolean;
+    labelIds: string[];
 }
 
 function MonthCellItems(props: { items: MonthCellItem[] }): JSX.Element {
@@ -433,7 +437,8 @@ function MonthCellItems(props: { items: MonthCellItem[] }): JSX.Element {
             <For each={shown()}>
                 {(item) => (
                     <span class="calendar-month-task" classList={{ 'calendar-month-task--projected': item.projected }}>
-                        {item.summary}
+                        <span class="calendar-month-task__summary">{item.summary}</span>
+                        <LabelMarks labelIds={item.labelIds} />
                     </span>
                 )}
             </For>
@@ -562,6 +567,7 @@ function CalendarTaskButton(props: { task: Task; onOpen: () => void; compact?: b
                     summary={props.task.summary}
                     labelIds={props.task.labelIds}
                     completed={props.task.completed}
+                    labelsMode={props.compact ? 'marks' : undefined}
                 />
             </button>
         </div>

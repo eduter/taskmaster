@@ -1,0 +1,18 @@
+.label-marks {
+    --label-mark-width: 22px;
+    --label-mark-height: 3px;
+    --label-mark-gap: 2px;
+    display: flex;
+    flex-wrap: wrap;
+    gap: var(--label-mark-gap);
+    min-width: 0;
+    margin-top: 2px;
+}
+
+.label-marks__bar {
+    flex: 0 0 auto;
+    width: var(--label-mark-width);
+    height: var(--label-mark-height);
+    border-radius: 1px;
+    background: var(--label-color, currentColor);
+}

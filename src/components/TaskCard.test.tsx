@@ -70,4 +70,25 @@ describe('TaskCardView projected tasks', () => {
 
         expect(result.container.querySelector('.task-card--labels-visible')).toBeNull();
     });
+
+    it('shows nameless color bars in marks mode even when the preference is off', () => {
+        const result = render(() => <TaskCardView summary="Template task" labelIds={['label-1']} labelsMode="marks" />);
+
+        expect(result.container.querySelector('.task-card--labels-visible')).toBeNull();
+        expect(result.container.querySelector('.label-marks__bar')).toBeInstanceOf(HTMLElement);
+        expect((result.container.querySelector('.label-marks__bar') as HTMLElement).style.background).toBe(
+            'rgb(79, 70, 229)'
+        );
+        expect(result.queryByText('Home')).toBeNull();
+    });
+
+    it('keeps marks mode from showing label names when the preference is on', () => {
+        preferences.labelsVisible = true;
+
+        const result = render(() => <TaskCardView summary="Template task" labelIds={['label-1']} labelsMode="marks" />);
+
+        expect(result.container.querySelector('.task-card--labels-visible')).toBeNull();
+        expect(result.queryByText('Home')).toBeNull();
+        expect(result.container.querySelector('.label-marks__bar')).not.toBeNull();
+    });
 });
