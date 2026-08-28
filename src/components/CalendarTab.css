@@ -140,7 +140,8 @@
 }
 
 .calendar-month-task {
-    display: block;
+    display: flex;
+    flex-direction: column;
     min-width: 0;
     padding: 1px 3px;
     overflow: hidden;
@@ -149,8 +150,19 @@
     background: var(--bg-surface);
     font-size: 0.6rem;
     line-height: 13px;
+}
+
+.calendar-month-task__summary {
+    overflow: hidden;
     text-overflow: ellipsis;
     white-space: nowrap;
+}
+
+.calendar-month-task .label-marks {
+    --label-mark-width: 10px;
+    --label-mark-height: 2px;
+    --label-mark-gap: 1px;
+    margin-top: 1px;
 }
 
 .calendar-month-task--projected {
@@ -256,10 +268,6 @@
 
 .calendar-task-button--compact .task-card {
     padding: 5px;
-}
-
-.calendar-task-button--compact .task-card__labels {
-    display: none;
 }
 
 .calendar-task-button--compact .task-card__summary {

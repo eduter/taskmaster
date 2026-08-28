@@ -3,10 +3,12 @@ import { MemoryRouter, Route, createMemoryHistory } from '@solidjs/router';
 import { cleanup, fireEvent, render, screen } from '@solidjs/testing-library';
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import type { ProjectedTask } from '../calendar/project.ts';
+import { today } from '../stores/taskStore.ts';
+import { resetDb, seedTask } from '../test/helpers.ts';
 import { CalendarTab, ProjectedTaskCard } from './CalendarTab.tsx';
 
 vi.mock('../stores/labelStore.ts', () => ({
-    labels: () => [],
+    labels: () => [{ id: 'home', name: 'Home', color: '#4f46e5' }],
 }));
 
 vi.mock('../stores/viewPreferencesStore.ts', () => ({
@@ -94,5 +96,44 @@ describe('CalendarTab day dialog', () => {
         fireEvent.click(screen.getAllByRole('button', { name: 'Close' })[0]);
 
         expect(nav.closeCalendarDetail).toHaveBeenCalledOnce();
+    });
+});
+
+describe('CalendarTab month cells', () => {
+    beforeEach(async () => {
+        HTMLElement.prototype.scrollTo = vi.fn();
+        await resetDb();
+    });
+
+    it('shows nameless label marks on tiny day-cell tasks', async () => {
+        await seedTask({
+            id: 'recycle',
+            summary: 'Take out recycling',
+            date: today(),
+            labelIds: ['home'],
+        });
+
+        const history = createMemoryHistory();
+        history.set({ value: '/calendar', replace: true });
+
+        const { container } = render(() => (
+            <MemoryRouter history={history}>
+                <Route
+                    path={['/calendar', '/calendar/:date', '/calendar/:date/tasks/:taskId']}
+                    component={CalendarTab}
+                />
+            </MemoryRouter>
+        ));
+
+        await screen.findAllByText('Take out recycling');
+
+        const tasks = [...container.querySelectorAll('.calendar-month-task')].filter((el) =>
+            el.textContent?.includes('Take out recycling')
+        );
+        expect(tasks.length).toBeGreaterThan(0);
+        for (const task of tasks) {
+            expect((task.querySelector('.label-marks__bar') as HTMLElement).style.background).toBe('rgb(79, 70, 229)');
+        }
+        expect(screen.queryByText('Home')).toBeNull();
     });
 });
