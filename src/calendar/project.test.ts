@@ -68,4 +68,24 @@ describe('projectGeneratorTasks', () => {
 
         expect(projected).toEqual([]);
     });
+
+    it('projects tomorrow when DTSTART encodes local noon as 10:00 UTC', () => {
+        const projected = projectGeneratorTasks(
+            [
+                generator({
+                    id: 'sundays',
+                    name: 'Sundays',
+                    rrule: 'DTSTART:20260628T100000Z\nRRULE:FREQ=WEEKLY;INTERVAL=1;BYDAY=SU',
+                    templates: [{ summary: 'Fold clothes', description: '', labelIds: [] }],
+                    lastGeneratedDate: '2026-08-29',
+                }),
+            ],
+            [],
+            '2026-08-29',
+            '2026-09-06',
+            '2026-08-29'
+        );
+
+        expect(projected.map((item) => item.date)).toEqual(['2026-08-30', '2026-09-06']);
+    });
 });

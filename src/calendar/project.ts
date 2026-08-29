@@ -37,7 +37,7 @@ function projectGeneratorTasks(
             continue;
         }
 
-        const occurrences = parseGeneratorRule(generator).between(parseDate(start), parseDate(rangeEnd), true);
+        const occurrences = parseGeneratorRule(generator).between(startOfDay(start), endOfDay(rangeEnd), true);
         for (const occurrence of occurrences) {
             const date = toISODate(occurrence);
             if (existing.has(`${generator.id}:${date}`)) {
@@ -72,9 +72,12 @@ function latestDate(...dates: string[]): string {
     return dates.reduce((latest, date) => (date > latest ? date : latest));
 }
 
-function parseDate(date: string): Date {
-    // Match rrule DTSTART/occurrence instants (UTC noon), not local noon
-    return new Date(`${date}T12:00:00Z`);
+function startOfDay(date: string): Date {
+    return new Date(`${date}T00:00:00`);
+}
+
+function endOfDay(date: string): Date {
+    return new Date(`${date}T23:59:59`);
 }
 
 export { projectGeneratorTasks };
