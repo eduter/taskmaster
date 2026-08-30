@@ -51,12 +51,22 @@ describe('TodayTabIcon', () => {
 
         const result = render(() => <TodayTabIcon />);
         const icon = result.container.querySelector('.today-tab-icon') as HTMLElement;
+        const progress = result.container.querySelector('.today-tab-icon__progress');
 
         expect(icon.style.getPropertyValue('--completion-rate')).toBe('0');
         expect(icon.style.getPropertyValue('--completion-color')).toBe('#f87171');
-        const dasharray = dasharrayValues(result.container.querySelector('.today-tab-icon__progress'));
-        expect(dasharray?.[0]).toBe(0);
-        expect(dasharray?.[1]).toBeCloseTo(50.265, 2);
+        expect(progress).toBeNull();
+    });
+
+    it('shows an empty ring when today has tasks but none are complete', () => {
+        taskState.tasks = [makeTask({ id: 'a', completed: false }), makeTask({ id: 'b', completed: false })];
+
+        const result = render(() => <TodayTabIcon />);
+        const icon = result.container.querySelector('.today-tab-icon') as HTMLElement;
+
+        expect(icon.style.getPropertyValue('--completion-rate')).toBe('0');
+        expect(result.container.querySelector('.today-tab-icon__progress')).toBeNull();
+        expect(result.container.querySelector('.today-tab-icon__track')).not.toBeNull();
     });
 
     it('fills half the ring when half of today tasks are complete', () => {

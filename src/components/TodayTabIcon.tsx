@@ -1,4 +1,4 @@
-import { createMemo, type JSX } from 'solid-js';
+import { createMemo, Show, type JSX } from 'solid-js';
 import checkIcon from '../icons/check.svg?raw';
 import { tasks } from '../stores/taskStore.ts';
 import { completionColor } from '../utils/completionColor.ts';
@@ -35,15 +35,18 @@ function TodayTabIcon(): JSX.Element {
         >
             <svg class="today-tab-icon__svg" viewBox="0 0 20 20" width="20" height="20" aria-hidden="true">
                 <circle class="today-tab-icon__track" cx="10" cy="10" r={RING_RADIUS} />
-                <circle
-                    class="today-tab-icon__progress"
-                    cx="10"
-                    cy="10"
-                    r={RING_RADIUS}
-                    stroke={color()}
-                    stroke-dasharray={`${progressLength()} ${RING_CIRCUMFERENCE}`}
-                    transform="rotate(-90 10 10)"
-                />
+                {/* Round caps still paint a blob when dash length is 0 */}
+                <Show when={completionRate() > 0}>
+                    <circle
+                        class="today-tab-icon__progress"
+                        cx="10"
+                        cy="10"
+                        r={RING_RADIUS}
+                        stroke={color()}
+                        stroke-dasharray={`${progressLength()} ${RING_CIRCUMFERENCE}`}
+                        transform="rotate(-90 10 10)"
+                    />
+                </Show>
             </svg>
             <Icon class="today-tab-icon__check" src={checkIcon} width={12} height={12} />
         </span>
