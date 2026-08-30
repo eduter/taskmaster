@@ -1,0 +1,43 @@
+.today-tab-icon {
+    position: relative;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    width: 20px;
+    height: 20px;
+    flex-shrink: 0;
+}
+
+.today-tab-icon__svg {
+    display: block;
+}
+
+.today-tab-icon__track,
+.today-tab-icon__progress {
+    fill: none;
+    stroke-width: 2;
+}
+
+.today-tab-icon__track {
+    stroke: var(--border-light);
+}
+
+.today-tab-icon__progress {
+    stroke-linecap: round;
+    transition:
+        stroke-dasharray var(--transition-fast),
+        stroke var(--transition-fast);
+}
+
+.today-tab-icon__check {
+    position: absolute;
+    color: var(--completion-color);
+    transition: color var(--transition-fast);
+}
+
+@media (prefers-reduced-motion: reduce) {
+    .today-tab-icon__progress,
+    .today-tab-icon__check {
+        transition: none;
+    }
+}

@@ -52,6 +52,23 @@ function shouldCelebrateLastTask(list: { id: string; completed: boolean }[], id:
 }
 
 /**
+ * Viewport center of the Today tab icon, or undefined if it is not mounted.
+ */
+function todayTabConfettiOrigin(): ConfettiOrigin | undefined {
+    if (typeof document === 'undefined') {
+        return undefined;
+    }
+
+    const icon = document.querySelector('.today-tab-icon');
+    if (!icon) {
+        return undefined;
+    }
+
+    const rect = icon.getBoundingClientRect();
+    return { x: rect.left + rect.width / 2, y: rect.top + rect.height / 2 };
+}
+
+/**
  * Burst confetti from `origin` (CSS viewport pixels). No-ops under prefers-reduced-motion.
  * Falls back to viewport center when origin is omitted.
  */
@@ -183,5 +200,5 @@ function loop(): void {
     }
 }
 
-export { fireConfetti, shouldCelebrateLastTask };
+export { fireConfetti, shouldCelebrateLastTask, todayTabConfettiOrigin };
 export type { ConfettiOrigin };

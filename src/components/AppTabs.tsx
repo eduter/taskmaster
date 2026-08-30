@@ -1,18 +1,18 @@
 import calendarIcon from '../icons/tab-calendar.svg?raw';
 import generatorsIcon from '../icons/tab-generators.svg?raw';
-import todayIcon from '../icons/tab-today.svg?raw';
 import { type AppTab, useActiveTab, useAppNavigate } from '../routing/navigation.ts';
 import { Icon } from './Icon.tsx';
+import { TodayTabIcon } from './TodayTabIcon.tsx';
 import './AppTabs.css';
 
 interface TabConfig {
     id: AppTab;
     label: string;
-    icon: string;
+    icon?: string;
 }
 
 const TABS: TabConfig[] = [
-    { id: 'today', label: "Today's tasks", icon: todayIcon },
+    { id: 'today', label: "Today's tasks" },
     { id: 'calendar', label: 'Calendar', icon: calendarIcon },
     { id: 'generators', label: 'Generators', icon: generatorsIcon },
 ];
@@ -32,7 +32,7 @@ function AppTabs() {
                     aria-current={activeTab() === tab.id ? 'page' : undefined}
                     onClick={() => toTab(tab.id)}
                 >
-                    <Icon src={tab.icon} />
+                    {tab.id === 'today' ? <TodayTabIcon /> : <Icon src={tab.icon ?? ''} />}
                 </button>
             ))}
         </nav>

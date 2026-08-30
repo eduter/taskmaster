@@ -4,10 +4,15 @@ import { afterEach, describe, expect, it, vi } from 'vitest';
 import type { Task } from '../db/types.ts';
 import { TaskRows } from './TaskRows.tsx';
 
-const { removeTask, toggleComplete } = vi.hoisted(() => ({
-    removeTask: vi.fn(async () => {}),
-    toggleComplete: vi.fn(async () => true),
-}));
+const { removeTask, toggleComplete, fireConfetti, shouldCelebrateLastTask, todayTabConfettiOrigin } = vi.hoisted(
+    () => ({
+        removeTask: vi.fn(async () => {}),
+        toggleComplete: vi.fn(async () => true),
+        fireConfetti: vi.fn(),
+        shouldCelebrateLastTask: vi.fn(() => false),
+        todayTabConfettiOrigin: vi.fn(() => ({ x: 50, y: 20 })),
+    })
+);
 
 vi.mock('../stores/taskStore.ts', () => ({
     removeTask,
@@ -22,8 +27,9 @@ vi.mock('../stores/viewPreferencesStore.ts', () => ({
     showTaskLabels: () => false,
 }));
 vi.mock('../utils/confetti.ts', () => ({
-    fireConfetti: vi.fn(),
-    shouldCelebrateLastTask: () => false,
+    fireConfetti,
+    shouldCelebrateLastTask,
+    todayTabConfettiOrigin,
 }));
 
 function makeTask(): Task {
@@ -48,6 +54,10 @@ describe('TaskRows', () => {
         cleanup();
         removeTask.mockClear();
         toggleComplete.mockClear();
+        fireConfetti.mockClear();
+        shouldCelebrateLastTask.mockReset();
+        shouldCelebrateLastTask.mockReturnValue(false);
+        todayTabConfettiOrigin.mockClear();
     });
 
     it('reuses task controls while allowing calendar labels and navigation', async () => {
@@ -97,5 +107,16 @@ describe('TaskRows', () => {
 
         fireEvent.click(screen.getByRole('button', { name: 'Delete task' }));
         await vi.waitFor(() => expect(removeTask).toHaveBeenCalledWith('future-task'));
+    });
+
+    it('fires last-task confetti from the today tab icon', async () => {
+        shouldCelebrateLastTask.mockReturnValue(true);
+
+        render(() => <TaskRows items={[makeTask()]} onReorder={() => {}} onOpen={() => {}} />);
+
+        fireEvent.click(screen.getByRole('button', { name: 'Mark complete' }));
+
+        await vi.waitFor(() => expect(fireConfetti).toHaveBeenCalledWith({ x: 50, y: 20 }));
+        expect(todayTabConfettiOrigin).toHaveBeenCalled();
     });
 });
