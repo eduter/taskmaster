@@ -123,10 +123,11 @@ describe('CalendarTab month cells', () => {
         expect(container.querySelectorAll('.calendar-month-weekdays')).toHaveLength(1);
         expect(container.querySelectorAll('.calendar-month-page')).toHaveLength(0);
 
-        const weekNumbers = [...container.querySelectorAll('.calendar-month-week-row .calendar-week-number')].map(
-            (cell) => cell.textContent
-        );
-        expect(new Set(weekNumbers).size).toBe(weekNumbers.length);
+        const weekRows = container.querySelectorAll('.calendar-month-week-row');
+        expect(weekRows.length).toBe(110);
+        for (const row of weekRows) {
+            expect(row.querySelectorAll('.calendar-day-cell')).toHaveLength(7);
+        }
     });
 
     it('shows nameless label marks on tiny day-cell tasks', async () => {

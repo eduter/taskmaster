@@ -217,7 +217,6 @@ function CalendarTab(): JSX.Element {
                     >
                         <MonthWeekScroller
                             weeks={monthWeeks()}
-                            currentIndex={monthWeekIndex()}
                             visibleMonth={visibleMonth()}
                             scheduledFor={scheduledFor}
                             projectedFor={projectedFor}
@@ -353,7 +352,6 @@ interface CalendarLookupProps {
 
 interface MonthWeekScrollerProps extends CalendarLookupProps {
     weeks: string[];
-    currentIndex: number;
     visibleMonth: string;
     onDay: (date: string) => void;
     scrollerRef: (element: HTMLDivElement) => void;
@@ -369,15 +367,12 @@ function MonthWeekScroller(props: MonthWeekScrollerProps): JSX.Element {
             </div>
             <div ref={props.scrollerRef} class="calendar-month-scroller" onScroll={props.onScroll}>
                 <For each={props.weeks}>
-                    {(weekMonday, index) => (
+                    {(weekMonday) => (
                         <section
                             class="calendar-month-week-row"
                             classList={{ 'calendar-month-week-row--snap': isMonthStartWeek(weekMonday) }}
-                            aria-hidden={!shouldRenderCalendarPage(index(), props.currentIndex)}
                         >
-                            <Show when={shouldRenderCalendarPage(index(), props.currentIndex)}>
-                                <MonthWeekRow weekMonday={weekMonday} {...props} />
-                            </Show>
+                            <MonthWeekRow weekMonday={weekMonday} {...props} />
                         </section>
                     )}
                 </For>
