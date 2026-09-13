@@ -1,6 +1,17 @@
 import { useParams } from '@solidjs/router';
 import { createEffect, createMemo, createResource, createSignal, For, on, onCleanup, Show, type JSX } from 'solid-js';
-import { addMonths, getMonthGrid, getWeekDates, startOfMonth, startOfWeek } from '../calendar/calendarDate.ts';
+import {
+    getISOWeekNumber,
+    getWeekDates,
+    indexOfMonthStartWeek,
+    isMonthStartWeek,
+    monthReelIndex,
+    monthStartMonths,
+    nearestMonthStartWeekIndex,
+    startOfMonth,
+    startOfWeek,
+    visibleMonthForWeekOffset,
+} from '../calendar/calendarDate.ts';
 import { loadCalendarRange } from '../calendar/calendarData.ts';
 import type { ProjectedTask } from '../calendar/project.ts';
 import { indexCalendarItemsByDate, shouldRenderCalendarPage } from '../calendar/calendarViewModel.ts';
@@ -27,8 +38,8 @@ import { LabelMarks } from './labels';
 import { LabelsDialog } from './labels/LabelsDialog.tsx';
 import './CalendarTab.css';
 
-const MONTH_PAGE_COUNT = 25;
-const MONTH_MIDDLE_INDEX = 12;
+const MONTH_WEEK_COUNT = 110;
+const MONTH_WEEK_MIDDLE_INDEX = 55;
 const WEEK_PAGE_COUNT = 53;
 const WEEK_MIDDLE_INDEX = 26;
 const FILTER_OPTIONS: SegmentedOption<CalendarFilter>[] = [
@@ -44,26 +55,25 @@ function CalendarTab(): JSX.Element {
     const labelsOpen = useLabelsPanelOpen();
     const postponeOpen = usePostponePanelOpen();
     const navigation = useAppNavigate();
-    const [monthIndex, setMonthIndex] = createSignal(MONTH_MIDDLE_INDEX);
+    const [monthWeekOffset, setMonthWeekOffset] = createSignal(MONTH_WEEK_MIDDLE_INDEX);
     const [weekIndex, setWeekIndex] = createSignal(WEEK_MIDDLE_INDEX);
     let monthScroller: HTMLDivElement | undefined;
     let weekScroller: HTMLDivElement | undefined;
-    let monthScrollTimer: ReturnType<typeof setTimeout> | undefined;
+    let monthScrollFrame: number | undefined;
     let weekScrollTimer: ReturnType<typeof setTimeout> | undefined;
 
-    const baseMonth = createMemo(() => startOfMonth(today()));
-    const baseWeek = createMemo(() => startOfWeek(today()));
-    const months = createMemo(() =>
-        Array.from({ length: MONTH_PAGE_COUNT }, (_, index) => addMonths(baseMonth(), index - MONTH_MIDDLE_INDEX))
+    const baseMonthStartWeek = createMemo(() => startOfWeek(startOfMonth(today())));
+    const monthWeeks = createMemo(() =>
+        Array.from({ length: MONTH_WEEK_COUNT }, (_, index) =>
+            addDays(baseMonthStartWeek(), (index - MONTH_WEEK_MIDDLE_INDEX) * 7)
+        )
     );
+    const baseWeek = createMemo(() => startOfWeek(today()));
     const weeks = createMemo(() =>
         Array.from({ length: WEEK_PAGE_COUNT }, (_, index) => addDays(baseWeek(), (index - WEEK_MIDDLE_INDEX) * 7))
     );
-    const rangeStart = createMemo(() => getMonthGrid(months()[0] ?? baseMonth())[0]?.days[0]?.date ?? baseMonth());
-    const rangeEnd = createMemo(() => {
-        const grid = getMonthGrid(months().at(-1) ?? baseMonth());
-        return grid.at(-1)?.days.at(-1)?.date ?? baseMonth();
-    });
+    const rangeStart = createMemo(() => monthWeeks()[0] ?? baseMonthStartWeek());
+    const rangeEnd = createMemo(() => addDays(monthWeeks().at(-1) ?? baseMonthStartWeek(), 6));
     const [calendarData] = createResource(
         () => `${rangeStart()}:${rangeEnd()}:${today()}:${taskVersion()}:${genVersion()}`,
         () => loadCalendarRange(rangeStart(), rangeEnd(), today())
@@ -77,7 +87,9 @@ function CalendarTab(): JSX.Element {
     );
     const selectedDate = createMemo(() => (isDate(params.date) ? params.date : undefined));
     const selectedTask = createMemo(() => (params.taskId ? scheduledById().get(params.taskId) : undefined));
-    const visibleMonth = createMemo(() => months()[monthIndex()] ?? baseMonth());
+    const visibleMonth = createMemo(() => visibleMonthForWeekOffset(monthWeeks(), monthWeekOffset()));
+    const monthReelMonths = createMemo(() => monthStartMonths(monthWeeks()));
+    const monthReelOffset = createMemo(() => monthReelIndex(monthWeeks(), monthWeekOffset()));
     const visibleWeek = createMemo(() => weeks()[weekIndex()] ?? baseWeek());
 
     createEffect(
@@ -86,15 +98,36 @@ function CalendarTab(): JSX.Element {
         })
     );
     onCleanup(() => {
-        clearTimeout(monthScrollTimer);
+        if (monthScrollFrame !== undefined) {
+            cancelAnimationFrame(monthScrollFrame);
+        }
         clearTimeout(weekScrollTimer);
     });
+
+    function syncMonthWeekOffsetFromScroll(): void {
+        if (!monthScroller) {
+            return;
+        }
+        const rowHeight = monthWeekRowHeight();
+        if (rowHeight <= 0) {
+            return;
+        }
+        setMonthWeekOffset(monthScroller.scrollTop / rowHeight);
+    }
+
+    function monthWeekRowHeight(): number {
+        return (monthScroller?.clientHeight ?? 0) / 6;
+    }
 
     function scrollToCurrent(smooth: boolean): void {
         const behavior: ScrollBehavior = smooth ? 'smooth' : 'auto';
         if (calendarView() === 'month' && monthScroller) {
-            monthScroller.scrollTo({ top: monthScroller.clientHeight * MONTH_MIDDLE_INDEX, behavior });
-            setMonthIndex(MONTH_MIDDLE_INDEX);
+            const targetIndex = indexOfMonthStartWeek(monthWeeks(), startOfMonth(today()));
+            const rowHeight = monthWeekRowHeight();
+            monthScroller.scrollTo({ top: targetIndex * rowHeight, behavior });
+            if (!smooth) {
+                setMonthWeekOffset(targetIndex);
+            }
         }
         if (calendarView() === 'week' && weekScroller) {
             const page = weekScroller.querySelector<HTMLElement>('.calendar-week-page');
@@ -107,13 +140,13 @@ function CalendarTab(): JSX.Element {
     }
 
     function handleMonthScroll(): void {
-        clearTimeout(monthScrollTimer);
-        monthScrollTimer = setTimeout(() => {
-            if (!monthScroller) {
-                return;
-            }
-            setMonthIndex(Math.round(monthScroller.scrollTop / monthScroller.clientHeight));
-        }, 80);
+        if (monthScrollFrame !== undefined) {
+            return;
+        }
+        monthScrollFrame = requestAnimationFrame(() => {
+            monthScrollFrame = undefined;
+            syncMonthWeekOffsetFromScroll();
+        });
     }
 
     function handleWeekScroll(): void {
@@ -165,7 +198,16 @@ function CalendarTab(): JSX.Element {
         <section class="calendar-tab">
             <header class="calendar-toolbar">
                 <div class="calendar-toolbar__headline">
-                    <h1>{calendarView() === 'month' ? formatMonth(visibleMonth()) : formatWeek(visibleWeek())}</h1>
+                    <Show
+                        when={calendarView() === 'month'}
+                        fallback={<h1 class="calendar-toolbar__title">{formatWeek(visibleWeek())}</h1>}
+                    >
+                        <MonthReel
+                            months={monthReelMonths()}
+                            reelIndex={monthReelOffset()}
+                            snapMonth={visibleMonth()}
+                        />
+                    </Show>
                     <button
                         type="button"
                         class="btn btn--secondary calendar-toolbar__today"
@@ -210,15 +252,17 @@ function CalendarTab(): JSX.Element {
                             />
                         }
                     >
-                        <MonthPager
-                            months={months()}
-                            currentIndex={monthIndex()}
+                        <MonthWeekScroller
+                            weeks={monthWeeks()}
+                            visibleMonth={visibleMonth()}
                             scheduledFor={scheduledFor}
                             projectedFor={projectedFor}
                             onDay={navigation.toCalendarDay}
                             scrollerRef={(element) => {
                                 monthScroller = element;
-                                enableMouseDragScroll(element);
+                                enableMouseDragScroll(element, monthWeekRowHeight, (weekOffset) =>
+                                    nearestMonthStartWeekIndex(monthWeeks(), weekOffset)
+                                );
                                 requestAnimationFrame(() => scrollToCurrent(false));
                             }}
                             onScroll={handleMonthScroll}
@@ -274,7 +318,11 @@ function CalendarTab(): JSX.Element {
 }
 
 /** Adds mouse drag paging while leaving Chrome's native touch panning unchanged. */
-function enableMouseDragScroll(scroller: HTMLDivElement): void {
+function enableMouseDragScroll(
+    scroller: HTMLDivElement,
+    rowHeight: () => number,
+    snapWeekIndex: (weekOffset: number) => number
+): void {
     let pointerId: number | undefined;
     let lastY = 0;
     let dragged = false;
@@ -319,8 +367,12 @@ function enableMouseDragScroll(scroller: HTMLDivElement): void {
         if (scroller.hasPointerCapture(event.pointerId)) {
             scroller.releasePointerCapture(event.pointerId);
         }
+        const height = rowHeight();
+        if (height <= 0) {
+            return;
+        }
         scroller.scrollTo({
-            top: Math.round(scroller.scrollTop / scroller.clientHeight) * scroller.clientHeight,
+            top: snapWeekIndex(scroller.scrollTop / height) * height,
             behavior: 'smooth',
         });
     };
@@ -345,79 +397,76 @@ interface CalendarLookupProps {
     projectedFor: (date: string) => ProjectedTask[];
 }
 
-interface MonthPagerProps extends CalendarLookupProps {
-    months: string[];
-    currentIndex: number;
+interface MonthWeekScrollerProps extends CalendarLookupProps {
+    weeks: string[];
+    visibleMonth: string;
     onDay: (date: string) => void;
     scrollerRef: (element: HTMLDivElement) => void;
     onScroll: () => void;
 }
 
-function MonthPager(props: MonthPagerProps): JSX.Element {
+function MonthWeekScroller(props: MonthWeekScrollerProps): JSX.Element {
     return (
-        <div ref={props.scrollerRef} class="calendar-month-scroller" onScroll={props.onScroll}>
-            <For each={props.months}>
-                {(month, index) => (
-                    <section class="calendar-month-page" aria-label={formatMonth(month)}>
-                        <Show when={shouldRenderCalendarPage(index(), props.currentIndex)}>
-                            <MonthPage month={month} {...props} />
-                        </Show>
-                    </section>
-                )}
-            </For>
-        </div>
-    );
-}
-
-function MonthPage(props: MonthPagerProps & { month: string }): JSX.Element {
-    return (
-        <>
+        <div class="calendar-month-view">
             <div class="calendar-month-weekdays" aria-hidden="true">
                 <span>W</span>
                 <For each={WEEKDAY_LABELS}>{(weekday) => <span>{weekday}</span>}</For>
             </div>
-            <div class="calendar-month-grid">
-                <For each={getMonthGrid(props.month)}>
-                    {(week) => (
-                        <>
-                            <div class="calendar-week-number">{week.weekNumber}</div>
-                            <For each={week.days}>
-                                {(day) => {
-                                    const items = () => [
-                                        ...props.scheduledFor(day.date).map((task) => ({
-                                            id: task.id,
-                                            summary: task.summary,
-                                            projected: false,
-                                            labelIds: task.labelIds,
-                                        })),
-                                        ...props.projectedFor(day.date).map((task) => ({
-                                            id: task.id,
-                                            summary: task.summary,
-                                            projected: true,
-                                            labelIds: task.labelIds,
-                                        })),
-                                    ];
-                                    return (
-                                        <button
-                                            type="button"
-                                            class="calendar-day-cell"
-                                            classList={{
-                                                'calendar-day-cell--outside': !day.inMonth,
-                                                'calendar-day-cell--today': day.date === today(),
-                                            }}
-                                            onClick={() => props.onDay(day.date)}
-                                            aria-label={`${formatFullDate(day.date)}, ${items().length} tasks`}
-                                        >
-                                            <span class="calendar-day-cell__number">{Number(day.date.slice(-2))}</span>
-                                            <MonthCellItems items={items()} />
-                                        </button>
-                                    );
-                                }}
-                            </For>
-                        </>
+            <div ref={props.scrollerRef} class="calendar-month-scroller" onScroll={props.onScroll}>
+                <For each={props.weeks}>
+                    {(weekMonday) => (
+                        <section
+                            class="calendar-month-week-row"
+                            classList={{ 'calendar-month-week-row--snap': isMonthStartWeek(weekMonday) }}
+                        >
+                            <MonthWeekRow weekMonday={weekMonday} {...props} />
+                        </section>
                     )}
                 </For>
             </div>
+        </div>
+    );
+}
+
+function MonthWeekRow(props: MonthWeekScrollerProps & { weekMonday: string }): JSX.Element {
+    const monthKey = () => props.visibleMonth.slice(0, 7);
+
+    return (
+        <>
+            <div class="calendar-week-number">{getISOWeekNumber(props.weekMonday)}</div>
+            <For each={getWeekDates(props.weekMonday)}>
+                {(date) => {
+                    const items = () => [
+                        ...props.scheduledFor(date).map((task) => ({
+                            id: task.id,
+                            summary: task.summary,
+                            projected: false,
+                            labelIds: task.labelIds,
+                        })),
+                        ...props.projectedFor(date).map((task) => ({
+                            id: task.id,
+                            summary: task.summary,
+                            projected: true,
+                            labelIds: task.labelIds,
+                        })),
+                    ];
+                    return (
+                        <button
+                            type="button"
+                            class="calendar-day-cell"
+                            classList={{
+                                'calendar-day-cell--outside': !date.startsWith(monthKey()),
+                                'calendar-day-cell--today': date === today(),
+                            }}
+                            onClick={() => props.onDay(date)}
+                            aria-label={`${formatFullDate(date)}, ${items().length} tasks`}
+                        >
+                            <span class="calendar-day-cell__number">{Number(date.slice(-2))}</span>
+                            <MonthCellItems items={items()} />
+                        </button>
+                    );
+                }}
+            </For>
         </>
     );
 }
@@ -594,6 +643,38 @@ function ProjectedTaskCard(props: { task: ProjectedTask; onOpen: () => void }): 
                 />
             </button>
         </div>
+    );
+}
+
+/** Clipped month headline that rolls like a mechanical counter while scrolling. */
+function MonthReel(props: { months: string[]; reelIndex: number; snapMonth: string }): JSX.Element {
+    const [reduceMotion, setReduceMotion] = createSignal(false);
+
+    createEffect(() => {
+        if (typeof window.matchMedia !== 'function') {
+            return;
+        }
+        const media = window.matchMedia('(prefers-reduced-motion: reduce)');
+        const sync = () => setReduceMotion(media.matches);
+        sync();
+        media.addEventListener('change', sync);
+        onCleanup(() => media.removeEventListener('change', sync));
+    });
+
+    const index = () => (reduceMotion() ? Math.round(props.reelIndex) : props.reelIndex);
+
+    return (
+        <h1 class="calendar-toolbar__title calendar-toolbar__reel" aria-label={formatMonth(props.snapMonth)}>
+            <span
+                class="calendar-toolbar__reel-strip"
+                style={{ transform: `translateY(${-index() * 1.25}rem)` }}
+                aria-hidden="true"
+            >
+                <For each={props.months}>
+                    {(month) => <span class="calendar-toolbar__reel-item">{formatMonth(month)}</span>}
+                </For>
+            </span>
+        </h1>
     );
 }
 

@@ -105,6 +105,31 @@ describe('CalendarTab month cells', () => {
         await resetDb();
     });
 
+    it('renders one weekday header and no duplicate week rows', async () => {
+        const history = createMemoryHistory();
+        history.set({ value: '/calendar', replace: true });
+
+        const { container } = render(() => (
+            <MemoryRouter history={history}>
+                <Route
+                    path={['/calendar', '/calendar/:date', '/calendar/:date/tasks/:taskId']}
+                    component={CalendarTab}
+                />
+            </MemoryRouter>
+        ));
+
+        await screen.findByText('Mon');
+
+        expect(container.querySelectorAll('.calendar-month-weekdays')).toHaveLength(1);
+        expect(container.querySelectorAll('.calendar-month-page')).toHaveLength(0);
+
+        const weekRows = container.querySelectorAll('.calendar-month-week-row');
+        expect(weekRows.length).toBe(110);
+        for (const row of weekRows) {
+            expect(row.querySelectorAll('.calendar-day-cell')).toHaveLength(7);
+        }
+    });
+
     it('shows nameless label marks on tiny day-cell tasks', async () => {
         await seedTask({
             id: 'recycle',
