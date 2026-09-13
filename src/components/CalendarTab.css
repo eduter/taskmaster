@@ -24,13 +24,61 @@
     min-width: 0;
 }
 
-.calendar-toolbar__headline h1 {
+.calendar-toolbar__headline h1,
+.calendar-toolbar__title {
     overflow: hidden;
     margin: 0;
     color: var(--text-heading);
     font-size: 1rem;
     text-overflow: ellipsis;
     white-space: nowrap;
+}
+
+.calendar-toolbar__title {
+    position: relative;
+    flex: 1;
+    min-width: 0;
+    height: 1.25rem;
+}
+
+.calendar-toolbar__title-layer {
+    position: absolute;
+    inset: 0;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+}
+
+.calendar-toolbar__title-layer--leaving {
+    animation: calendar-title-out 180ms ease forwards;
+}
+
+.calendar-toolbar__title:has(.calendar-toolbar__title-layer--leaving) .calendar-toolbar__title-layer--entering {
+    animation: calendar-title-in 180ms ease;
+}
+
+@keyframes calendar-title-out {
+    from {
+        opacity: 1;
+        transform: translateY(0);
+    }
+
+    to {
+        opacity: 0;
+        transform: translateY(-0.35em);
+    }
+}
+
+@keyframes calendar-title-in {
+    from {
+        opacity: 0;
+        transform: translateY(0.35em);
+    }
+
+    to {
+        opacity: 1;
+        transform: translateY(0);
+    }
 }
 
 .calendar-toolbar__today {
@@ -115,6 +163,10 @@
     background: var(--bg-primary);
     text-align: left;
     touch-action: pan-y;
+    transition:
+        color 180ms ease,
+        background 180ms ease,
+        box-shadow 180ms ease;
 }
 
 .calendar-day-cell--outside {
@@ -337,6 +389,15 @@
 .calendar-day-dialog__projected {
     display: grid;
     gap: var(--space-sm);
+}
+
+@media (prefers-reduced-motion: reduce) {
+    .calendar-day-cell,
+    .calendar-toolbar__title-layer--leaving,
+    .calendar-toolbar__title:has(.calendar-toolbar__title-layer--leaving) .calendar-toolbar__title-layer--entering {
+        transition: none;
+        animation: none;
+    }
 }
 
 @media (min-width: 700px) {

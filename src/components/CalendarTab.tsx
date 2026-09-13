@@ -48,7 +48,7 @@ function CalendarTab(): JSX.Element {
     const [weekIndex, setWeekIndex] = createSignal(WEEK_MIDDLE_INDEX);
     let monthScroller: HTMLDivElement | undefined;
     let weekScroller: HTMLDivElement | undefined;
-    let monthScrollTimer: ReturnType<typeof setTimeout> | undefined;
+    let monthScrollFrame: number | undefined;
     let weekScrollTimer: ReturnType<typeof setTimeout> | undefined;
 
     const baseMonthStartWeek = createMemo(() => startOfWeek(startOfMonth(today())));
@@ -85,9 +85,25 @@ function CalendarTab(): JSX.Element {
         })
     );
     onCleanup(() => {
-        clearTimeout(monthScrollTimer);
+        if (monthScrollFrame !== undefined) {
+            cancelAnimationFrame(monthScrollFrame);
+        }
         clearTimeout(weekScrollTimer);
     });
+
+    function syncMonthWeekIndexFromScroll(): void {
+        if (!monthScroller) {
+            return;
+        }
+        const rowHeight = monthWeekRowHeight();
+        if (rowHeight <= 0) {
+            return;
+        }
+        const index = Math.round(monthScroller.scrollTop / rowHeight);
+        if (index !== monthWeekIndex()) {
+            setMonthWeekIndex(index);
+        }
+    }
 
     function monthWeekRowHeight(): number {
         return (monthScroller?.clientHeight ?? 0) / 6;
@@ -99,7 +115,9 @@ function CalendarTab(): JSX.Element {
             const targetIndex = indexOfMonthStartWeek(monthWeeks(), startOfMonth(today()));
             const rowHeight = monthWeekRowHeight();
             monthScroller.scrollTo({ top: targetIndex * rowHeight, behavior });
-            setMonthWeekIndex(targetIndex);
+            if (!smooth) {
+                setMonthWeekIndex(targetIndex);
+            }
         }
         if (calendarView() === 'week' && weekScroller) {
             const page = weekScroller.querySelector<HTMLElement>('.calendar-week-page');
@@ -112,13 +130,13 @@ function CalendarTab(): JSX.Element {
     }
 
     function handleMonthScroll(): void {
-        clearTimeout(monthScrollTimer);
-        monthScrollTimer = setTimeout(() => {
-            if (!monthScroller) {
-                return;
-            }
-            setMonthWeekIndex(Math.round(monthScroller.scrollTop / monthWeekRowHeight()));
-        }, 80);
+        if (monthScrollFrame !== undefined) {
+            return;
+        }
+        monthScrollFrame = requestAnimationFrame(() => {
+            monthScrollFrame = undefined;
+            syncMonthWeekIndexFromScroll();
+        });
     }
 
     function handleWeekScroll(): void {
@@ -170,7 +188,12 @@ function CalendarTab(): JSX.Element {
         <section class="calendar-tab">
             <header class="calendar-toolbar">
                 <div class="calendar-toolbar__headline">
-                    <h1>{calendarView() === 'month' ? formatMonth(visibleMonth()) : formatWeek(visibleWeek())}</h1>
+                    <Show
+                        when={calendarView() === 'month'}
+                        fallback={<h1 class="calendar-toolbar__title">{formatWeek(visibleWeek())}</h1>}
+                    >
+                        <CrossfadeTitle text={formatMonth(visibleMonth())} />
+                    </Show>
                     <button
                         type="button"
                         class="btn btn--secondary calendar-toolbar__today"
@@ -596,6 +619,47 @@ function ProjectedTaskCard(props: { task: ProjectedTask; onOpen: () => void }): 
                 />
             </button>
         </div>
+    );
+}
+
+function CrossfadeTitle(props: { text: string }): JSX.Element {
+    const [layers, setLayers] = createSignal<{ visible: string; leaving?: string }>({ visible: props.text });
+
+    createEffect(
+        on(
+            () => props.text,
+            (text, previous) => {
+                if (previous === undefined || text === previous) {
+                    setLayers({ visible: text });
+                    return;
+                }
+                setLayers({ visible: text, leaving: previous });
+            }
+        )
+    );
+
+    function clearLeaving(): void {
+        setLayers((state) => ({ visible: state.visible }));
+    }
+
+    return (
+        <h1 class="calendar-toolbar__title">
+            <Show when={layers().leaving}>
+                {(leaving) => (
+                    <span
+                        class="calendar-toolbar__title-layer calendar-toolbar__title-layer--leaving"
+                        onAnimationEnd={clearLeaving}
+                    >
+                        {leaving()}
+                    </span>
+                )}
+            </Show>
+            <Show when={layers().visible} keyed>
+                {(visible) => (
+                    <span class="calendar-toolbar__title-layer calendar-toolbar__title-layer--entering">{visible}</span>
+                )}
+            </Show>
+        </h1>
     );
 }
 
