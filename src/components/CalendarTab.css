@@ -34,51 +34,24 @@
     white-space: nowrap;
 }
 
-.calendar-toolbar__title {
+.calendar-toolbar__reel {
     position: relative;
     flex: 1;
     min-width: 0;
     height: 1.25rem;
 }
 
-.calendar-toolbar__title-layer {
-    position: absolute;
-    inset: 0;
+.calendar-toolbar__reel-strip {
+    display: flex;
+    flex-direction: column;
+}
+
+.calendar-toolbar__reel-item {
     overflow: hidden;
+    height: 1.25rem;
+    line-height: 1.25rem;
     text-overflow: ellipsis;
     white-space: nowrap;
-}
-
-.calendar-toolbar__title-layer--leaving {
-    animation: calendar-title-out 180ms ease forwards;
-}
-
-.calendar-toolbar__title:has(.calendar-toolbar__title-layer--leaving) .calendar-toolbar__title-layer--entering {
-    animation: calendar-title-in 180ms ease;
-}
-
-@keyframes calendar-title-out {
-    from {
-        opacity: 1;
-        transform: translateY(0);
-    }
-
-    to {
-        opacity: 0;
-        transform: translateY(-0.35em);
-    }
-}
-
-@keyframes calendar-title-in {
-    from {
-        opacity: 0;
-        transform: translateY(0.35em);
-    }
-
-    to {
-        opacity: 1;
-        transform: translateY(0);
-    }
 }
 
 .calendar-toolbar__today {
@@ -392,11 +365,8 @@
 }
 
 @media (prefers-reduced-motion: reduce) {
-    .calendar-day-cell,
-    .calendar-toolbar__title-layer--leaving,
-    .calendar-toolbar__title:has(.calendar-toolbar__title-layer--leaving) .calendar-toolbar__title-layer--entering {
+    .calendar-day-cell {
         transition: none;
-        animation: none;
     }
 }
 

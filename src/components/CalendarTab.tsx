@@ -1,6 +1,17 @@
 import { useParams } from '@solidjs/router';
 import { createEffect, createMemo, createResource, createSignal, For, on, onCleanup, Show, type JSX } from 'solid-js';
-import { getISOWeekNumber, getWeekDates, indexOfMonthStartWeek, isMonthStartWeek, startOfMonth, startOfWeek, visibleMonthForWeekIndex } from '../calendar/calendarDate.ts';
+import {
+    getISOWeekNumber,
+    getWeekDates,
+    indexOfMonthStartWeek,
+    isMonthStartWeek,
+    monthReelIndex,
+    monthStartMonths,
+    nearestMonthStartWeekIndex,
+    startOfMonth,
+    startOfWeek,
+    visibleMonthForWeekOffset,
+} from '../calendar/calendarDate.ts';
 import { loadCalendarRange } from '../calendar/calendarData.ts';
 import type { ProjectedTask } from '../calendar/project.ts';
 import { indexCalendarItemsByDate, shouldRenderCalendarPage } from '../calendar/calendarViewModel.ts';
@@ -44,7 +55,7 @@ function CalendarTab(): JSX.Element {
     const labelsOpen = useLabelsPanelOpen();
     const postponeOpen = usePostponePanelOpen();
     const navigation = useAppNavigate();
-    const [monthWeekIndex, setMonthWeekIndex] = createSignal(MONTH_WEEK_MIDDLE_INDEX);
+    const [monthWeekOffset, setMonthWeekOffset] = createSignal(MONTH_WEEK_MIDDLE_INDEX);
     const [weekIndex, setWeekIndex] = createSignal(WEEK_MIDDLE_INDEX);
     let monthScroller: HTMLDivElement | undefined;
     let weekScroller: HTMLDivElement | undefined;
@@ -76,7 +87,9 @@ function CalendarTab(): JSX.Element {
     );
     const selectedDate = createMemo(() => (isDate(params.date) ? params.date : undefined));
     const selectedTask = createMemo(() => (params.taskId ? scheduledById().get(params.taskId) : undefined));
-    const visibleMonth = createMemo(() => visibleMonthForWeekIndex(monthWeeks(), monthWeekIndex()));
+    const visibleMonth = createMemo(() => visibleMonthForWeekOffset(monthWeeks(), monthWeekOffset()));
+    const monthReelMonths = createMemo(() => monthStartMonths(monthWeeks()));
+    const monthReelOffset = createMemo(() => monthReelIndex(monthWeeks(), monthWeekOffset()));
     const visibleWeek = createMemo(() => weeks()[weekIndex()] ?? baseWeek());
 
     createEffect(
@@ -91,7 +104,7 @@ function CalendarTab(): JSX.Element {
         clearTimeout(weekScrollTimer);
     });
 
-    function syncMonthWeekIndexFromScroll(): void {
+    function syncMonthWeekOffsetFromScroll(): void {
         if (!monthScroller) {
             return;
         }
@@ -99,10 +112,7 @@ function CalendarTab(): JSX.Element {
         if (rowHeight <= 0) {
             return;
         }
-        const index = Math.round(monthScroller.scrollTop / rowHeight);
-        if (index !== monthWeekIndex()) {
-            setMonthWeekIndex(index);
-        }
+        setMonthWeekOffset(monthScroller.scrollTop / rowHeight);
     }
 
     function monthWeekRowHeight(): number {
@@ -116,7 +126,7 @@ function CalendarTab(): JSX.Element {
             const rowHeight = monthWeekRowHeight();
             monthScroller.scrollTo({ top: targetIndex * rowHeight, behavior });
             if (!smooth) {
-                setMonthWeekIndex(targetIndex);
+                setMonthWeekOffset(targetIndex);
             }
         }
         if (calendarView() === 'week' && weekScroller) {
@@ -135,7 +145,7 @@ function CalendarTab(): JSX.Element {
         }
         monthScrollFrame = requestAnimationFrame(() => {
             monthScrollFrame = undefined;
-            syncMonthWeekIndexFromScroll();
+            syncMonthWeekOffsetFromScroll();
         });
     }
 
@@ -192,7 +202,11 @@ function CalendarTab(): JSX.Element {
                         when={calendarView() === 'month'}
                         fallback={<h1 class="calendar-toolbar__title">{formatWeek(visibleWeek())}</h1>}
                     >
-                        <CrossfadeTitle text={formatMonth(visibleMonth())} />
+                        <MonthReel
+                            months={monthReelMonths()}
+                            reelIndex={monthReelOffset()}
+                            snapMonth={visibleMonth()}
+                        />
                     </Show>
                     <button
                         type="button"
@@ -246,7 +260,9 @@ function CalendarTab(): JSX.Element {
                             onDay={navigation.toCalendarDay}
                             scrollerRef={(element) => {
                                 monthScroller = element;
-                                enableMouseDragScroll(element, monthWeekRowHeight);
+                                enableMouseDragScroll(element, monthWeekRowHeight, (weekOffset) =>
+                                    nearestMonthStartWeekIndex(monthWeeks(), weekOffset)
+                                );
                                 requestAnimationFrame(() => scrollToCurrent(false));
                             }}
                             onScroll={handleMonthScroll}
@@ -302,7 +318,11 @@ function CalendarTab(): JSX.Element {
 }
 
 /** Adds mouse drag paging while leaving Chrome's native touch panning unchanged. */
-function enableMouseDragScroll(scroller: HTMLDivElement, rowHeight: () => number): void {
+function enableMouseDragScroll(
+    scroller: HTMLDivElement,
+    rowHeight: () => number,
+    snapWeekIndex: (weekOffset: number) => number
+): void {
     let pointerId: number | undefined;
     let lastY = 0;
     let dragged = false;
@@ -347,8 +367,12 @@ function enableMouseDragScroll(scroller: HTMLDivElement, rowHeight: () => number
         if (scroller.hasPointerCapture(event.pointerId)) {
             scroller.releasePointerCapture(event.pointerId);
         }
+        const height = rowHeight();
+        if (height <= 0) {
+            return;
+        }
         scroller.scrollTo({
-            top: Math.round(scroller.scrollTop / rowHeight()) * rowHeight(),
+            top: snapWeekIndex(scroller.scrollTop / height) * height,
             behavior: 'smooth',
         });
     };
@@ -622,43 +646,34 @@ function ProjectedTaskCard(props: { task: ProjectedTask; onOpen: () => void }): 
     );
 }
 
-function CrossfadeTitle(props: { text: string }): JSX.Element {
-    const [layers, setLayers] = createSignal<{ visible: string; leaving?: string }>({ visible: props.text });
+/** Clipped month headline that rolls like a mechanical counter while scrolling. */
+function MonthReel(props: { months: string[]; reelIndex: number; snapMonth: string }): JSX.Element {
+    const [reduceMotion, setReduceMotion] = createSignal(false);
 
-    createEffect(
-        on(
-            () => props.text,
-            (text, previous) => {
-                if (previous === undefined || text === previous) {
-                    setLayers({ visible: text });
-                    return;
-                }
-                setLayers({ visible: text, leaving: previous });
-            }
-        )
-    );
+    createEffect(() => {
+        if (typeof window.matchMedia !== 'function') {
+            return;
+        }
+        const media = window.matchMedia('(prefers-reduced-motion: reduce)');
+        const sync = () => setReduceMotion(media.matches);
+        sync();
+        media.addEventListener('change', sync);
+        onCleanup(() => media.removeEventListener('change', sync));
+    });
 
-    function clearLeaving(): void {
-        setLayers((state) => ({ visible: state.visible }));
-    }
+    const index = () => (reduceMotion() ? Math.round(props.reelIndex) : props.reelIndex);
 
     return (
-        <h1 class="calendar-toolbar__title">
-            <Show when={layers().leaving}>
-                {(leaving) => (
-                    <span
-                        class="calendar-toolbar__title-layer calendar-toolbar__title-layer--leaving"
-                        onAnimationEnd={clearLeaving}
-                    >
-                        {leaving()}
-                    </span>
-                )}
-            </Show>
-            <Show when={layers().visible} keyed>
-                {(visible) => (
-                    <span class="calendar-toolbar__title-layer calendar-toolbar__title-layer--entering">{visible}</span>
-                )}
-            </Show>
+        <h1 class="calendar-toolbar__title calendar-toolbar__reel" aria-label={formatMonth(props.snapMonth)}>
+            <span
+                class="calendar-toolbar__reel-strip"
+                style={{ transform: `translateY(${-index() * 1.25}rem)` }}
+                aria-hidden="true"
+            >
+                <For each={props.months}>
+                    {(month) => <span class="calendar-toolbar__reel-item">{formatMonth(month)}</span>}
+                </For>
+            </span>
         </h1>
     );
 }

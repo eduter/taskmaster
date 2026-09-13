@@ -79,16 +79,87 @@ function monthForStartWeek(weekMonday: string): string {
     return startOfMonth(firstOfMonth);
 }
 
-/** Returns the month headline shown while a week index is near the top of the scroller. */
-function visibleMonthForWeekIndex(weeks: readonly string[], weekIndex: number): string {
-    const boundedIndex = Math.max(0, Math.min(weekIndex, weeks.length - 1));
-    for (let index = boundedIndex; index >= 0; index--) {
-        const weekMonday = weeks[index];
-        if (weekMonday && isMonthStartWeek(weekMonday)) {
-            return monthForStartWeek(weekMonday);
+/**
+ * Returns the month-start week index CSS snap would settle on for a fractional
+ * scroller offset (scrollTop / rowHeight).
+ */
+function nearestMonthStartWeekIndex(weeks: readonly string[], weekOffset: number): number {
+    const snaps = monthStartWeekIndexes(weeks);
+    const fallback = Math.max(0, Math.min(Math.round(weekOffset), weeks.length - 1));
+    if (snaps.length === 0) {
+        return fallback;
+    }
+
+    let best = snaps[0] ?? fallback;
+    let bestDistance = Math.abs(best - weekOffset);
+    for (const snap of snaps) {
+        const distance = Math.abs(snap - weekOffset);
+        // Prefer the later snap on a tie so the midpoint matches nearest rounding.
+        if (distance < bestDistance || (distance === bestDistance && snap > best)) {
+            best = snap;
+            bestDistance = distance;
         }
     }
-    return startOfMonth(weeks[boundedIndex] ?? '1970-01-01');
+    return best;
+}
+
+/** Returns the month headline that matches the nearest month-start snap. */
+function visibleMonthForWeekOffset(weeks: readonly string[], weekOffset: number): string {
+    const snapIndex = nearestMonthStartWeekIndex(weeks, weekOffset);
+    const weekMonday = weeks[snapIndex];
+    if (weekMonday && isMonthStartWeek(weekMonday)) {
+        return monthForStartWeek(weekMonday);
+    }
+    return startOfMonth(weekMonday ?? '1970-01-01');
+}
+
+/**
+ * Returns a fractional index into the month-start list so a clipped month
+ * headline can scroll in lockstep with the calendar.
+ */
+function monthReelIndex(weeks: readonly string[], weekOffset: number): number {
+    const snaps = monthStartWeekIndexes(weeks);
+    if (snaps.length === 0) {
+        return 0;
+    }
+
+    const first = snaps[0] ?? 0;
+    const last = snaps.at(-1) ?? first;
+    if (weekOffset <= first) {
+        return 0;
+    }
+    if (weekOffset >= last) {
+        return snaps.length - 1;
+    }
+
+    for (let index = 0; index < snaps.length - 1; index++) {
+        const start = snaps[index] ?? first;
+        const end = snaps[index + 1] ?? last;
+        if (weekOffset > end) {
+            continue;
+        }
+        if (end === start) {
+            return index;
+        }
+        return index + (weekOffset - start) / (end - start);
+    }
+    return snaps.length - 1;
+}
+
+/** Returns the 1st-of-month dates for every snap week in the scroller. */
+function monthStartMonths(weeks: readonly string[]): string[] {
+    return monthStartWeekIndexes(weeks).map((index) => monthForStartWeek(weeks[index] ?? '1970-01-01'));
+}
+
+function monthStartWeekIndexes(weeks: readonly string[]): number[] {
+    const indexes: number[] = [];
+    for (let index = 0; index < weeks.length; index++) {
+        const weekMonday = weeks[index];
+        if (weekMonday && isMonthStartWeek(weekMonday)) {
+            indexes.push(index);
+        }
+    }
+    return indexes;
 }
 
 /** Returns the week index whose row should align with the supplied month headline. */
@@ -113,8 +184,11 @@ export {
     indexOfMonthStartWeek,
     isMonthStartWeek,
     monthForStartWeek,
+    monthReelIndex,
+    monthStartMonths,
+    nearestMonthStartWeekIndex,
     startOfMonth,
     startOfWeek,
-    visibleMonthForWeekIndex,
+    visibleMonthForWeekOffset,
 };
 export type { MonthDay, MonthWeek };
