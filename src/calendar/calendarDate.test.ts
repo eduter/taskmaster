@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import { addMonths, getISOWeekNumber, getMonthGrid, getWeekDates, startOfWeek } from './calendarDate.ts';
+import { addMonths, getISOWeekNumber, getMonthGrid, getWeekDates, indexOfMonthStartWeek, isMonthStartWeek, monthForStartWeek, startOfWeek, visibleMonthForWeekIndex } from './calendarDate.ts';
 
 describe('calendar dates', () => {
     it('starts weeks on Monday', () => {
@@ -34,5 +34,19 @@ describe('calendar dates', () => {
     it('adds months without carrying short months forward', () => {
         expect(addMonths('2026-01-31', 1)).toBe('2026-02-01');
         expect(addMonths('2026-12-01', 1)).toBe('2027-01-01');
+    });
+
+    it('identifies month-start weeks and resolves visible months while scrolling', () => {
+        const weeks = ['2026-07-27', '2026-08-03', '2026-08-10', '2026-08-17', '2026-08-24', '2026-08-31'];
+
+        expect(isMonthStartWeek('2026-07-27')).toBe(true);
+        expect(isMonthStartWeek('2026-08-03')).toBe(false);
+        expect(isMonthStartWeek('2026-08-31')).toBe(true);
+        expect(monthForStartWeek('2026-07-27')).toBe('2026-08-01');
+        expect(monthForStartWeek('2026-08-31')).toBe('2026-09-01');
+        expect(visibleMonthForWeekIndex(weeks, 2)).toBe('2026-08-01');
+        expect(visibleMonthForWeekIndex(weeks, 5)).toBe('2026-09-01');
+        expect(indexOfMonthStartWeek(weeks, '2026-08-01')).toBe(0);
+        expect(indexOfMonthStartWeek(weeks, '2026-09-01')).toBe(5);
     });
 });

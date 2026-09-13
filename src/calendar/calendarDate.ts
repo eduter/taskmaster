@@ -65,9 +65,56 @@ function startOfMonth(date: string): string {
     return `${date.slice(0, 7)}-01`;
 }
 
+/** True when the week row contains the first day of a month. */
+function isMonthStartWeek(weekMonday: string): boolean {
+    return getWeekDates(weekMonday).some((date) => date.endsWith('-01'));
+}
+
+/** Returns the month headline for a week row containing that month's first day. */
+function monthForStartWeek(weekMonday: string): string {
+    const firstOfMonth = getWeekDates(weekMonday).find((date) => date.endsWith('-01'));
+    if (!firstOfMonth) {
+        throw new Error(`week ${weekMonday} is not a month-start week`);
+    }
+    return startOfMonth(firstOfMonth);
+}
+
+/** Returns the month headline shown while a week index is near the top of the scroller. */
+function visibleMonthForWeekIndex(weeks: readonly string[], weekIndex: number): string {
+    const boundedIndex = Math.max(0, Math.min(weekIndex, weeks.length - 1));
+    for (let index = boundedIndex; index >= 0; index--) {
+        const weekMonday = weeks[index];
+        if (weekMonday && isMonthStartWeek(weekMonday)) {
+            return monthForStartWeek(weekMonday);
+        }
+    }
+    return startOfMonth(weeks[boundedIndex] ?? '1970-01-01');
+}
+
+/** Returns the week index whose row should align with the supplied month headline. */
+function indexOfMonthStartWeek(weeks: readonly string[], month: string): number {
+    const monthStartWeek = startOfWeek(month);
+    const index = weeks.indexOf(monthStartWeek);
+    if (index === -1) {
+        throw new Error(`month ${month} is outside the rendered week range`);
+    }
+    return index;
+}
+
 function parseDate(date: string): Date {
     return new Date(`${date}T12:00:00`);
 }
 
-export { addMonths, getISOWeekNumber, getMonthGrid, getWeekDates, startOfMonth, startOfWeek };
+export {
+    addMonths,
+    getISOWeekNumber,
+    getMonthGrid,
+    getWeekDates,
+    indexOfMonthStartWeek,
+    isMonthStartWeek,
+    monthForStartWeek,
+    startOfMonth,
+    startOfWeek,
+    visibleMonthForWeekIndex,
+};
 export type { MonthDay, MonthWeek };
