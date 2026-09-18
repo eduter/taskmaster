@@ -215,6 +215,7 @@ describe('getVisibleTasks', () => {
             date: '2026-05-20',
             completed: true,
             completedAt,
+            updatedAt: completedAt,
         });
 
         const visible = await getVisibleTasks('2026-05-23');
@@ -265,6 +266,25 @@ describe('getVisibleTasks', () => {
 
         const visible = await getVisibleTasks('2026-05-23');
         expect(visible.map((t) => t.id)).toEqual(['today', 'leftover']);
+    });
+
+    it('hides a task completed today after it is backdated to a prior day', async () => {
+        const completedAt = new Date('2026-05-23T10:00:00').getTime();
+        await seedTask({
+            id: 'backdated',
+            summary: 'Finished yesterday',
+            date: '2026-05-23',
+            completed: true,
+            completedAt,
+            updatedAt: completedAt,
+        });
+        await db.tasks.update('backdated', {
+            date: '2026-05-22',
+            updatedAt: new Date('2026-05-23T10:05:00').getTime(),
+        });
+
+        const visible = await getVisibleTasks('2026-05-23');
+        expect(visible.map((t) => t.id)).not.toContain('backdated');
     });
 });
 

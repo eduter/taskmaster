@@ -208,10 +208,11 @@ async function toggleTaskCompleted(id: string): Promise<boolean> {
 
     // Flip completion
     const completed = !task.completed;
+    const now = Date.now();
     await db.tasks.update(id, {
         completed,
-        completedAt: completed ? Date.now() : null,
-        updatedAt: Date.now(),
+        completedAt: completed ? now : null,
+        updatedAt: now,
     });
 
     await seatTaskAtCompletionBoundary(id);
@@ -281,11 +282,25 @@ function wasCompletedOn(task: Task, day: string): boolean {
     return task.completedAt != null && getLogicalDay(new Date(task.completedAt)) === day;
 }
 
+function wasRescheduledAfterCompletion(task: Task): boolean {
+    return task.completedAt != null && task.updatedAt > task.completedAt;
+}
+
+function isVisibleOnToday(task: Task, today: string): boolean {
+    if (!task.completed) {
+        return true;
+    }
+    if (task.date === today) {
+        return true;
+    }
+    return wasCompletedOn(task, today) && !wasRescheduledAfterCompletion(task);
+}
+
 async function getVisibleTasks(today: string): Promise<Task[]> {
     const tasks = await db.tasks.where('date').belowOrEqual(today).toArray();
 
     return tasks
-        .filter((t) => !t.completed || t.date === today || wasCompletedOn(t, today))
+        .filter((t) => isVisibleOnToday(t, today))
         .sort((a, b) => a.sortOrder - b.sortOrder);
 }
 
