@@ -299,9 +299,7 @@ function isVisibleOnToday(task: Task, today: string): boolean {
 async function getVisibleTasks(today: string): Promise<Task[]> {
     const tasks = await db.tasks.where('date').belowOrEqual(today).toArray();
 
-    return tasks
-        .filter((t) => isVisibleOnToday(t, today))
-        .sort((a, b) => a.sortOrder - b.sortOrder);
+    return tasks.filter((t) => isVisibleOnToday(t, today)).sort((a, b) => a.sortOrder - b.sortOrder);
 }
 
 async function reorderTasks(orderedIds: string[]): Promise<void> {
