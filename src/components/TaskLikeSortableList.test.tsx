@@ -159,6 +159,46 @@ describe('TaskLikeSortableList drag reorder', () => {
         expect(releasedSelection.defaultPrevented).toBe(false);
     });
 
+    it('auto-scrolls the page while a dragged row is held near the bottom edge', () => {
+        const frames: FrameRequestCallback[] = [];
+        vi.stubGlobal('requestAnimationFrame', (callback: FrameRequestCallback) => {
+            frames.push(callback);
+            return frames.length;
+        });
+        vi.stubGlobal('cancelAnimationFrame', () => {});
+
+        const { container } = render(() => (
+            <SortableListHarness
+                initial={[makeTask('a', 'Alpha', 0), makeTask('b', 'Beta', 1), makeTask('c', 'Charlie', 2)]}
+                onReorder={() => {}}
+            />
+        ));
+        stubStackedRowLayouts(container);
+
+        const surface = container.querySelector<HTMLElement>('.task-row__surface');
+        if (!surface) {
+            throw new Error('expected a task surface to drag');
+        }
+        const from = surface.getBoundingClientRect();
+        const startX = from.left + from.width / 2;
+        const startY = from.top + from.height / 2;
+
+        dispatchPointer(surface, 'pointerdown', startX, startY);
+        dispatchPointer(document, 'pointermove', startX, startY + 20);
+        // Hold the pointer right at the bottom edge of the viewport (window.innerHeight in jsdom is 768).
+        dispatchPointer(document, 'pointermove', startX, window.innerHeight - 2);
+
+        const before = document.documentElement.scrollTop;
+        // Run a couple of frames; the first establishes the time baseline.
+        frames.shift()?.(0);
+        frames.shift()?.(16);
+
+        expect(document.documentElement.scrollTop).toBeGreaterThan(before);
+
+        dispatchPointer(document, 'pointerup', startX, window.innerHeight - 2);
+        vi.unstubAllGlobals();
+    });
+
     it('calls onReorder when a row is dragged onto another', async () => {
         const onReorder = vi.fn();
 
