@@ -35,9 +35,31 @@ const SCROLL_LOCK_DELAY_MS = 80;
 /** Drag overlay tilt (degrees), Trello-style. */
 const DRAG_ROTATE_DEG = 2.5;
 
+/**
+ * Edge auto-scroll while dragging: how close to the container's top/bottom edge
+ * the pointer must get before the list starts scrolling. Larger = kicks in earlier.
+ */
+const DRAG_AUTOSCROLL_EDGE_PX = 72;
+
+/**
+ * Edge auto-scroll speed (px/second) at the inner boundary of the edge zone.
+ * The scroll speed ramps proportionally from this value up to the max below.
+ */
+const DRAG_AUTOSCROLL_MIN_SPEED_PX_PER_SEC = 180;
+
+/** Edge auto-scroll speed (px/second) when the pointer reaches the very edge. */
+const DRAG_AUTOSCROLL_MAX_SPEED_PX_PER_SEC = 1400;
+
+/** Upper bound on a single animation frame's time delta, so a background tab can't jump the list. */
+const DRAG_AUTOSCROLL_MAX_FRAME_MS = 50;
+
 export {
     AXIS_LOCK_PX,
     CHECK_COMPLETE_RATIO,
+    DRAG_AUTOSCROLL_EDGE_PX,
+    DRAG_AUTOSCROLL_MAX_FRAME_MS,
+    DRAG_AUTOSCROLL_MAX_SPEED_PX_PER_SEC,
+    DRAG_AUTOSCROLL_MIN_SPEED_PX_PER_SEC,
     DRAG_ROTATE_DEG,
     LONG_PRESS_MS,
     REVEAL_OPEN_RATIO,
