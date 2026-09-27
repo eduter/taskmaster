@@ -199,6 +199,45 @@ describe('TaskLikeSortableList drag reorder', () => {
         vi.unstubAllGlobals();
     });
 
+    it('keeps the measured overlay axis-aligned by tilting the inner card instead', () => {
+        const { container } = render(() => (
+            <SortableListHarness initial={[makeTask('a', 'Alpha', 0), makeTask('b', 'Beta', 1)]} onReorder={() => {}} />
+        ));
+        stubStackedRowLayouts(container);
+        const surface = container.querySelector<HTMLElement>('.task-row__surface');
+        if (!surface) {
+            throw new Error('expected a task surface to drag');
+        }
+        const from = surface.getBoundingClientRect();
+        const x = from.left + from.width / 2;
+        const y = from.top + from.height / 2;
+        dispatchPointer(surface, 'pointerdown', x, y);
+        // A fractional pointer delta must not leak a fractional translate onto the
+        // overlay either: solid-dnd floors measured coordinates, so fractions drift.
+        dispatchPointer(document, 'pointermove', x + 3.5, y + 20.5);
+
+        const overlay = container.querySelector<HTMLElement>('.task-drag-overlay');
+        const card = overlay?.querySelector<HTMLElement>('.task-drag-overlay__card');
+        if (!overlay || !card) {
+            throw new Error('expected a drag overlay with a card');
+        }
+
+        // solid-dnd measures the overlay element itself; a rotated box inflates its
+        // bounding rect and the repeated recomputes during auto-scroll drift it away.
+        expect(overlay.style.transform).not.toContain('rotate');
+        expect(card.style.transform).toContain('rotate');
+        expect(card.style.transformOrigin).not.toBe('');
+
+        const match = overlay.style.transform.match(/translate3d\((-?[\d.]+)px, (-?[\d.]+)px/);
+        if (!match) {
+            throw new Error(`expected a translate3d transform, got '${overlay.style.transform}'`);
+        }
+        expect(Number.isInteger(Number(match[1]))).toBe(true);
+        expect(Number.isInteger(Number(match[2]))).toBe(true);
+
+        dispatchPointer(document, 'pointerup', x, y + 20);
+    });
+
     it('calls onReorder when a row is dragged onto another', async () => {
         const onReorder = vi.fn();
 
