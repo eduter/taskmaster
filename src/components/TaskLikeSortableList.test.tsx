@@ -159,6 +159,85 @@ describe('TaskLikeSortableList drag reorder', () => {
         expect(releasedSelection.defaultPrevented).toBe(false);
     });
 
+    it('auto-scrolls the page while a dragged row is held near the bottom edge', () => {
+        const frames: FrameRequestCallback[] = [];
+        vi.stubGlobal('requestAnimationFrame', (callback: FrameRequestCallback) => {
+            frames.push(callback);
+            return frames.length;
+        });
+        vi.stubGlobal('cancelAnimationFrame', () => {});
+
+        const { container } = render(() => (
+            <SortableListHarness
+                initial={[makeTask('a', 'Alpha', 0), makeTask('b', 'Beta', 1), makeTask('c', 'Charlie', 2)]}
+                onReorder={() => {}}
+            />
+        ));
+        stubStackedRowLayouts(container);
+
+        const surface = container.querySelector<HTMLElement>('.task-row__surface');
+        if (!surface) {
+            throw new Error('expected a task surface to drag');
+        }
+        const from = surface.getBoundingClientRect();
+        const startX = from.left + from.width / 2;
+        const startY = from.top + from.height / 2;
+
+        dispatchPointer(surface, 'pointerdown', startX, startY);
+        dispatchPointer(document, 'pointermove', startX, startY + 20);
+        // Hold the pointer right at the bottom edge of the viewport (window.innerHeight in jsdom is 768).
+        dispatchPointer(document, 'pointermove', startX, window.innerHeight - 2);
+
+        const before = document.documentElement.scrollTop;
+        // Run a couple of frames; the first establishes the time baseline.
+        frames.shift()?.(0);
+        frames.shift()?.(16);
+
+        expect(document.documentElement.scrollTop).toBeGreaterThan(before);
+
+        dispatchPointer(document, 'pointerup', startX, window.innerHeight - 2);
+        vi.unstubAllGlobals();
+    });
+
+    it('keeps the measured overlay axis-aligned by tilting the inner card instead', () => {
+        const { container } = render(() => (
+            <SortableListHarness initial={[makeTask('a', 'Alpha', 0), makeTask('b', 'Beta', 1)]} onReorder={() => {}} />
+        ));
+        stubStackedRowLayouts(container);
+        const surface = container.querySelector<HTMLElement>('.task-row__surface');
+        if (!surface) {
+            throw new Error('expected a task surface to drag');
+        }
+        const from = surface.getBoundingClientRect();
+        const x = from.left + from.width / 2;
+        const y = from.top + from.height / 2;
+        dispatchPointer(surface, 'pointerdown', x, y);
+        // A fractional pointer delta must not leak a fractional translate onto the
+        // overlay either: solid-dnd floors measured coordinates, so fractions drift.
+        dispatchPointer(document, 'pointermove', x + 3.5, y + 20.5);
+
+        const overlay = container.querySelector<HTMLElement>('.task-drag-overlay');
+        const card = overlay?.querySelector<HTMLElement>('.task-drag-overlay__card');
+        if (!overlay || !card) {
+            throw new Error('expected a drag overlay with a card');
+        }
+
+        // solid-dnd measures the overlay element itself; a rotated box inflates its
+        // bounding rect and the repeated recomputes during auto-scroll drift it away.
+        expect(overlay.style.transform).not.toContain('rotate');
+        expect(card.style.transform).toContain('rotate');
+        expect(card.style.transformOrigin).not.toBe('');
+
+        const match = overlay.style.transform.match(/translate3d\((-?[\d.]+)px, (-?[\d.]+)px/);
+        if (!match) {
+            throw new Error(`expected a translate3d transform, got '${overlay.style.transform}'`);
+        }
+        expect(Number.isInteger(Number(match[1]))).toBe(true);
+        expect(Number.isInteger(Number(match[2]))).toBe(true);
+
+        dispatchPointer(document, 'pointerup', x, y + 20);
+    });
+
     it('calls onReorder when a row is dragged onto another', async () => {
         const onReorder = vi.fn();
 

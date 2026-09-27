@@ -5,7 +5,6 @@ If the work reveals follow-up tasks, add those as new items. If something is wor
 in code comments, or other doc files — not the backlog.
 
 * redesign the generator dialog to improve UX
-* when dragging a task on list that doesn't fit the screen, when getting near the top/bottom edge of the screen, it should scroll -> the same problem probably exists in checklists
 * make "Add" / "+" buttons usage and positioning consistent across tasks, checklists, labels, generators, and task templates
 * redesign app's header - the tabs don't look great, the show/hide labels button is not very self-explanatory, and it's a bit crowded if I were to add filters
 * Small styling fixes

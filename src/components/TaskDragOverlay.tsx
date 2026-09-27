@@ -64,7 +64,6 @@ function TaskDragOverlay<T extends TaskDragOverlayItem>(props: TaskDragOverlayPr
         if (!overlay || !draggable) {
             return {};
         }
-        const grab = touchDrag.grabOffset();
         const t = overlay.transform;
         return {
             top: `${overlay.layout.top}px`,
@@ -73,7 +72,19 @@ function TaskDragOverlay<T extends TaskDragOverlayItem>(props: TaskDragOverlayPr
             'max-width': `${draggable.layout.width}px`,
             'min-height': `${draggable.layout.height}px`,
             boxSizing: 'border-box' as const,
-            transform: `translate3d(${t.x}px, ${t.y}px, 0) rotate(${DRAG_ROTATE_DEG}deg)`,
+            // Integer translate so solid-dnd's flooring layout math stays a fixed
+            // point across the repeated recomputes that edge auto-scroll performs.
+            transform: `translate3d(${Math.round(t.x)}px, ${Math.round(t.y)}px, 0)`,
+        };
+    });
+
+    // Tilt lives on the inner card so the measured overlay box stays axis-aligned.
+    // Rotating the element solid-dnd measures inflates its bounding rect, and the
+    // repeated layout recomputes during edge auto-scroll then walk the overlay upward.
+    const cardStyle = createMemo(() => {
+        const grab = touchDrag.grabOffset();
+        return {
+            transform: `rotate(${DRAG_ROTATE_DEG}deg)`,
             'transform-origin': `${grab.x}px ${grab.y}px`,
         };
     });
@@ -82,7 +93,9 @@ function TaskDragOverlay<T extends TaskDragOverlayItem>(props: TaskDragOverlayPr
         <Show when={activeItem()}>
             {(item) => (
                 <div ref={overlayRef} class="task-drag-overlay" style={overlayStyle()}>
-                    <div class="task-drag-overlay__card">{props.renderCard(item())}</div>
+                    <div class="task-drag-overlay__card" style={cardStyle()}>
+                        {props.renderCard(item())}
+                    </div>
                 </div>
             )}
         </Show>

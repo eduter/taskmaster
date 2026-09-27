@@ -3,13 +3,14 @@
     top: 0;
     left: 0;
     z-index: 150;
-    box-shadow: var(--shadow-lg);
-    border-radius: var(--radius-md);
     pointer-events: none;
     box-sizing: border-box;
 }
 
+/* The shadow rides on the rotating card; on the un-rotated wrapper it would
+   render axis-aligned and peek out from behind the tilted card's corners. */
 .task-drag-overlay__card {
+    box-shadow: var(--shadow-lg);
     border-radius: var(--radius-md);
     width: 100%;
 }
