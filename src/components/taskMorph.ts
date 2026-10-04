@@ -9,6 +9,13 @@ const MORPH_ID_ATTRIBUTE = 'data-task-morph-id';
 /** How long the update callback may wait for the dialog panel to render. */
 const PANEL_WAIT_MS = 600;
 
+/**
+ * Gap between two identical lookups required before an element counts as
+ * settled. Route changes re-render the task list asynchronously, so the first
+ * matching card can be a doomed node that is replaced a few milliseconds later.
+ */
+const STABLE_CHECK_MS = 16;
+
 let activeTransition: ViewTransition | undefined;
 const namedElements = new Set<HTMLElement>();
 
@@ -51,10 +58,13 @@ function runMorph(update: () => void | Promise<void>): void {
     transition.finished
         .catch(() => undefined)
         .finally(() => {
+            // Only the current transition may clean up: a skipped predecessor's
+            // `finished` resolves late and would otherwise wipe the names a newer
+            // transition just set.
             if (activeTransition === transition) {
                 activeTransition = undefined;
+                clearMorphNames();
             }
-            clearMorphNames();
         });
 }
 
@@ -84,23 +94,35 @@ function findSourceCard(taskId: string): HTMLElement | null {
     return document.querySelector<HTMLElement>(`[${MORPH_ID_ATTRIBUTE}="${taskId}"]`);
 }
 
-/** Polls until `find` returns an element or the timeout elapses. */
-function waitForElement(find: () => HTMLElement | null, timeoutMs: number): Promise<HTMLElement | null> {
+/**
+ * Resolves with the first element that `find` returns twice in a row (with a
+ * short gap), so callers don't capture a node the router is about to replace.
+ * Resolves with `null` if nothing settles before the timeout.
+ */
+function waitForStableElement(find: () => HTMLElement | null, timeoutMs: number): Promise<HTMLElement | null> {
     return new Promise((resolve) => {
         const startedAt = performance.now();
+        let candidate: HTMLElement | null = null;
         const tick = (): void => {
+            // The loop can outlive the test/SSR environment; bail before touching
+            // `document` so a torn-down DOM doesn't throw from a stray timer.
+            if (typeof document === 'undefined') {
+                resolve(null);
+                return;
+            }
             const element = find();
-            if (element) {
+            if (element && element === candidate) {
                 resolve(element);
                 return;
             }
+            candidate = element;
             if (performance.now() - startedAt >= timeoutMs) {
-                resolve(null);
+                resolve(element);
                 return;
             }
             // setTimeout, not requestAnimationFrame: frames can be paused while the
             // view-transition update callback is pending, which would stall the poll.
-            setTimeout(tick, 0);
+            setTimeout(tick, element ? STABLE_CHECK_MS : 0);
         };
         tick();
     });
@@ -138,7 +160,7 @@ function morphTaskOpen(source: HTMLElement | undefined, navigate: () => void): v
         }
         navigate();
 
-        const panel = await waitForElement(findDialogPanel, PANEL_WAIT_MS);
+        const panel = await waitForStableElement(findDialogPanel, PANEL_WAIT_MS);
         if (!panel) {
             return;
         }
@@ -176,7 +198,7 @@ function morphTaskClose(taskId: string, navigate: () => void): void {
         }
         navigate();
 
-        const card = await waitForElement(() => findSourceCard(taskId), PANEL_WAIT_MS);
+        const card = await waitForStableElement(() => findSourceCard(taskId), PANEL_WAIT_MS);
         if (!card) {
             return;
         }

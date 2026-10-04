@@ -46,6 +46,38 @@ function removeViewTransitions(): void {
     Reflect.deleteProperty(document, 'startViewTransition');
 }
 
+/** Stubs view transitions with a separately resolvable `finished` per call. */
+function stubManyViewTransitions(): TransitionStub[] {
+    const handles: TransitionStub[] = [];
+    Object.defineProperty(document, 'startViewTransition', {
+        configurable: true,
+        writable: true,
+        value: (update: () => void | Promise<void>) => {
+            let resolveFinished: () => void = () => {};
+            const finished = new Promise<void>((resolve) => {
+                resolveFinished = resolve;
+            });
+            const handle: TransitionStub = { finish: () => resolveFinished(), skipped: false, update };
+            handles.push(handle);
+            void update();
+            return {
+                finished,
+                ready: Promise.resolve(),
+                updateCallbackDone: Promise.resolve(),
+                skipTransition: () => {
+                    handle.skipped = true;
+                },
+            };
+        },
+    });
+    window.matchMedia = (() => ({
+        matches: false,
+        addEventListener: () => {},
+        removeEventListener: () => {},
+    })) as unknown as typeof window.matchMedia;
+    return handles;
+}
+
 function makeSourceCard(taskId: string, summary: string): HTMLElement {
     const card = document.createElement('div');
     card.className = 'task-card';
@@ -71,9 +103,9 @@ function appendDialogPanel(): HTMLElement {
     return panel;
 }
 
+/** Waits past the morph module's stability re-check before asserting. */
 async function flush(): Promise<void> {
-    await new Promise((resolve) => setTimeout(resolve, 0));
-    await new Promise((resolve) => setTimeout(resolve, 0));
+    await new Promise((resolve) => setTimeout(resolve, 40));
 }
 
 afterEach(() => {
@@ -133,6 +165,21 @@ describe('morphTaskOpen', () => {
         expect(first).toBe(false);
         expect(transition.skipped).toBe(true);
     });
+
+    it('keeps the names a newer morph set when the skipped one finishes late', async () => {
+        const handles = stubManyViewTransitions();
+        const panel = appendDialogPanel();
+        morphTaskOpen(makeSourceCard('t1', 'Groceries'), vi.fn());
+        morphTaskOpen(makeSourceCard('t2', 'Milk'), vi.fn());
+        await flush();
+        expect(panel.style.viewTransitionName).toBe('task-morph-panel');
+
+        // The skipped first transition resolves after the second one started.
+        handles[0].finish();
+        await flush();
+
+        expect(panel.style.viewTransitionName).toBe('task-morph-panel');
+    });
 });
 
 describe('morphTaskClose', () => {
@@ -156,6 +203,27 @@ describe('morphTaskClose', () => {
 
         expect(navigate).toHaveBeenCalledOnce();
         expect(panel.style.viewTransitionName).toBe('');
+        const card = document.querySelector<HTMLElement>(`[${MORPH_ID_ATTRIBUTE}="t1"]`);
+        expect(card?.style.viewTransitionName).toBe('task-morph-panel');
+        expect(card?.querySelector('.task-card__summary')?.style.viewTransitionName).toBe('task-morph-title');
+    });
+
+    it('names the surviving card when the router replaces it mid-morph', async () => {
+        stubViewTransitions();
+        const panel = appendDialogPanel();
+        const navigate = vi.fn(() => {
+            panel.closest('dialog')?.remove();
+            const doomed = makeSourceCard('t1', 'Groceries');
+            // The router re-renders the list a beat later, swapping the card out.
+            setTimeout(() => {
+                doomed.remove();
+                makeSourceCard('t1', 'Groceries');
+            }, 5);
+        });
+
+        morphTaskClose('t1', navigate);
+        await flush();
+
         const card = document.querySelector<HTMLElement>(`[${MORPH_ID_ATTRIBUTE}="t1"]`);
         expect(card?.style.viewTransitionName).toBe('task-morph-panel');
         expect(card?.querySelector('.task-card__summary')?.style.viewTransitionName).toBe('task-morph-title');
