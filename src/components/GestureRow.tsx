@@ -48,7 +48,8 @@ interface GestureRowProps {
     onRevealChange: (id: string, open: boolean) => void;
     onRowTouchStart?: (id: string) => void;
     onDragEnd?: () => void;
-    onOpen: () => void;
+    /** Receives the gesture surface element so callers can anchor a view transition to it. */
+    onOpen: (source: HTMLElement) => void;
     onDelete: () => void | Promise<void>;
     onComplete?: () => void | Promise<void>;
     renderContent: (state: GestureRowContentState) => JSX.Element;
@@ -236,7 +237,9 @@ function GestureRow(props: GestureRowProps): JSX.Element {
             if (props.deleteRevealed) {
                 props.onRevealChange(props.id, false);
             }
-            props.onOpen();
+            if (surfaceEl) {
+                props.onOpen(surfaceEl);
+            }
         }, 0);
     }
 

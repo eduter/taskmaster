@@ -8,6 +8,7 @@ import { completionColor } from '../utils/completionColor.ts';
 import { completionRate } from '../utils/completionRate.ts';
 import { CompletionRing } from './CompletionRing.tsx';
 import { Icon } from './Icon.tsx';
+import { MORPH_ID_ATTRIBUTE } from './taskMorph.ts';
 import { LabelChip, LabelMarks, LabelRing } from './labels';
 import './TaskCard.css';
 
@@ -22,6 +23,8 @@ interface TaskCardProps {
     labelsVisible?: boolean;
     onCheckClick?: (event: MouseEvent) => void;
     checkRef?: (el: HTMLButtonElement | undefined) => void;
+    /** Marks the card as the morph anchor for its task id (see taskMorph). */
+    morphId?: string;
 }
 
 interface TaskCardViewProps {
@@ -41,6 +44,8 @@ interface TaskCardViewProps {
     labelsVisible?: boolean;
     /** `marks` always shows thin color bars and ignores the show-labels preference. */
     labelsMode?: 'toggle' | 'marks';
+    /** Marks the card as the morph anchor for its task id (see taskMorph). */
+    morphId?: string;
 }
 
 /** Shared task-like card display for persisted tasks and generator templates. */
@@ -64,6 +69,7 @@ function TaskCardView(props: TaskCardViewProps): JSX.Element {
     return (
         <div
             class="task-card"
+            {...(props.morphId ? { [MORPH_ID_ATTRIBUTE]: props.morphId } : {})}
             classList={{
                 'task-card--completed': showCompleted(),
                 'task-card--labels-visible': labelsVisible(),
@@ -160,6 +166,7 @@ function TaskCard(props: TaskCardProps): JSX.Element {
             labelsVisible={props.labelsVisible}
             onCheckClick={props.onCheckClick}
             checkRef={props.checkRef}
+            morphId={props.morphId}
         />
     );
 }

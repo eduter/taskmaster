@@ -102,7 +102,7 @@ describe('TaskRows', () => {
                 clientY: 20,
             })
         );
-        await vi.waitFor(() => expect(onOpen).toHaveBeenCalledWith('future-task'));
+        await vi.waitFor(() => expect(onOpen).toHaveBeenCalledWith('future-task', expect.any(HTMLElement)));
 
         fireEvent.click(screen.getByRole('button', { name: 'Mark complete' }));
         await vi.waitFor(() => expect(toggleComplete).toHaveBeenCalledWith('future-task'));

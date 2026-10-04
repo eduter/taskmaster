@@ -8,7 +8,7 @@ import { TaskRow } from './TaskRow.tsx';
 interface TaskRowsProps {
     items: Task[];
     onReorder: (orderedIds: string[]) => void | Promise<void>;
-    onOpen: (taskId: string) => void;
+    onOpen: (taskId: string, source?: HTMLElement) => void;
     labelsVisible?: boolean;
     celebrateCompletion?: boolean;
 }

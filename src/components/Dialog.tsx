@@ -35,6 +35,11 @@ interface DialogProps {
     stackLevel?: number;
     /** Replaces the heading; `title` is still used as the dialog's accessible name. */
     titleSlot?: JSX.Element;
+    /**
+     * When set, the × button (and only it) calls this instead of `onClose`.
+     * Lets callers animate a close while ESC and backdrop stay instant.
+     */
+    onCloseButton?: () => void;
     children: JSX.Element;
 }
 
@@ -106,7 +111,7 @@ function Dialog(props: DialogProps) {
                     <button
                         type="button"
                         class="dialog__close"
-                        onClick={requestClose}
+                        onClick={props.onCloseButton ?? requestClose}
                         aria-label={props.closeLabel ?? 'Close'}
                     >
                         &times;
