@@ -288,6 +288,7 @@ function CalendarTab(): JSX.Element {
                         projected={projectedFor(date())}
                         loading={loadedData() == null && calendarData.loading}
                         loadFailed={loadedData() == null && calendarData.error != null}
+                        openTaskId={params.taskId}
                         onClose={navigation.closeCalendarDetail}
                         onTask={(id, source) => openTask(date(), id, source)}
                         onGenerator={navigation.toGenerator}
@@ -569,6 +570,8 @@ interface DayDialogProps {
     projected: ProjectedTask[];
     loading: boolean;
     loadFailed: boolean;
+    /** Task whose editor is stacked on top of this day dialog; its row is hidden to keep the morph illusion. */
+    openTaskId?: string;
     onClose: () => void;
     onTask: (id: string, source?: HTMLElement) => void;
     onGenerator: (id: string) => void;
@@ -584,6 +587,7 @@ function DayDialog(props: DayDialogProps): JSX.Element {
                         items={props.scheduled}
                         onReorder={reorder}
                         onOpen={props.onTask}
+                        openTaskId={props.openTaskId}
                         celebrateCompletion={false}
                     />
                 </Show>

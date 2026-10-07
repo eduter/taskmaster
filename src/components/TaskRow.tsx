@@ -8,6 +8,7 @@ import { TaskCard } from './TaskCard.tsx';
 interface TaskRowProps {
     task: Task;
     deleteRevealed: boolean;
+    hidden?: boolean;
     onRevealChange: (taskId: string, open: boolean) => void;
     onRowTouchStart?: (taskId: string) => void;
     onDragEnd?: () => void;
@@ -49,6 +50,7 @@ function TaskRow(props: TaskRowProps): JSX.Element {
             deleteRevealed={props.deleteRevealed}
             deleteLabel="Delete task"
             completed={props.task.completed}
+            hidden={props.hidden}
             allowCheckSwipe={!props.task.completed}
             onRevealChange={props.onRevealChange}
             onRowTouchStart={props.onRowTouchStart}

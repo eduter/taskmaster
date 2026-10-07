@@ -1,3 +1,4 @@
+import { useParams } from '@solidjs/router';
 import { Show } from 'solid-js';
 import { dbError, dbStatus } from '../db/dbLifecycle.ts';
 import { useAppNavigate } from '../routing/navigation.ts';
@@ -8,12 +9,13 @@ import './TaskList.css';
 
 function SortableTaskList() {
     const navigation = useAppNavigate();
+    const params = useParams();
 
     function openTask(taskId: string, source?: HTMLElement): void {
         morphTaskOpen(source, () => navigation.toTask(taskId));
     }
 
-    return <TaskRows items={tasks() ?? []} onReorder={reorder} onOpen={openTask} />;
+    return <TaskRows items={tasks() ?? []} onReorder={reorder} onOpen={openTask} openTaskId={params.id} />;
 }
 
 function taskLoadError(): string | null {

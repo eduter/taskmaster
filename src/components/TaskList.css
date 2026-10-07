@@ -26,6 +26,12 @@
     visibility: hidden;
 }
 
+/* Hidden, not removed: keeping the row's box lets the close morph land on the
+   card's real position. */
+.task-list__item--hidden {
+    visibility: hidden;
+}
+
 .task-list__empty {
     text-align: center;
     color: var(--text-muted);

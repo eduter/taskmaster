@@ -45,6 +45,8 @@ interface GestureRowProps {
     completed?: boolean;
     allowCheckSwipe?: boolean;
     hideDuringDrag?: boolean;
+    /** Hides the whole row (e.g. while its detail dialog morphs in or out). */
+    hidden?: boolean;
     onRevealChange: (id: string, open: boolean) => void;
     onRowTouchStart?: (id: string) => void;
     onDragEnd?: () => void;
@@ -577,6 +579,7 @@ function GestureRow(props: GestureRowProps): JSX.Element {
             classList={{
                 'task-list__item--dragging': sortable.isActiveDraggable,
                 'task-list__item--placeholder': isDraggingThis(),
+                'task-list__item--hidden': props.hidden ?? false,
             }}
         >
             <div class="task-row">
