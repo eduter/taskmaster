@@ -1,6 +1,6 @@
 /** @vitest-environment jsdom */
 import { afterEach, describe, expect, it, vi } from 'vitest';
-import { canMorph, MORPH_ID_ATTRIBUTE, morphTaskClose, morphTaskOpen } from './taskMorph.ts';
+import { canMorph, MORPH_ACTIVE_ATTRIBUTE, MORPH_ID_ATTRIBUTE, morphTaskClose, morphTaskOpen } from './taskMorph.ts';
 
 interface TransitionStub {
     finish: () => void;
@@ -112,6 +112,7 @@ afterEach(() => {
     vi.unstubAllGlobals();
     removeViewTransitions();
     document.body.replaceChildren();
+    document.documentElement.removeAttribute(MORPH_ACTIVE_ATTRIBUTE);
 });
 
 describe('canMorph', () => {
@@ -227,5 +228,61 @@ describe('morphTaskClose', () => {
         const card = document.querySelector<HTMLElement>(`[${MORPH_ID_ATTRIBUTE}="t1"]`);
         expect(card?.style.viewTransitionName).toBe('task-morph-panel');
         expect(card?.querySelector('.task-card__summary')?.style.viewTransitionName).toBe('task-morph-title');
+    });
+});
+
+describe('morph-active flag', () => {
+    it('marks the document while opening and clears it when the transition finishes', async () => {
+        const transition = stubViewTransitions();
+        const card = makeSourceCard('t1', 'Groceries');
+        appendDialogPanel();
+
+        morphTaskOpen(card, vi.fn());
+        await flush();
+        expect(document.documentElement.hasAttribute(MORPH_ACTIVE_ATTRIBUTE)).toBe(true);
+
+        transition.finish();
+        await flush();
+        expect(document.documentElement.hasAttribute(MORPH_ACTIVE_ATTRIBUTE)).toBe(false);
+    });
+
+    it('marks the document while closing and clears it when the transition finishes', async () => {
+        const transition = stubViewTransitions();
+        const panel = appendDialogPanel();
+        const navigate = vi.fn(() => {
+            panel.closest('dialog')?.remove();
+            makeSourceCard('t1', 'Groceries');
+        });
+
+        morphTaskClose('t1', navigate);
+        await flush();
+        expect(document.documentElement.hasAttribute(MORPH_ACTIVE_ATTRIBUTE)).toBe(true);
+
+        transition.finish();
+        await flush();
+        expect(document.documentElement.hasAttribute(MORPH_ACTIVE_ATTRIBUTE)).toBe(false);
+    });
+
+    it('does not mark the document when view transitions are unavailable', () => {
+        morphTaskOpen(makeSourceCard('t1', 'Groceries'), vi.fn());
+        expect(document.documentElement.hasAttribute(MORPH_ACTIVE_ATTRIBUTE)).toBe(false);
+    });
+
+    it('keeps the document marked while a newer morph replaces a skipped one', async () => {
+        const handles = stubManyViewTransitions();
+        appendDialogPanel();
+
+        morphTaskOpen(makeSourceCard('t1', 'Groceries'), vi.fn());
+        morphTaskOpen(makeSourceCard('t2', 'Milk'), vi.fn());
+        await flush();
+
+        // The skipped first transition resolves after the second one started.
+        handles[0].finish();
+        await flush();
+        expect(document.documentElement.hasAttribute(MORPH_ACTIVE_ATTRIBUTE)).toBe(true);
+
+        handles[1].finish();
+        await flush();
+        expect(document.documentElement.hasAttribute(MORPH_ACTIVE_ATTRIBUTE)).toBe(false);
     });
 });

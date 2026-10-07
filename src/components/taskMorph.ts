@@ -5,6 +5,12 @@ const TITLE_SELECTOR = '.editable-summary-heading';
 const SUMMARY_SELECTOR = '.task-card__summary';
 const CARD_SELECTOR = '.task-card';
 const MORPH_ID_ATTRIBUTE = 'data-task-morph-id';
+/**
+ * Set on `<html>` while a morph transition is animating. The source row is
+ * hidden while its dialog is open, so the close morph reveals it; this flag
+ * keeps the row's delete strip from flashing underneath the morphing card.
+ */
+const MORPH_ACTIVE_ATTRIBUTE = 'data-task-morph-active';
 
 /** How long the update callback may wait for the dialog panel to render. */
 const PANEL_WAIT_MS = 600;
@@ -55,6 +61,7 @@ function prepareMorph(): void {
 function runMorph(update: () => void | Promise<void>): void {
     const transition = document.startViewTransition(update);
     activeTransition = transition;
+    document.documentElement.setAttribute(MORPH_ACTIVE_ATTRIBUTE, '');
     transition.finished
         .catch(() => undefined)
         .finally(() => {
@@ -64,6 +71,7 @@ function runMorph(update: () => void | Promise<void>): void {
             if (activeTransition === transition) {
                 activeTransition = undefined;
                 clearMorphNames();
+                document.documentElement.removeAttribute(MORPH_ACTIVE_ATTRIBUTE);
             }
         });
 }
@@ -210,4 +218,4 @@ function morphTaskClose(taskId: string, navigate: () => void): void {
     });
 }
 
-export { canMorph, MORPH_ID_ATTRIBUTE, morphTaskClose, morphTaskOpen };
+export { canMorph, MORPH_ACTIVE_ATTRIBUTE, MORPH_ID_ATTRIBUTE, morphTaskClose, morphTaskOpen };
