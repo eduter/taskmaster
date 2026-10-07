@@ -1,6 +1,6 @@
 import { useParams } from '@solidjs/router';
 import { RRule } from 'rrule';
-import { createEffect, createSignal, For, on, Show } from 'solid-js';
+import { createEffect, createSignal, For, Show } from 'solid-js';
 import type { Generator, TaskTemplate } from '../db/types.ts';
 import { addGenerator, editGenerator, generators, removeGenerator } from '../stores/generatorStore.ts';
 import { generateId } from '../utils/id.ts';
@@ -60,41 +60,51 @@ function GeneratorEditor(props: GeneratorEditorProps) {
         return templates().find((template) => template.id === id);
     };
 
-    createEffect(
-        on(generatorId, () => {
-            const gen = editingGen();
-            if (gen) {
-                setName(gen.name);
-                setActive(gen.active);
-                setTemplates(gen.templates.map(templateToDraft));
-                setEditingTemplateId(null);
-
-                try {
-                    const freqMatch = gen.rrule.match(/FREQ=(DAILY|WEEKLY|MONTHLY|YEARLY)/);
-                    setFreq(freqMatch ? freqMatch[1] : 'DAILY');
-
-                    const intervalMatch = gen.rrule.match(/INTERVAL=(\d+)/);
-                    setIntervalVal(intervalMatch ? parseInt(intervalMatch[1], 10) : 1);
-
-                    const bydayMatch = gen.rrule.match(/BYDAY=([A-Z,]+)/);
-                    setByday(bydayMatch ? bydayMatch[1].split(',') : []);
-
-                    const rule = RRule.fromString(gen.rrule);
-                    const nextOccur = rule.after(new Date(), true);
-                    if (nextOccur) {
-                        setDtstart(formatDate(nextOccur));
-                    } else {
-                        setDtstart(formatDate(new Date()));
-                    }
-                } catch (e) {
-                    console.error(e);
-                    setDtstart(formatDate(new Date()));
-                }
-            } else if (generatorId() === 'new') {
+    // Tracks which generator the form was last populated from. A direct URL load
+    // mounts the editor before the generators resource resolves, so hydrating must
+    // also react to the resource arriving, not only to the route param changing.
+    let hydratedId: string | undefined;
+    createEffect(() => {
+        const id = generatorId();
+        const gen = editingGen();
+        if (id === 'new') {
+            if (hydratedId !== id) {
+                hydratedId = id;
                 clearFormFields();
             }
-        })
-    );
+            return;
+        }
+        if (!gen || hydratedId === id) {
+            return;
+        }
+        hydratedId = id;
+        setName(gen.name);
+        setActive(gen.active);
+        setTemplates(gen.templates.map(templateToDraft));
+        setEditingTemplateId(null);
+
+        try {
+            const freqMatch = gen.rrule.match(/FREQ=(DAILY|WEEKLY|MONTHLY|YEARLY)/);
+            setFreq(freqMatch ? freqMatch[1] : 'DAILY');
+
+            const intervalMatch = gen.rrule.match(/INTERVAL=(\d+)/);
+            setIntervalVal(intervalMatch ? parseInt(intervalMatch[1], 10) : 1);
+
+            const bydayMatch = gen.rrule.match(/BYDAY=([A-Z,]+)/);
+            setByday(bydayMatch ? bydayMatch[1].split(',') : []);
+
+            const rule = RRule.fromString(gen.rrule);
+            const nextOccur = rule.after(new Date(), true);
+            if (nextOccur) {
+                setDtstart(formatDate(nextOccur));
+            } else {
+                setDtstart(formatDate(new Date()));
+            }
+        } catch (e) {
+            console.error(e);
+            setDtstart(formatDate(new Date()));
+        }
+    });
 
     createEffect(() => {
         const id = generatorId();
