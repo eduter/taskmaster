@@ -28,6 +28,7 @@ function ChecklistEditor(props: ChecklistEditorProps): JSX.Element {
     const [editingSummary, setEditingSummary] = createSignal('');
     const [adding, setAdding] = createSignal(false);
     const [newSummary, setNewSummary] = createSignal('');
+    let newInputEl: HTMLInputElement | undefined;
 
     onMount(() => {
         if (props.startAdding) {
@@ -41,16 +42,23 @@ function ChecklistEditor(props: ChecklistEditorProps): JSX.Element {
         setAdding(true);
     }
 
-    function commitAdd(): void {
+    function commitAdd(stay: boolean): void {
         if (!adding()) {
             return;
         }
 
         const summary = newSummary().trim();
-        setAdding(false);
         setNewSummary('');
         if (summary) {
             void props.onAdd(summary);
+        }
+
+        // Enter with text keeps the input open for the next item; every other
+        // commit (empty Enter, or any blur) means the user is done adding.
+        if (summary && stay) {
+            queueMicrotask(() => newInputEl?.focus());
+        } else {
+            setAdding(false);
         }
     }
 
@@ -80,10 +88,10 @@ function ChecklistEditor(props: ChecklistEditorProps): JSX.Element {
         setNewSummary('');
     }
 
-    function handleInputKeyDown(event: KeyboardEvent, commit: () => void): void {
+    function handleNewInputKeyDown(event: KeyboardEvent): void {
         if (event.key === 'Enter') {
             event.preventDefault();
-            commit();
+            commitAdd(true);
         } else if (event.key === 'Escape') {
             event.preventDefault();
             cancelInput();
@@ -159,13 +167,16 @@ function ChecklistEditor(props: ChecklistEditorProps): JSX.Element {
                     }
                 >
                     <input
-                        ref={focusInput}
+                        ref={(element) => {
+                            newInputEl = element;
+                            focusInput(element);
+                        }}
                         class="checklist-editor__input checklist-editor__new-input"
                         aria-label="New checklist item"
                         value={newSummary()}
                         onInput={(event) => setNewSummary(event.currentTarget.value)}
-                        onKeyDown={(event) => handleInputKeyDown(event, commitAdd)}
-                        onBlur={commitAdd}
+                        onKeyDown={handleNewInputKeyDown}
+                        onBlur={() => commitAdd(false)}
                     />
                 </Show>
             </div>
