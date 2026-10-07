@@ -1,0 +1,21 @@
+.completion-ring__track,
+.completion-ring__progress {
+    fill: none;
+}
+
+.completion-ring__track {
+    stroke: var(--border-light);
+}
+
+.completion-ring__progress {
+    stroke-linecap: round;
+    transition:
+        stroke-dasharray var(--transition-fast),
+        stroke var(--transition-fast);
+}
+
+@media (prefers-reduced-motion: reduce) {
+    .completion-ring__progress {
+        transition: none;
+    }
+}

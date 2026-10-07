@@ -115,6 +115,90 @@ describe('ChecklistEditor', () => {
         expect(onAdd).toHaveBeenCalledWith('Eggs');
     });
 
+    it('clears the input and stays in add mode after committing so the next item can be typed', async () => {
+        const onAdd = vi.fn();
+        render(() => (
+            <ChecklistEditor items={items} onAdd={onAdd} onRename={() => {}} onDelete={() => {}} onReorder={() => {}} />
+        ));
+
+        fireEvent.click(screen.getByRole('button', { name: 'Add checklist item' }));
+        const input = screen.getByRole<HTMLInputElement>('textbox', { name: 'New checklist item' });
+        await vi.waitFor(() => expect(document.activeElement).toBe(input));
+
+        fireEvent.input(input, { target: { value: 'Eggs' } });
+        fireEvent.keyDown(input, { key: 'Enter' });
+
+        expect(onAdd).toHaveBeenCalledWith('Eggs');
+        expect(input.value).toBe('');
+        expect(screen.getByRole('textbox', { name: 'New checklist item' })).toBe(input);
+        await vi.waitFor(() => expect(document.activeElement).toBe(input));
+    });
+
+    it('exits add mode on Escape', () => {
+        render(() => (
+            <ChecklistEditor
+                items={items}
+                onAdd={() => {}}
+                onRename={() => {}}
+                onDelete={() => {}}
+                onReorder={() => {}}
+            />
+        ));
+
+        fireEvent.click(screen.getByRole('button', { name: 'Add checklist item' }));
+        const input = screen.getByRole('textbox', { name: 'New checklist item' });
+        fireEvent.keyDown(input, { key: 'Escape' });
+
+        expect(screen.queryByRole('textbox', { name: 'New checklist item' })).toBeNull();
+        expect(screen.getByRole('button', { name: 'Add checklist item' })).toBeTruthy();
+    });
+
+    it('exits add mode without adding when Enter is pressed on an empty input', () => {
+        const onAdd = vi.fn();
+        render(() => (
+            <ChecklistEditor items={items} onAdd={onAdd} onRename={() => {}} onDelete={() => {}} onReorder={() => {}} />
+        ));
+
+        fireEvent.click(screen.getByRole('button', { name: 'Add checklist item' }));
+        const input = screen.getByRole('textbox', { name: 'New checklist item' });
+        fireEvent.keyDown(input, { key: 'Enter' });
+
+        expect(onAdd).not.toHaveBeenCalled();
+        expect(screen.queryByRole('textbox', { name: 'New checklist item' })).toBeNull();
+        expect(screen.getByRole('button', { name: 'Add checklist item' })).toBeTruthy();
+    });
+
+    it('exits add mode without adding when the empty input loses focus', () => {
+        const onAdd = vi.fn();
+        render(() => (
+            <ChecklistEditor items={items} onAdd={onAdd} onRename={() => {}} onDelete={() => {}} onReorder={() => {}} />
+        ));
+
+        fireEvent.click(screen.getByRole('button', { name: 'Add checklist item' }));
+        const input = screen.getByRole('textbox', { name: 'New checklist item' });
+        fireEvent.blur(input);
+
+        expect(onAdd).not.toHaveBeenCalled();
+        expect(screen.queryByRole('textbox', { name: 'New checklist item' })).toBeNull();
+        expect(screen.getByRole('button', { name: 'Add checklist item' })).toBeTruthy();
+    });
+
+    it('adds the typed item and exits add mode when a non-empty input loses focus', () => {
+        const onAdd = vi.fn();
+        render(() => (
+            <ChecklistEditor items={items} onAdd={onAdd} onRename={() => {}} onDelete={() => {}} onReorder={() => {}} />
+        ));
+
+        fireEvent.click(screen.getByRole('button', { name: 'Add checklist item' }));
+        const input = screen.getByRole('textbox', { name: 'New checklist item' });
+        fireEvent.input(input, { target: { value: 'Eggs' } });
+        fireEvent.blur(input);
+
+        expect(onAdd).toHaveBeenCalledWith('Eggs');
+        expect(screen.queryByRole('textbox', { name: 'New checklist item' })).toBeNull();
+        expect(screen.getByRole('button', { name: 'Add checklist item' })).toBeTruthy();
+    });
+
     it('renames an item inline and discards an empty edit', async () => {
         const onRename = vi.fn();
         const { container } = render(() => (

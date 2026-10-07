@@ -32,7 +32,7 @@ vi.mock('../utils/confetti.ts', () => ({
     todayTabConfettiOrigin,
 }));
 
-function makeTask(): Task {
+function makeTask(overrides: Partial<Task> = {}): Task {
     return {
         id: 'future-task',
         summary: 'Prepare presentation',
@@ -46,6 +46,8 @@ function makeTask(): Task {
         updatedAt: 1,
         generatorId: null,
         parentTaskId: null,
+        checklistItems: [],
+        ...overrides,
     };
 }
 
@@ -118,5 +120,24 @@ describe('TaskRows', () => {
 
         await vi.waitFor(() => expect(fireConfetti).toHaveBeenCalledWith({ x: 50, y: 20 }));
         expect(todayTabConfettiOrigin).toHaveBeenCalled();
+    });
+
+    it('previews checklist progress on the task row check button', () => {
+        const { container } = render(() => (
+            <TaskRows
+                items={[
+                    makeTask({
+                        checklistItems: [
+                            { id: 'a', summary: 'A', completed: true },
+                            { id: 'b', summary: 'B', completed: false },
+                        ],
+                    }),
+                ]}
+                onReorder={() => {}}
+                onOpen={() => {}}
+            />
+        ));
+
+        expect(container.querySelector('.task-card__check-progress')).not.toBeNull();
     });
 });

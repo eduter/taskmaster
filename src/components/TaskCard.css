@@ -47,7 +47,21 @@
     margin-top: 1px;
 }
 
-.task-card__check:hover {
+/* Checklist progress ring replaces the binary border so the two rings don't stack. */
+.task-card__check-ring {
+    position: absolute;
+    inset: 0;
+    display: block;
+    pointer-events: none;
+}
+
+.task-card__check-shell--ring .task-card__check {
+    position: relative;
+    z-index: 1;
+    border-color: transparent;
+}
+
+.task-card__check-shell:not(.task-card__check-shell--ring) .task-card__check:hover {
     border-color: var(--text-secondary);
 }
 

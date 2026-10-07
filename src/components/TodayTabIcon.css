@@ -12,18 +12,7 @@
     display: block;
 }
 
-.today-tab-icon__track,
 .today-tab-icon__progress {
-    fill: none;
-    stroke-width: 2;
-}
-
-.today-tab-icon__track {
-    stroke: var(--border-light);
-}
-
-.today-tab-icon__progress {
-    stroke-linecap: round;
     transition:
         stroke-dasharray var(--transition-fast),
         stroke var(--transition-fast);
