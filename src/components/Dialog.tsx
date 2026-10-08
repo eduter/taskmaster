@@ -47,6 +47,11 @@ interface DialogProps {
 function Dialog(props: DialogProps) {
     let dialogRef: HTMLDialogElement | undefined;
     const titleId = `dialog-title-${Math.random().toString(36).slice(2, 9)}`;
+    // A tap that opens a dialog also fires the browser's compatibility click, which
+    // lands after the dialog has mounted and can retarget onto the fresh backdrop.
+    // Requiring a pointerdown on the backdrop keeps that stray click from dismissing
+    // the dialog the tap just opened, while real backdrop taps still close.
+    let backdropPressed = false;
 
     createEffect(() => {
         const el = dialogRef;
@@ -77,6 +82,20 @@ function Dialog(props: DialogProps) {
         props.onClose();
     }
 
+    function handleBackdropPointerDown() {
+        backdropPressed = true;
+    }
+
+    function handleBackdropClick() {
+        // Ignore a compatibility click that has no matching backdrop pointerdown
+        // (e.g. the tap that opened this dialog retargeting onto the backdrop).
+        if (!backdropPressed) {
+            return;
+        }
+        backdropPressed = false;
+        requestClose();
+    }
+
     function handleCancel(e: Event) {
         e.preventDefault();
         requestClose();
@@ -97,7 +116,8 @@ function Dialog(props: DialogProps) {
                 type="button"
                 class="dialog__backdrop"
                 aria-label={props.closeLabel ?? 'Close'}
-                onClick={requestClose}
+                onPointerDown={handleBackdropPointerDown}
+                onClick={handleBackdropClick}
             />
             <div class={`dialog__panel${props.panelClass ? ` ${props.panelClass}` : ''}`}>
                 <div class="dialog__header">

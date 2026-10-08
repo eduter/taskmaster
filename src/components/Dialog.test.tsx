@@ -30,4 +30,50 @@ describe('Dialog', () => {
         expect(cancelEvent.defaultPrevented).toBe(true);
         expect(onClose).toHaveBeenCalledOnce();
     });
+
+    function renderDialog(onClose: () => void): HTMLElement {
+        render(() => (
+            <Dialog open={true} onClose={onClose} title="Edit task">
+                Body
+            </Dialog>
+        ));
+        const backdrop = document.querySelector<HTMLElement>('.dialog__backdrop');
+        if (!backdrop) {
+            throw new Error('backdrop not rendered');
+        }
+        return backdrop;
+    }
+
+    it('ignores a backdrop click with no matching pointerdown', () => {
+        const onClose = vi.fn();
+        const backdrop = renderDialog(onClose);
+
+        // A tap that opens this dialog also emits a compatibility click; by the
+        // time it fires the backdrop is mounted, but no pointerdown reached it.
+        fireEvent.click(backdrop);
+
+        expect(onClose).not.toHaveBeenCalled();
+    });
+
+    it('closes on a backdrop press (pointerdown then click)', () => {
+        const onClose = vi.fn();
+        const backdrop = renderDialog(onClose);
+
+        fireEvent.pointerDown(backdrop);
+        fireEvent.click(backdrop);
+
+        expect(onClose).toHaveBeenCalledOnce();
+    });
+
+    it('closes on a backdrop press after an ignored stray click', () => {
+        const onClose = vi.fn();
+        const backdrop = renderDialog(onClose);
+
+        fireEvent.click(backdrop);
+        expect(onClose).not.toHaveBeenCalled();
+
+        fireEvent.pointerDown(backdrop);
+        fireEvent.click(backdrop);
+        expect(onClose).toHaveBeenCalledOnce();
+    });
 });
