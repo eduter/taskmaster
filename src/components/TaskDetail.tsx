@@ -2,6 +2,7 @@ import { useParams } from '@solidjs/router';
 import { createEffect, createResource, Show } from 'solid-js';
 import { useAppNavigate } from '../routing/navigation.ts';
 import { loadTask, taskVersion } from '../stores/taskStore.ts';
+import { morphTaskClose } from './taskMorph.ts';
 import { TaskEditorDialog } from './TaskEditorDialog.tsx';
 
 /** Looks up a concrete task by route id, including postponed items. */
@@ -32,12 +33,17 @@ function TaskDetail() {
         }
     });
 
+    function closeWithMorph(): void {
+        const id = taskId();
+        morphTaskClose(id ?? '', closeTaskDetail);
+    }
+
     return (
         <Show when={selectedTask()}>
             {(task) => (
                 <TaskEditorDialog
                     task={task()}
-                    onClose={closeTaskDetail}
+                    onClose={closeWithMorph}
                     onOpenLabelsPicker={openLabelsPicker}
                     onOpenPostponePicker={openPostponePicker}
                 />

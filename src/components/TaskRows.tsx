@@ -8,9 +8,11 @@ import { TaskRow } from './TaskRow.tsx';
 interface TaskRowsProps {
     items: Task[];
     onReorder: (orderedIds: string[]) => void | Promise<void>;
-    onOpen: (taskId: string) => void;
+    onOpen: (taskId: string, source?: HTMLElement) => void;
     labelsVisible?: boolean;
     celebrateCompletion?: boolean;
+    /** Task whose detail dialog is open; its row is hidden so the card appears to become the dialog. */
+    openTaskId?: string;
 }
 
 /** Renders persisted tasks with the app's shared open, check, delete, and reorder gestures. */
@@ -23,6 +25,7 @@ function TaskRows(props: TaskRowsProps): JSX.Element {
                 <TaskRow
                     task={task}
                     deleteRevealed={row.deleteRevealed}
+                    hidden={task.id === props.openTaskId}
                     onRevealChange={row.onRevealChange}
                     onRowTouchStart={row.onRowTouchStart}
                     onOpen={props.onOpen}

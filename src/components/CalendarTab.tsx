@@ -31,6 +31,7 @@ import { AddTask } from './AddTask.tsx';
 import { Dialog } from './Dialog.tsx';
 import { SegmentedControl, type SegmentedOption } from './SegmentedControl.tsx';
 import { TaskCardView } from './TaskCard.tsx';
+import { morphTaskClose, morphTaskOpen } from './taskMorph.ts';
 import { PostponeDialog } from './PostponeDialog.tsx';
 import { TaskEditorDialog } from './TaskEditorDialog.tsx';
 import { TaskRows } from './TaskRows.tsx';
@@ -194,6 +195,14 @@ function CalendarTab(): JSX.Element {
         navigation.closePostponePicker();
     }
 
+    function openTask(date: string, id: string, source?: HTMLElement): void {
+        morphTaskOpen(source, () => navigation.toCalendarTask(date, id));
+    }
+
+    function closeTaskDetail(): void {
+        morphTaskClose(params.taskId ?? '', navigation.closeCalendarDetail);
+    }
+
     return (
         <section class="calendar-tab">
             <header class="calendar-toolbar">
@@ -242,7 +251,7 @@ function CalendarTab(): JSX.Element {
                                 currentIndex={weekIndex()}
                                 scheduledFor={scheduledFor}
                                 projectedFor={projectedFor}
-                                onTask={(date, id) => navigation.toCalendarTask(date, id)}
+                                onTask={openTask}
                                 onGenerator={navigation.toGenerator}
                                 scrollerRef={(element) => {
                                     weekScroller = element;
@@ -279,8 +288,9 @@ function CalendarTab(): JSX.Element {
                         projected={projectedFor(date())}
                         loading={loadedData() == null && calendarData.loading}
                         loadFailed={loadedData() == null && calendarData.error != null}
+                        openTaskId={params.taskId}
                         onClose={navigation.closeCalendarDetail}
-                        onTask={(id) => navigation.toCalendarTask(date(), id)}
+                        onTask={(id, source) => openTask(date(), id, source)}
                         onGenerator={navigation.toGenerator}
                     />
                 )}
@@ -290,7 +300,7 @@ function CalendarTab(): JSX.Element {
                 {(task) => (
                     <TaskEditorDialog
                         task={task()}
-                        onClose={navigation.closeCalendarDetail}
+                        onClose={closeTaskDetail}
                         onOpenLabelsPicker={navigation.openLabelsPicker}
                         onOpenPostponePicker={navigation.openPostponePicker}
                         stackLevel={1}
@@ -501,7 +511,7 @@ function MonthCellItems(props: { items: MonthCellItem[] }): JSX.Element {
 interface WeekPagerProps extends CalendarLookupProps {
     weeks: string[];
     currentIndex: number;
-    onTask: (date: string, id: string) => void;
+    onTask: (date: string, id: string, source?: HTMLElement) => void;
     onGenerator: (id: string) => void;
     scrollerRef: (element: HTMLDivElement) => void;
     onScroll: () => void;
@@ -538,7 +548,7 @@ function WeekPage(props: WeekPagerProps & { week: string }): JSX.Element {
                                 <CalendarTaskButton
                                     task={task}
                                     compact={true}
-                                    onOpen={() => props.onTask(date, task.id)}
+                                    onOpen={(source) => props.onTask(date, task.id, source)}
                                 />
                             )}
                         </For>
@@ -560,8 +570,10 @@ interface DayDialogProps {
     projected: ProjectedTask[];
     loading: boolean;
     loadFailed: boolean;
+    /** Task whose editor is stacked on top of this day dialog; its row is hidden to keep the morph illusion. */
+    openTaskId?: string;
     onClose: () => void;
-    onTask: (id: string) => void;
+    onTask: (id: string, source?: HTMLElement) => void;
     onGenerator: (id: string) => void;
 }
 
@@ -575,6 +587,7 @@ function DayDialog(props: DayDialogProps): JSX.Element {
                         items={props.scheduled}
                         onReorder={reorder}
                         onOpen={props.onTask}
+                        openTaskId={props.openTaskId}
                         celebrateCompletion={false}
                     />
                 </Show>
@@ -603,14 +616,25 @@ function DayDialog(props: DayDialogProps): JSX.Element {
     );
 }
 
-function CalendarTaskButton(props: { task: Task; onOpen: () => void; compact?: boolean }): JSX.Element {
+function CalendarTaskButton(props: {
+    task: Task;
+    onOpen: (source: HTMLElement) => void;
+    compact?: boolean;
+}): JSX.Element {
+    let buttonEl: HTMLButtonElement | undefined;
+
     return (
         <div class="calendar-task-button" classList={{ 'calendar-task-button--compact': props.compact }}>
             <button
+                ref={buttonEl}
                 type="button"
                 class="calendar-task-button__open"
                 aria-label={`Edit ${props.task.summary}`}
-                onClick={props.onOpen}
+                onClick={() => {
+                    if (buttonEl) {
+                        props.onOpen(buttonEl);
+                    }
+                }}
             >
                 <TaskCardView
                     summary={props.task.summary}

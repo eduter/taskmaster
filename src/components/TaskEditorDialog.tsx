@@ -179,6 +179,8 @@ function TaskEditorDialog(props: TaskEditorDialogProps): JSX.Element {
             canClose={canClose}
             title={summary() || 'Task'}
             titleSlot={summaryHeading}
+            panelClass="task-editor-dialog"
+            onCloseButton={tryDismiss}
             stackLevel={props.stackLevel}
         >
             <div class="form-field">

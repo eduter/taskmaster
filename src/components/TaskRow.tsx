@@ -8,17 +8,18 @@ import { TaskCard } from './TaskCard.tsx';
 interface TaskRowProps {
     task: Task;
     deleteRevealed: boolean;
+    hidden?: boolean;
     onRevealChange: (taskId: string, open: boolean) => void;
     onRowTouchStart?: (taskId: string) => void;
     onDragEnd?: () => void;
-    onOpen: (taskId: string) => void;
+    onOpen: (taskId: string, source?: HTMLElement) => void;
     labelsVisible?: boolean;
     celebrateCompletion?: boolean;
 }
 
 function TaskRow(props: TaskRowProps): JSX.Element {
-    function openTaskDetail(): void {
-        props.onOpen(props.task.id);
+    function openTaskDetail(source: HTMLElement): void {
+        props.onOpen(props.task.id, source);
     }
 
     async function toggleAndMaybeCelebrate(): Promise<void> {
@@ -49,6 +50,7 @@ function TaskRow(props: TaskRowProps): JSX.Element {
             deleteRevealed={props.deleteRevealed}
             deleteLabel="Delete task"
             completed={props.task.completed}
+            hidden={props.hidden}
             allowCheckSwipe={!props.task.completed}
             onRevealChange={props.onRevealChange}
             onRowTouchStart={props.onRowTouchStart}
@@ -63,6 +65,7 @@ function TaskRow(props: TaskRowProps): JSX.Element {
                         visualCompleted={state.visualCompleted}
                         labelsVisible={props.labelsVisible}
                         onCheckClick={handleCheckClick}
+                        morphId={props.task.id}
                     />
                     {state.showStrike && (
                         <div class="task-row__strike" style={{ width: state.strikeWidth }} aria-hidden="true" />

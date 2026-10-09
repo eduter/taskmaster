@@ -26,6 +26,18 @@
     visibility: hidden;
 }
 
+/* While a card is morphing to or from its dialog, keep the revealed delete
+   strip out of the picture so it cannot flash behind the animating card. */
+html[data-task-morph-active] .task-row__delete-slot {
+    visibility: hidden;
+}
+
+/* Hidden, not removed: keeping the row's box lets the close morph land on the
+   card's real position. */
+.task-list__item--hidden {
+    visibility: hidden;
+}
+
 .task-list__empty {
     text-align: center;
     color: var(--text-muted);

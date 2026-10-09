@@ -93,7 +93,9 @@ describe('CalendarTab day dialog', () => {
             </MemoryRouter>
         ));
 
-        fireEvent.click(screen.getAllByRole('button', { name: 'Close' })[0]);
+        const backdrop = screen.getAllByRole('button', { name: 'Close' })[0];
+        fireEvent.pointerDown(backdrop);
+        fireEvent.click(backdrop);
 
         expect(nav.closeCalendarDetail).toHaveBeenCalledOnce();
     });

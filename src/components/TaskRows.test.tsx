@@ -102,13 +102,38 @@ describe('TaskRows', () => {
                 clientY: 20,
             })
         );
-        await vi.waitFor(() => expect(onOpen).toHaveBeenCalledWith('future-task'));
+        await vi.waitFor(() => expect(onOpen).toHaveBeenCalledWith('future-task', expect.any(HTMLElement)));
 
         fireEvent.click(screen.getByRole('button', { name: 'Mark complete' }));
         await vi.waitFor(() => expect(toggleComplete).toHaveBeenCalledWith('future-task'));
 
         fireEvent.click(screen.getByRole('button', { name: 'Delete task' }));
         await vi.waitFor(() => expect(removeTask).toHaveBeenCalledWith('future-task'));
+    });
+
+    it('hides the row whose detail view is open', () => {
+        const { container } = render(() => (
+            <TaskRows
+                items={[makeTask({ id: 'open-task' }), makeTask({ id: 'other-task' })]}
+                onReorder={() => {}}
+                onOpen={() => {}}
+                openTaskId="open-task"
+            />
+        ));
+
+        const rows = [...container.querySelectorAll<HTMLElement>('.task-list__item')];
+        expect(rows).toHaveLength(2);
+        expect(rows[0].classList.contains('task-list__item--hidden')).toBe(true);
+        expect(rows[1].classList.contains('task-list__item--hidden')).toBe(false);
+    });
+
+    it('shows every row when no detail view is open', () => {
+        const { container } = render(() => (
+            <TaskRows items={[makeTask({ id: 'a' }), makeTask({ id: 'b' })]} onReorder={() => {}} onOpen={() => {}} />
+        ));
+
+        const rows = [...container.querySelectorAll<HTMLElement>('.task-list__item')];
+        expect(rows.every((row) => !row.classList.contains('task-list__item--hidden'))).toBe(true);
     });
 
     it('fires last-task confetti from the today tab icon', async () => {
