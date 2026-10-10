@@ -2,7 +2,7 @@
 import { MemoryRouter, Route, useLocation, type LocationChange, type MemoryHistory } from '@solidjs/router';
 import { cleanup, fireEvent, render, screen, waitFor } from '@solidjs/testing-library';
 import type { JSX } from 'solid-js';
-import { afterEach, describe, expect, it } from 'vitest';
+import { afterEach, describe, expect, it, vi } from 'vitest';
 import { RedirectToTasks } from '../App.tsx';
 import { AppTabs } from '../components/AppTabs.tsx';
 import { useAppNavigate, useLabelsPanelOpen, usePostponePanelOpen, useSyncPanelOpen } from './navigation.ts';
@@ -182,6 +182,34 @@ describe('tab history', () => {
             stack: ['/tasks'],
             atRoot: true,
         });
+    });
+});
+
+describe('task detail scroll', () => {
+    it('does not scroll the list when opening a task detail', async () => {
+        const scrollTo = vi.fn();
+        window.scrollTo = scrollTo as unknown as typeof window.scrollTo;
+
+        // Use the router's own memory history: unlike the inspectable stub below,
+        // it runs the default scroll-to-top, which is what we need to observe.
+        render(() => (
+            <MemoryRouter root={HistoryHarness}>
+                <Route path="/" component={RedirectToTasks} />
+                <Route path="/tasks" component={EmptyPage} />
+                <Route path="/tasks/:id" component={EmptyPage} />
+            </MemoryRouter>
+        ));
+        // The launch redirect itself is allowed to scroll; ignore that call.
+        await pathIs('/tasks');
+        await new Promise((resolve) => setTimeout(resolve, 0));
+        scrollTo.mockClear();
+
+        fireEvent.click(screen.getByRole('button', { name: 'Open task' }));
+        await pathIs('/tasks/task-1');
+        // Let the router's deferred scroll (if any) run before asserting.
+        await new Promise((resolve) => setTimeout(resolve, 0));
+
+        expect(scrollTo).not.toHaveBeenCalled();
     });
 });
 

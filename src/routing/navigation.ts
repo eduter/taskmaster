@@ -63,7 +63,10 @@ function useAppNavigate() {
             navigate(pathKeepingOverlays(TAB_ROUTES[tab]), { replace: true });
         },
         toTask(id: string) {
-            navigate(taskDetailPath(id));
+            // The task dialog opens over the list it was tapped from; keeping the
+            // scroll position is what lets the card morph in place instead of the
+            // list jumping to the top under the overlay.
+            navigate(taskDetailPath(id), { scroll: false });
         },
         closeTaskDetail() {
             navigate(-1);
