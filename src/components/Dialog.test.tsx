@@ -76,4 +76,16 @@ describe('Dialog', () => {
         fireEvent.click(backdrop);
         expect(onClose).toHaveBeenCalledOnce();
     });
+
+    it('focuses the panel instead of the backdrop so no full-screen ring shows', () => {
+        render(() => (
+            <Dialog open={true} onClose={vi.fn()} title="Edit task">
+                Body
+            </Dialog>
+        ));
+
+        const panel = document.querySelector<HTMLElement>('.dialog__panel');
+        expect(panel?.getAttribute('tabindex')).toBe('-1');
+        expect(document.activeElement).toBe(panel);
+    });
 });

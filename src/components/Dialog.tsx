@@ -46,6 +46,7 @@ interface DialogProps {
 /** Modal dialog built on the native `<dialog>` element with ESC and backdrop dismiss. */
 function Dialog(props: DialogProps) {
     let dialogRef: HTMLDialogElement | undefined;
+    let panelRef: HTMLDivElement | undefined;
     const titleId = `dialog-title-${Math.random().toString(36).slice(2, 9)}`;
     // A tap that opens a dialog also fires the browser's compatibility click, which
     // lands after the dialog has mounted and can retarget onto the fresh backdrop.
@@ -61,6 +62,11 @@ function Dialog(props: DialogProps) {
         if (props.open) {
             if (!el.open) {
                 el.showModal();
+                // showModal autofocuses the first focusable element; without a
+                // focus target that is the full-viewport backdrop button, whose
+                // focus ring Chrome paints around the whole screen behind the
+                // panel. Focus the panel instead so the ring stays invisible.
+                panelRef?.focus();
             }
         } else if (el.open) {
             el.close();
@@ -119,7 +125,7 @@ function Dialog(props: DialogProps) {
                 onPointerDown={handleBackdropPointerDown}
                 onClick={handleBackdropClick}
             />
-            <div class={`dialog__panel${props.panelClass ? ` ${props.panelClass}` : ''}`}>
+            <div ref={panelRef} tabindex="-1" class={`dialog__panel${props.panelClass ? ` ${props.panelClass}` : ''}`}>
                 <div class="dialog__header">
                     <div class="dialog__title-slot">
                         {props.titleSlot ?? (
