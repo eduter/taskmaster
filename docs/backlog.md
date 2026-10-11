@@ -8,7 +8,6 @@ in code comments, or other doc files — not the backlog.
 * make "Add" / "+" buttons usage and positioning consistent across tasks, checklists, labels, generators, and task templates
 * redesign app's header - the tabs don't look great, the show/hide labels button is not very self-explanatory, and it's a bit crowded if I were to add filters
 * Small styling fixes
-  * Get rid of focus ring when opening dialog
   * Tweak padding for when revealing the delete button
   * Improve styling of task being dragged
   * Improve crossing task gesture styling
