@@ -363,4 +363,49 @@ describe('ChecklistEditor', () => {
 
         await vi.waitFor(() => expect(onToggle).toHaveBeenCalledWith('milk'));
     });
+
+    it('taps a URL chip without opening the item for editing', async () => {
+        const onRename = vi.fn();
+        render(() => (
+            <ChecklistEditor
+                items={[{ id: 'milk', summary: 'Buy https://www.apotea.se/x', completed: false }]}
+                onAdd={() => {}}
+                onRename={onRename}
+                onDelete={() => {}}
+                onReorder={() => {}}
+            />
+        ));
+
+        const link = screen.getByRole('link');
+        expect(link.getAttribute('href')).toBe('https://www.apotea.se/x');
+
+        // The chip stops the pointer sequence, so the row's tap gesture never fires.
+        link.dispatchEvent(
+            new PointerEvent('pointerdown', {
+                bubbles: true,
+                cancelable: true,
+                clientX: 20,
+                clientY: 20,
+                pointerId: 9,
+                pointerType: 'touch',
+                button: 0,
+                buttons: 1,
+            })
+        );
+        link.dispatchEvent(
+            new PointerEvent('pointerup', {
+                bubbles: true,
+                cancelable: true,
+                clientX: 20,
+                clientY: 20,
+                pointerId: 9,
+                pointerType: 'touch',
+                button: 0,
+                buttons: 0,
+            })
+        );
+
+        expect(screen.queryByRole('textbox', { name: 'Edit Buy https://www.apotea.se/x' })).toBeNull();
+        expect(onRename).not.toHaveBeenCalled();
+    });
 });

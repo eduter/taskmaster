@@ -3,6 +3,7 @@ import checkIcon from '../icons/check.svg?raw';
 import plusIcon from '../icons/plus.svg?raw';
 import { GestureRow } from './GestureRow.tsx';
 import { Icon } from './Icon.tsx';
+import { LinkText } from './LinkText.tsx';
 import { TaskLikeSortableList } from './TaskLikeSortableList.tsx';
 import './ChecklistEditor.css';
 
@@ -221,7 +222,14 @@ function ChecklistItemContent(props: ChecklistItemContentProps): JSX.Element {
                 </button>
             </Show>
 
-            <Show when={props.editing} fallback={<span class="checklist-editor__summary">{props.item.summary}</span>}>
+            <Show
+                when={props.editing}
+                fallback={
+                    <span class="checklist-editor__summary">
+                        <LinkText text={props.item.summary} />
+                    </span>
+                }
+            >
                 <input
                     ref={focusAtEnd}
                     class="checklist-editor__input"
