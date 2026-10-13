@@ -1,0 +1,48 @@
+.link-text {
+    min-width: 0;
+    overflow-wrap: anywhere;
+}
+
+.link-chip {
+    display: inline-flex;
+    align-items: center;
+    gap: 4px;
+    max-width: 100%;
+    padding: 1px 6px;
+    border: 1px solid var(--border);
+    border-radius: var(--radius-sm);
+    background: var(--bg-surface-hover);
+    color: var(--text-primary);
+    font-size: 0.95em;
+    line-height: 1.4;
+    text-decoration: none;
+    vertical-align: baseline;
+}
+
+.link-chip:hover {
+    background: var(--bg-surface-active);
+    border-color: var(--accent);
+}
+
+.link-chip:focus-visible {
+    outline: 2px solid var(--accent);
+    outline-offset: 2px;
+}
+
+.link-chip__favicon {
+    width: 14px;
+    height: 14px;
+    border-radius: 2px;
+    object-fit: contain;
+}
+
+.link-chip__icon {
+    color: var(--accent);
+}
+
+.link-chip__url {
+    min-width: 0;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+}
