@@ -1,4 +1,5 @@
 import { isDominantHorizontal } from './axisLock.ts';
+import { REVEAL_WIDTH_PX } from './constants.ts';
 import { checkProgress, shouldCompleteCheck } from './swipeCheck.ts';
 import { revealOffsetX, snapRevealOpen } from './swipeReveal.ts';
 
@@ -58,7 +59,7 @@ interface RowGestureResult {
 
 function createInitialRowGestureState(
     initial?: Partial<Pick<RowGestureState, 'deleteRevealed' | 'cardWidth'>>,
-    revealWidthPx = 40
+    revealWidthPx = REVEAL_WIDTH_PX
 ): RowGestureState {
     const deleteRevealed = initial?.deleteRevealed ?? false;
     return {
