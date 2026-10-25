@@ -66,12 +66,14 @@
 .task-row__strike {
     position: absolute;
     left: calc(var(--space-md) + 22px + var(--space-sm));
-    right: auto;
     top: 50%;
-    height: 2px;
-    margin-top: -1px;
+    height: 1px;
+    margin-top: -0.5px;
     background: var(--text-primary);
-    border-radius: 1px;
     pointer-events: none;
-    transform-origin: left center;
+}
+
+/* While the swipe previews completion the summary dims, so the strike dims with it. */
+.task-row__strike--completed {
+    background: var(--text-muted);
 }

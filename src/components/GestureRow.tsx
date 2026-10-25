@@ -35,7 +35,8 @@ import './TaskRow.css';
 interface GestureRowContentState {
     visualCompleted: boolean;
     showStrike: boolean;
-    strikeWidth: string;
+    /** CSS `right` offset for the strike line, so its trailing edge tracks the pointer. */
+    strikeRight: string;
 }
 
 interface GestureRowProps {
@@ -155,8 +156,6 @@ function GestureRow(props: GestureRowProps): JSX.Element {
         return `translateX(${gesture().revealOffsetX}px)`;
     });
 
-    const strikeWidth = createMemo(() => `${gesture().checkProgress * 100}%`);
-
     const visualCompleted = createMemo(() => {
         const g = gesture();
         if (g.phase === 'check-stroke' && !completed()) {
@@ -166,6 +165,16 @@ function GestureRow(props: GestureRowProps): JSX.Element {
     });
 
     const showStrike = createMemo(() => !!props.onComplete && !completed() && gesture().checkProgress > 0);
+
+    const strikeRight = createMemo(() => {
+        if (!showStrike()) {
+            return '';
+        }
+        // Anchor the trailing edge to the pointer so the line tracks the finger;
+        // `left` stays in CSS so the start stays pinned to the text.
+        const g = gesture();
+        return `${Math.max(0, g.cardWidth - g.checkPointerX)}px`;
+    });
 
     function clearLongPress() {
         if (longPressTimer !== undefined) {
@@ -437,6 +446,7 @@ function GestureRow(props: GestureRowProps): JSX.Element {
         props.onRowTouchStart?.(props.id);
 
         const cardWidth = surfaceEl?.clientWidth ?? 300;
+        const surfaceLeft = surfaceEl?.getBoundingClientRect().left ?? 0;
         // Prefer local (set on snap) so a stale props snapshot can't re-enter check-stroke
         // while the delete strip is still visually open.
         const deleteRevealedForDown = gesture().deleteRevealed || props.deleteRevealed;
@@ -450,6 +460,7 @@ function GestureRow(props: GestureRowProps): JSX.Element {
                 deleteRevealed: deleteRevealedForDown,
                 allowCheckSwipe: allowCheckSwipe() && !completed(),
                 cardWidth,
+                surfaceLeft,
             },
             event.clientX,
             event.clientY
@@ -615,7 +626,7 @@ function GestureRow(props: GestureRowProps): JSX.Element {
                     {props.renderContent({
                         visualCompleted: visualCompleted(),
                         showStrike: showStrike(),
-                        strikeWidth: strikeWidth(),
+                        strikeRight: strikeRight(),
                     })}
                 </div>
             </div>
