@@ -20,6 +20,7 @@ function down(
         deleteRevealed?: boolean;
         allowCheckSwipe?: boolean;
         cardWidth?: number;
+        surfaceLeft?: number;
     } = {}
 ) {
     return reduceRowGesture(
@@ -33,6 +34,7 @@ function down(
             deleteRevealed: opts.deleteRevealed ?? state.deleteRevealed,
             allowCheckSwipe: opts.allowCheckSwipe ?? state.allowCheckSwipe,
             cardWidth: opts.cardWidth ?? state.cardWidth,
+            surfaceLeft: opts.surfaceLeft ?? state.surfaceLeft,
         },
         config
     );
@@ -85,6 +87,15 @@ describe('reduceRowGesture', () => {
         expect(afterMove.state.checkProgress).toBeGreaterThan(0);
     });
 
+    it('tracks the pointer x relative to the surface while stroking', () => {
+        const afterDown = down(createInitialRowGestureState(), { surfaceLeft: 16 });
+        const afterMove = move(afterDown.state, 60, 0, 50);
+        expect(afterMove.state.checkPointerX).toBe(44);
+
+        const afterMore = move(afterMove.state, 120, 0, 80);
+        expect(afterMore.state.checkPointerX).toBe(104);
+    });
+
     it('stays pending on diagonal wobble while waiting to drag', () => {
         const afterDown = down(createInitialRowGestureState());
         const afterMove = move(afterDown.state, 12, 10, 50);
@@ -102,6 +113,13 @@ describe('reduceRowGesture', () => {
         const afterMove = move(afterDown.state, 120, 0, 50);
         const afterUp = up(afterMove.state, 120, 0, 100);
         expect(afterUp.effects).toContainEqual({ type: 'MARK_COMPLETE' });
+    });
+
+    it('resets the stroke pointer x when the gesture ends', () => {
+        const afterDown = down(createInitialRowGestureState(), { surfaceLeft: 16 });
+        const afterMove = move(afterDown.state, 60, 0, 50);
+        const afterUp = up(afterMove.state, 60, 0, 100);
+        expect(afterUp.state.checkPointerX).toBe(0);
     });
 
     it('does not enter check-stroke on completed tasks', () => {

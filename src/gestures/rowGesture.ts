@@ -1,4 +1,5 @@
 import { isDominantHorizontal } from './axisLock.ts';
+import { REVEAL_WIDTH_PX } from './constants.ts';
 import { checkProgress, shouldCompleteCheck } from './swipeCheck.ts';
 import { revealOffsetX, snapRevealOpen } from './swipeReveal.ts';
 
@@ -22,6 +23,10 @@ interface RowGestureState {
     startTime: number;
     revealOffsetX: number;
     checkProgress: number;
+    /** Client x of the gesture surface's left edge, captured at pointer-down. */
+    surfaceLeft: number;
+    /** Pointer x relative to the surface's left edge; ends the check stroke. */
+    checkPointerX: number;
     deleteRevealed: boolean;
     /** Swipe-right check stroke only when the task is incomplete. */
     allowCheckSwipe: boolean;
@@ -38,6 +43,8 @@ type RowGestureAction =
           deleteRevealed: boolean;
           allowCheckSwipe: boolean;
           cardWidth: number;
+          /** Client x of the gesture surface's left edge, so the check stroke can follow the pointer. */
+          surfaceLeft: number;
       }
     | { type: 'POINTER_MOVE'; x: number; y: number; time: number }
     | { type: 'POINTER_UP'; x: number; y: number; time: number }
@@ -58,7 +65,7 @@ interface RowGestureResult {
 
 function createInitialRowGestureState(
     initial?: Partial<Pick<RowGestureState, 'deleteRevealed' | 'cardWidth'>>,
-    revealWidthPx = 40
+    revealWidthPx = REVEAL_WIDTH_PX
 ): RowGestureState {
     const deleteRevealed = initial?.deleteRevealed ?? false;
     return {
@@ -69,6 +76,8 @@ function createInitialRowGestureState(
         startTime: 0,
         revealOffsetX: deleteRevealed ? -revealWidthPx : 0,
         checkProgress: 0,
+        surfaceLeft: 0,
+        checkPointerX: 0,
         deleteRevealed,
         allowCheckSwipe: true,
         cardWidth: initial?.cardWidth ?? 300,
@@ -82,6 +91,7 @@ function idleState(state: RowGestureState, revealWidthPx: number): RowGestureSta
         pointerId: null,
         revealOffsetX: state.deleteRevealed ? -revealWidthPx : 0,
         checkProgress: 0,
+        checkPointerX: 0,
     };
 }
 
@@ -103,6 +113,7 @@ function reduceRowGesture(
                     phase: 'idle',
                     pointerId: null,
                     checkProgress: 0,
+                    checkPointerX: 0,
                 },
                 effects,
             };
@@ -123,6 +134,8 @@ function reduceRowGesture(
                     deleteRevealed: action.deleteRevealed,
                     revealOffsetX: revealOffsetX0,
                     checkProgress: 0,
+                    surfaceLeft: action.surfaceLeft,
+                    checkPointerX: 0,
                     allowCheckSwipe: action.allowCheckSwipe,
                     cardWidth: action.cardWidth || state.cardWidth,
                 },
@@ -170,6 +183,7 @@ function reduceRowGesture(
                                 ...state,
                                 phase: 'check-stroke',
                                 checkProgress: checkProgress(dx, state.cardWidth, config.checkCompleteRatio),
+                                checkPointerX: action.x - state.surfaceLeft,
                             },
                             effects,
                         };
@@ -206,6 +220,7 @@ function reduceRowGesture(
                     state: {
                         ...state,
                         checkProgress: checkProgress(dxCheck, state.cardWidth, config.checkCompleteRatio),
+                        checkPointerX: action.x - state.surfaceLeft,
                     },
                     effects,
                 };

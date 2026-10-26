@@ -16,8 +16,12 @@ const TAP_MAX_PX_TOUCH = 24;
 /** Horizontal swipe must exceed vertical by this factor (avoids stealing long-press drag). */
 const SWIPE_HORIZONTAL_DOMINANCE = 1.5;
 
-/** Width of the delete action strip behind the card. */
-const REVEAL_WIDTH_PX = 40;
+/**
+ * Width of the delete action strip behind the card. Must clear the label ring,
+ * which overhangs the checkbox by 4px on each side: at a smaller reveal the
+ * ring's right edge stays inside the row's clipped viewport and peeks out.
+ */
+const REVEAL_WIDTH_PX = 42;
 
 /** Swipe-left release opens delete when past this fraction of reveal width. */
 const REVEAL_OPEN_RATIO = 0.45;

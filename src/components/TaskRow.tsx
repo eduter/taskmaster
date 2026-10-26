@@ -68,7 +68,12 @@ function TaskRow(props: TaskRowProps): JSX.Element {
                         morphId={props.task.id}
                     />
                     {state.showStrike && (
-                        <div class="task-row__strike" style={{ width: state.strikeWidth }} aria-hidden="true" />
+                        <div
+                            class="task-row__strike"
+                            classList={{ 'task-row__strike--completed': state.visualCompleted }}
+                            style={{ right: state.strikeRight }}
+                            aria-hidden="true"
+                        />
                     )}
                 </>
             )}

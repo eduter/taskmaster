@@ -135,7 +135,8 @@ function ChecklistEditor(props: ChecklistEditorProps): JSX.Element {
                                         {state.showStrike && (
                                             <div
                                                 class="task-row__strike checklist-editor__strike"
-                                                style={{ width: state.strikeWidth }}
+                                                classList={{ 'task-row__strike--completed': state.visualCompleted }}
+                                                style={{ right: state.strikeRight }}
                                                 aria-hidden="true"
                                             />
                                         )}
