@@ -215,7 +215,10 @@ async function toggleTaskCompleted(id: string): Promise<boolean> {
         updatedAt: now,
     });
 
-    await seatTaskAtCompletionBoundary(id);
+    // Checking floats a task to the completion boundary; unchecking must not move it.
+    if (completed) {
+        await seatTaskAtCompletionBoundary(id);
+    }
 
     return completed;
 }
