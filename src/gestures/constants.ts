@@ -36,8 +36,32 @@ const CHECK_COMPLETE_RATIO = 0.3;
 /** After holding a row, lock page scroll this many ms before long-press drag fires. */
 const SCROLL_LOCK_DELAY_MS = 80;
 
-/** Drag overlay tilt (degrees), Trello-style. */
-const DRAG_ROTATE_DEG = 2.5;
+/**
+ * Drag overlay pose. The card is lifted off the board in 3D; the wave below
+ * displaces this base pose as the pointer moves. Values match the drag-wave
+ * playground so what the preview shows is what the app renders.
+ */
+const DRAG_PERSPECTIVE_PX = 520;
+const DRAG_TILT_X_DEG = -15;
+const DRAG_TILT_Y_DEG = -5;
+const DRAG_LEAN_Z_DEG = 0;
+
+/** Gravity: the pitch (degrees) a still dragged card sags to. */
+const DRAG_GRAVITY_DEG = 4;
+
+/** Air resistance: lean/pitch degrees per 1000px/s of pointer speed. */
+const DRAG_AIR_LEAN_PER_1000 = 6;
+const DRAG_AIR_PITCH_PER_1000 = 4;
+
+/** Cap (degrees) on the wave's air deflection, per axis. */
+const DRAG_WAVE_MAX_DEG = 15;
+
+/** Damped-spring tuning for the drag wave: stiffness (rad^2/s^2) and damping (1/s). */
+const DRAG_WAVE_STIFFNESS = 90;
+const DRAG_WAVE_DAMPING = 9;
+
+/** Pointer velocity is averaged over this trailing window (ms) to smooth event bursts. */
+const DRAG_VELOCITY_WINDOW_MS = 100;
 
 /**
  * Edge auto-scroll while dragging: how close to the container's top/bottom edge
@@ -60,11 +84,21 @@ const DRAG_AUTOSCROLL_MAX_FRAME_MS = 50;
 export {
     AXIS_LOCK_PX,
     CHECK_COMPLETE_RATIO,
+    DRAG_AIR_LEAN_PER_1000,
+    DRAG_AIR_PITCH_PER_1000,
     DRAG_AUTOSCROLL_EDGE_PX,
     DRAG_AUTOSCROLL_MAX_FRAME_MS,
     DRAG_AUTOSCROLL_MAX_SPEED_PX_PER_SEC,
     DRAG_AUTOSCROLL_MIN_SPEED_PX_PER_SEC,
-    DRAG_ROTATE_DEG,
+    DRAG_GRAVITY_DEG,
+    DRAG_LEAN_Z_DEG,
+    DRAG_PERSPECTIVE_PX,
+    DRAG_TILT_X_DEG,
+    DRAG_TILT_Y_DEG,
+    DRAG_VELOCITY_WINDOW_MS,
+    DRAG_WAVE_DAMPING,
+    DRAG_WAVE_MAX_DEG,
+    DRAG_WAVE_STIFFNESS,
     LONG_PRESS_MS,
     REVEAL_OPEN_RATIO,
     REVEAL_WIDTH_PX,

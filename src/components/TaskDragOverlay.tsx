@@ -1,6 +1,6 @@
 import { useDragDropContext } from '@thisbeyond/solid-dnd';
 import { createMemo, Show, type JSX } from 'solid-js';
-import { DRAG_ROTATE_DEG } from '../gestures/constants.ts';
+import { DRAG_LEAN_Z_DEG, DRAG_PERSPECTIVE_PX, DRAG_TILT_X_DEG, DRAG_TILT_Y_DEG } from '../gestures/constants.ts';
 import { useTouchDrag } from '../gestures/touchDragContext.tsx';
 import './TaskDragOverlay.css';
 
@@ -81,10 +81,19 @@ function TaskDragOverlay<T extends TaskDragOverlayItem>(props: TaskDragOverlayPr
     // Tilt lives on the inner card so the measured overlay box stays axis-aligned.
     // Rotating the element solid-dnd measures inflates its bounding rect, and the
     // repeated layout recomputes during edge auto-scroll then walk the overlay upward.
+    //
+    // The card is a spring held by its grab point: gravity sags the base pose and
+    // air resistance (the wave) leans it against the pointer's direction of travel.
     const cardStyle = createMemo(() => {
         const grab = touchDrag.grabOffset();
+        const wave = touchDrag.waveDeflection();
+        const pitch = DRAG_TILT_X_DEG + wave.pitch;
+        const yaw = DRAG_TILT_Y_DEG + wave.yaw;
+        const lean = DRAG_LEAN_Z_DEG + wave.lean;
         return {
-            transform: `rotate(${DRAG_ROTATE_DEG}deg)`,
+            transform:
+                `perspective(${DRAG_PERSPECTIVE_PX}px) ` +
+                `rotateX(${pitch.toFixed(2)}deg) rotateY(${yaw.toFixed(2)}deg) rotateZ(${lean.toFixed(2)}deg)`,
             'transform-origin': `${grab.x}px ${grab.y}px`,
         };
     });
