@@ -8,10 +8,8 @@ import {
     DRAG_AUTOSCROLL_MAX_FRAME_MS,
     DRAG_AUTOSCROLL_MAX_SPEED_PX_PER_SEC,
     DRAG_AUTOSCROLL_MIN_SPEED_PX_PER_SEC,
-    DRAG_GRAVITY_DEG,
-    DRAG_LEAN_Z_DEG,
-    DRAG_TILT_X_DEG,
-    DRAG_TILT_Y_DEG,
+    DRAG_GRAVITY_LEAN_DEG,
+    DRAG_HANG_TOP_RATIO,
     DRAG_VELOCITY_WINDOW_MS,
     DRAG_WAVE_DAMPING,
     DRAG_WAVE_MAX_DEG,
@@ -24,7 +22,6 @@ import {
     type DragWaveConfig,
     type DragWaveDeflection,
     dragWaveTarget,
-    type DragWavePose,
     type DragWaveSample,
     sampleVelocity,
     waveDeflection as computeWaveDeflection,
@@ -43,21 +40,23 @@ const AUTO_SCROLL_CONFIG: DragAutoScrollConfig = {
 const WAVE_CONFIG: DragWaveConfig = {
     airLeanPer1000: DRAG_AIR_LEAN_PER_1000,
     airPitchPer1000: DRAG_AIR_PITCH_PER_1000,
-    gravityDeg: DRAG_GRAVITY_DEG,
+    gravityLeanDeg: DRAG_GRAVITY_LEAN_DEG,
     maxDeg: DRAG_WAVE_MAX_DEG,
     stiffness: DRAG_WAVE_STIFFNESS,
     damping: DRAG_WAVE_DAMPING,
 };
 
-const BASE_POSE: DragWavePose = {
-    pitch: DRAG_TILT_X_DEG,
-    yaw: DRAG_TILT_Y_DEG,
-    lean: DRAG_LEAN_Z_DEG,
-};
-
+/** The card-local point the overlay pivots around, in pixels from its top-left. */
 interface GrabOffset {
     x: number;
     y: number;
+}
+
+/** Where the card pivots: a horizontal offset from centre (-1..1) and a pixel pivot. */
+interface WaveGrip {
+    offsetX: number;
+    pivotX: number;
+    pivotY: number;
 }
 
 function useTouchSortableDrag() {
@@ -70,10 +69,12 @@ function useTouchSortableDrag() {
     const [waveDeflection, setWaveDeflection] = createSignal<DragWaveDeflection>({ pitch: 0, yaw: 0, lean: 0 });
 
     // Drag-wave spring state, shared across a drag. The pointer trail feeds the
-    // trailing-window velocity that air resistance is derived from.
-    const wave = createWaveState(BASE_POSE, WAVE_CONFIG);
+    // trailing-window velocity that air resistance is derived from, and the grip
+    // tells gravity which side of the card to hang.
+    const wave = createWaveState();
     let waveTrail: DragWaveSample[] = [];
     let lastPointer: DragWaveSample = { t: 0, x: 0, y: 0 };
+    let grip: WaveGrip = { offsetX: 0, pivotX: 0, pivotY: 0 };
 
     function stepWave(frame: DragFrame): void {
         // Keep sampling while a drag is live, even between pointer events: repeated
@@ -86,9 +87,9 @@ function useTouchSortableDrag() {
         }
 
         const velocity = sampleVelocity(waveTrail, DRAG_VELOCITY_WINDOW_MS);
-        const target = dragWaveTarget(BASE_POSE, velocity, WAVE_CONFIG);
+        const target = dragWaveTarget(grip.offsetX, velocity, WAVE_CONFIG);
         advanceWave(wave, target, WAVE_CONFIG, frame.elapsedMs / 1000);
-        setWaveDeflection(computeWaveDeflection(wave, BASE_POSE));
+        setWaveDeflection(computeWaveDeflection(wave));
     }
 
     // Auto-scroll moves the list under a stationary pointer, so solid-dnd's cached
@@ -114,14 +115,24 @@ function useTouchSortableDrag() {
 
     function startDrag(draggableId: Id, clientX: number, clientY: number, surfaceEl: HTMLElement) {
         const rect = surfaceEl.getBoundingClientRect();
-        setGrabOffset({ x: clientX - rect.left, y: clientY - rect.top });
+        const gripX = clientX - rect.left;
+        const gripY = clientY - rect.top;
+        // Pivot near the top edge so the row hangs from the pointer as if held by
+        // its top, whichever row (or how tall) it happens to be.
+        const pivotY = Math.min(gripY, rect.height * DRAG_HANG_TOP_RATIO);
+        setGrabOffset({ x: gripX, y: pivotY });
+        grip = {
+            offsetX: rect.width > 0 ? clamp(gripX / rect.width, 0, 1) * 2 - 1 : 0,
+            pivotX: gripX,
+            pivotY,
+        };
         lockGestureScroll();
         actions.sensorStart(SENSOR_ID, { x: clientX, y: clientY });
         actions.dragStart(draggableId);
 
-        // Reset the spring to the base pose so each drag starts from rest, and seed
-        // the velocity trail with the press point.
-        Object.assign(wave, createWaveState(BASE_POSE, WAVE_CONFIG));
+        // Reset the spring to flat so each drag starts from rest, and seed the
+        // velocity trail with the press point.
+        Object.assign(wave, createWaveState());
         waveTrail = [];
         lastPointer = { t: performance.now(), x: clientX, y: clientY };
         waveTrail.push(lastPointer);
@@ -157,6 +168,10 @@ function useTouchSortableDrag() {
     const isDragging = () => state.active.sensorId === SENSOR_ID;
 
     return { startDrag, moveDrag, endDragIfActive, isDragging, grabOffset, waveDeflection };
+}
+
+function clamp(value: number, min: number, max: number): number {
+    return Math.min(max, Math.max(min, value));
 }
 
 export type { GrabOffset };

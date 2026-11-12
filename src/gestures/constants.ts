@@ -37,23 +37,23 @@ const CHECK_COMPLETE_RATIO = 0.3;
 const SCROLL_LOCK_DELAY_MS = 80;
 
 /**
- * Drag overlay pose. The card is lifted off the board in 3D; the wave below
- * displaces this base pose as the pointer moves. Values match the drag-wave
- * playground so what the preview shows is what the app renders.
+ * Drag overlay pose. The card is a flat sheet lifted toward the viewer; the
+ * wave below tilts it from that flat pose as the pointer moves. Values match
+ * the drag-wave playground so what the preview shows is what the app renders.
  */
-const DRAG_PERSPECTIVE_PX = 520;
-const DRAG_TILT_X_DEG = -15;
-const DRAG_TILT_Y_DEG = -5;
-const DRAG_LEAN_Z_DEG = 0;
-
-/** Gravity: the pitch (degrees) a still dragged card sags to. */
-const DRAG_GRAVITY_DEG = 4;
+const DRAG_PERSPECTIVE_PX = 900;
 
 /** Air resistance: lean/pitch degrees per 1000px/s of pointer speed. */
 const DRAG_AIR_LEAN_PER_1000 = 6;
-const DRAG_AIR_PITCH_PER_1000 = 4;
+const DRAG_AIR_PITCH_PER_1000 = 5;
 
-/** Cap (degrees) on the wave's air deflection, per axis. */
+/**
+ * Gravity: lean degrees when the card is held at an edge, so the end farther
+ * from the grab point hangs down. Scaled by the grab point's offset from centre.
+ */
+const DRAG_GRAVITY_LEAN_DEG = 6;
+
+/** Cap (degrees) on the wave's deflection, per axis. */
 const DRAG_WAVE_MAX_DEG = 15;
 
 /** Damped-spring tuning for the drag wave: stiffness (rad^2/s^2) and damping (1/s). */
@@ -62,6 +62,14 @@ const DRAG_WAVE_DAMPING = 9;
 
 /** Pointer velocity is averaged over this trailing window (ms) to smooth event bursts. */
 const DRAG_VELOCITY_WINDOW_MS = 100;
+
+/**
+ * How far below the top of a dragged row the grab point is pinned, as a fraction
+ * of the row height. A short row would otherwise be grabbed by its centre and
+ * appear to pivot there; pinning near the top makes the row hang from the
+ * pointer as if held by its top edge, whichever row it was.
+ */
+const DRAG_HANG_TOP_RATIO = 0.18;
 
 /**
  * Edge auto-scroll while dragging: how close to the container's top/bottom edge
@@ -90,11 +98,9 @@ export {
     DRAG_AUTOSCROLL_MAX_FRAME_MS,
     DRAG_AUTOSCROLL_MAX_SPEED_PX_PER_SEC,
     DRAG_AUTOSCROLL_MIN_SPEED_PX_PER_SEC,
-    DRAG_GRAVITY_DEG,
-    DRAG_LEAN_Z_DEG,
+    DRAG_GRAVITY_LEAN_DEG,
+    DRAG_HANG_TOP_RATIO,
     DRAG_PERSPECTIVE_PX,
-    DRAG_TILT_X_DEG,
-    DRAG_TILT_Y_DEG,
     DRAG_VELOCITY_WINDOW_MS,
     DRAG_WAVE_DAMPING,
     DRAG_WAVE_MAX_DEG,

@@ -11,18 +11,18 @@ import {
 
 const CONFIG: DragWaveConfig = {
     airLeanPer1000: 6,
-    airPitchPer1000: 4,
-    gravityDeg: 4,
+    airPitchPer1000: 5,
+    gravityLeanDeg: 6,
     maxDeg: 15,
     stiffness: 90,
     damping: 9,
 };
 
-const POSE = { pitch: -15, yaw: -5, lean: 0 };
-
 function sample(t: number, x: number, y: number): DragWaveSample {
     return { t, x, y };
 }
+
+const STILL = { x: 0, y: 0 };
 
 describe('sampleVelocity', () => {
     it('returns zero with fewer than two samples', () => {
@@ -53,38 +53,43 @@ describe('sampleVelocity', () => {
 });
 
 describe('dragWaveTarget', () => {
-    it('holds the base pose plus gravity sag when still', () => {
-        const target = dragWaveTarget(POSE, { x: 0, y: 0 }, CONFIG);
-        expect(target.pitch).toBeCloseTo(POSE.pitch + CONFIG.gravityDeg, 5);
-        expect(target.yaw).toBeCloseTo(POSE.yaw, 5);
-        expect(target.lean).toBeCloseTo(POSE.lean, 5);
+    it('hangs level when held at the centre and still', () => {
+        expect(dragWaveTarget(0, STILL, CONFIG)).toEqual({ pitch: 0, yaw: 0, lean: 0 });
+    });
+
+    it('drops the far end when held off-centre, regardless of direction', () => {
+        // Held at the right edge: the left (far) end hangs down.
+        expect(dragWaveTarget(1, STILL, CONFIG).lean).toBeCloseTo(-CONFIG.gravityLeanDeg, 5);
+        // Held at the left edge: the right (far) end hangs down.
+        expect(dragWaveTarget(-1, STILL, CONFIG).lean).toBeCloseTo(CONFIG.gravityLeanDeg, 5);
+    });
+
+    it('scales gravity with how far off-centre the grab point is', () => {
+        expect(dragWaveTarget(0.5, STILL, CONFIG).lean).toBeCloseTo(-CONFIG.gravityLeanDeg / 2, 5);
     });
 
     it('leans against a rightward drag (air resistance)', () => {
-        const target = dragWaveTarget(POSE, { x: 1000, y: 0 }, CONFIG);
-        expect(target.lean).toBeCloseTo(-CONFIG.airLeanPer1000, 5);
+        expect(dragWaveTarget(0, { x: 1000, y: 0 }, CONFIG).lean).toBeCloseTo(-CONFIG.airLeanPer1000, 5);
     });
 
     it('leans the other way for a leftward drag', () => {
-        const target = dragWaveTarget(POSE, { x: -1000, y: 0 }, CONFIG);
-        expect(target.lean).toBeCloseTo(CONFIG.airLeanPer1000, 5);
+        expect(dragWaveTarget(0, { x: -1000, y: 0 }, CONFIG).lean).toBeCloseTo(CONFIG.airLeanPer1000, 5);
     });
 
-    it('pitches with vertical speed', () => {
-        const target = dragWaveTarget(POSE, { x: 0, y: 1000 }, CONFIG);
-        expect(target.pitch).toBeCloseTo(POSE.pitch + CONFIG.gravityDeg + CONFIG.airPitchPer1000, 5);
+    it('pitches the bottom edge away when the pointer moves up', () => {
+        // Upward pointer motion is negative screen-y, so pitch goes negative.
+        expect(dragWaveTarget(0, { x: 0, y: -1000 }, CONFIG).pitch).toBeCloseTo(-CONFIG.airPitchPer1000, 5);
     });
 
-    it('clamps the air deflection to the amplitude cap', () => {
-        const target = dragWaveTarget(POSE, { x: 100000, y: 0 }, CONFIG);
-        expect(target.lean).toBeCloseTo(-CONFIG.maxDeg, 5);
+    it('clamps the deflection to the amplitude cap', () => {
+        expect(dragWaveTarget(1, { x: 100000, y: 0 }, CONFIG).lean).toBeCloseTo(-CONFIG.maxDeg, 5);
     });
 });
 
 describe('advanceWave', () => {
     it('pulls a displaced wave back toward its target', () => {
-        const state = createWaveState(POSE, CONFIG);
-        const target = dragWaveTarget(POSE, { x: 0, y: 0 }, CONFIG);
+        const state = createWaveState();
+        const target = dragWaveTarget(0, STILL, CONFIG);
         // Kick the lean well away from rest, then step.
         state.lean = 12;
         const before = Math.abs(state.lean - target.lean);
@@ -95,9 +100,8 @@ describe('advanceWave', () => {
     });
 
     it('settles back to the target and stops moving', () => {
-        const state = createWaveState(POSE, CONFIG);
-        const target = dragWaveTarget(POSE, { x: 0, y: 0 }, CONFIG);
-        state.lean = 10;
+        const state = createWaveState();
+        const target = dragWaveTarget(1, STILL, CONFIG);
         for (let i = 0; i < 600; i++) {
             advanceWave(state, target, CONFIG, 1 / 60);
         }
@@ -106,8 +110,8 @@ describe('advanceWave', () => {
     });
 
     it('overshoots on the way to a suddenly-moved target', () => {
-        const state = createWaveState(POSE, CONFIG);
-        const target = dragWaveTarget(POSE, { x: 1000, y: 0 }, CONFIG);
+        const state = createWaveState();
+        const target = dragWaveTarget(0, { x: 1000, y: 0 }, CONFIG);
         let minLean = 0;
         for (let i = 0; i < 60; i++) {
             advanceWave(state, target, CONFIG, 1 / 60);
@@ -119,11 +123,11 @@ describe('advanceWave', () => {
 });
 
 describe('waveDeflection', () => {
-    it('reports the signed offset from the base pose', () => {
-        const state = createWaveState(POSE, CONFIG);
+    it('reports the signed deflection from flat', () => {
+        const state = createWaveState();
         state.lean = -3;
-        state.pitch = POSE.pitch + 1;
-        const d = waveDeflection(state, POSE);
+        state.pitch = 1;
+        const d = waveDeflection(state);
         expect(d.lean).toBeCloseTo(-3, 5);
         expect(d.pitch).toBeCloseTo(1, 5);
         expect(d.yaw).toBeCloseTo(0, 5);

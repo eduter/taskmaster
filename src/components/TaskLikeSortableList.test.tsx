@@ -4,11 +4,10 @@ import type { JSX } from 'solid-js';
 import { afterEach, describe, expect, it, vi } from 'vitest';
 import type { Task } from '../db/types.ts';
 import {
+    DRAG_GRAVITY_LEAN_DEG,
+    DRAG_HANG_TOP_RATIO,
+    DRAG_PERSPECTIVE_PX,
     SCROLL_LOCK_DELAY_MS,
-    DRAG_GRAVITY_DEG,
-    DRAG_LEAN_Z_DEG,
-    DRAG_TILT_X_DEG,
-    DRAG_TILT_Y_DEG,
 } from '../gestures/constants.ts';
 import { GestureRow } from './GestureRow.tsx';
 import { TaskCard } from './TaskCard.tsx';
@@ -231,6 +230,7 @@ describe('TaskLikeSortableList drag reorder', () => {
         // solid-dnd measures the overlay element itself; a rotated box inflates its
         // bounding rect and the repeated recomputes during auto-scroll drift it away.
         expect(overlay.style.transform).not.toContain('rotate');
+        expect(overlay.style.perspective).toBe(`${DRAG_PERSPECTIVE_PX}px`);
         expect(card.style.transform).toContain('rotate');
         expect(card.style.transformOrigin).not.toBe('');
 
@@ -244,7 +244,7 @@ describe('TaskLikeSortableList drag reorder', () => {
         dispatchPointer(document, 'pointerup', x, y + 20);
     });
 
-    it('lifts the dragged card into the app base pose', () => {
+    it('hangs the dragged card from a pivot near its top edge', () => {
         const { container } = render(() => (
             <SortableListHarness initial={[makeTask('a', 'Alpha', 0), makeTask('b', 'Beta', 1)]} onReorder={() => {}} />
         ));
@@ -255,7 +255,8 @@ describe('TaskLikeSortableList drag reorder', () => {
         }
         const from = surface.getBoundingClientRect();
         const x = from.left + from.width / 2;
-        const y = from.top + from.height / 2;
+        // Grab low on the row; the pivot must still sit near the top edge.
+        const y = from.bottom - 4;
         dispatchPointer(surface, 'pointerdown', x, y);
         dispatchPointer(document, 'pointermove', x, y + 20);
 
@@ -263,16 +264,60 @@ describe('TaskLikeSortableList drag reorder', () => {
         if (!card) {
             throw new Error('expected a drag overlay card');
         }
-        const transform = card.style.transform;
-        expect(transform).toContain('perspective(520px)');
-        expect(transform).toContain(`rotateX(${DRAG_TILT_X_DEG.toFixed(2)}deg)`);
-        expect(transform).toContain(`rotateY(${DRAG_TILT_Y_DEG.toFixed(2)}deg)`);
-        expect(transform).toContain(`rotateZ(${DRAG_LEAN_Z_DEG.toFixed(2)}deg)`);
+        const originY = Number(card.style.transformOrigin.split(' ')[1].replace('px', ''));
+        expect(originY).toBeLessThanOrEqual(from.height * DRAG_HANG_TOP_RATIO + 0.001);
+        expect(originY).toBeLessThan(from.height / 2);
 
         dispatchPointer(document, 'pointerup', x, y + 20);
     });
 
-    it('leans the card against pointer speed, then settles when the pointer stops', () => {
+    it('hangs the far side of the card down when held off-centre', () => {
+        const frames: FrameRequestCallback[] = [];
+        vi.stubGlobal('requestAnimationFrame', (callback: FrameRequestCallback) => {
+            frames.push(callback);
+            return frames.length;
+        });
+        vi.stubGlobal('cancelAnimationFrame', () => {});
+        let clock = 1000;
+        const nowSpy = vi.spyOn(performance, 'now').mockImplementation(() => clock);
+
+        const { container } = render(() => (
+            <SortableListHarness initial={[makeTask('a', 'Alpha', 0), makeTask('b', 'Beta', 1)]} onReorder={() => {}} />
+        ));
+        stubStackedRowLayouts(container);
+        const surface = container.querySelector<HTMLElement>('.task-row__surface');
+        if (!surface) {
+            throw new Error('expected a task surface to drag');
+        }
+        const from = surface.getBoundingClientRect();
+        // Grab near the right edge so the left (far) end should hang down.
+        const x = from.right - 6;
+        const y = from.top + from.height / 2;
+        dispatchPointer(surface, 'pointerdown', x, y);
+        clock = 1016;
+        dispatchPointer(document, 'pointermove', x, y + 20);
+        // Let the spring settle under gravity with the pointer held still.
+        for (let i = 0; i < 150; i++) {
+            clock += 16;
+            frames.shift()?.(clock);
+        }
+
+        const card = container.querySelector<HTMLElement>('.task-drag-overlay__card');
+        if (!card) {
+            throw new Error('expected a drag overlay card');
+        }
+        const lean = Number(card.style.transform.match(/rotateZ\((-?[\d.]+)deg\)/)?.[1]);
+        // Negative lean drops the left edge; the magnitude is scaled by how far
+        // off-centre the grab point sits, so it never exceeds the edge value.
+        expect(lean).toBeLessThan(0);
+        expect(lean).toBeGreaterThanOrEqual(-DRAG_GRAVITY_LEAN_DEG);
+
+        dispatchPointer(document, 'pointerup', x, y + 20);
+        nowSpy.mockRestore();
+        vi.unstubAllGlobals();
+    });
+
+    it('swings the card against pointer speed, then settles when the pointer stops', () => {
         const frames: FrameRequestCallback[] = [];
         vi.stubGlobal('requestAnimationFrame', (callback: FrameRequestCallback) => {
             frames.push(callback);
@@ -294,6 +339,8 @@ describe('TaskLikeSortableList drag reorder', () => {
             throw new Error('expected a task surface to drag');
         }
         const from = surface.getBoundingClientRect();
+        // Grab at the horizontal centre so gravity contributes nothing and the lean
+        // isolates the air-resistance swing.
         const x = from.left + from.width / 2;
         const y = from.top + from.height / 2;
         const rotateOf = (axis: string): number => {
@@ -317,18 +364,16 @@ describe('TaskLikeSortableList drag reorder', () => {
             frames.shift()?.(clock);
         }
 
-        // Air resistance leans the card against a rightward drag.
+        // Air resistance swings the card against a rightward drag.
         expect(rotateOf('rotateZ')).toBeLessThan(-1);
-        // Gravity has sagged the pitch toward its resting angle.
-        expect(rotateOf('rotateX')).toBeGreaterThan(DRAG_TILT_X_DEG);
 
-        // Hold the pointer still and let the spring settle back to the base pose.
+        // Hold the pointer still and let the spring settle back to flat.
         for (let i = 0; i < 150; i++) {
             clock += 16;
             frames.shift()?.(clock);
         }
-        expect(rotateOf('rotateZ')).toBeCloseTo(DRAG_LEAN_Z_DEG, 1);
-        expect(rotateOf('rotateX')).toBeCloseTo(DRAG_TILT_X_DEG + DRAG_GRAVITY_DEG, 1);
+        expect(rotateOf('rotateZ')).toBeCloseTo(0, 1);
+        expect(rotateOf('rotateX')).toBeCloseTo(0, 1);
 
         dispatchPointer(document, 'pointerup', pointerX, y + 20);
         nowSpy.mockRestore();

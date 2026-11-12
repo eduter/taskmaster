@@ -158,14 +158,22 @@ composite; **Save** = commit a draft or batch. Do not use **Update**.
 
 ## Drag overlay physics
 
-- The dragged card's pose is a damped spring (`src/gestures/dragWave.ts`):
-  gravity sags the base pose, air resistance leans it against pointer speed.
+- The dragged card's pose is a damped spring (`src/gestures/dragWave.ts`) with no
+  base tilt: flat is neutral. Air resistance leans it against pointer speed, and
+  gravity drops the side farther from the grab point, so the card hangs from
+  wherever it is held. Positive lean tips the card's left edge up.
 - The spring steps once per drag animation frame. That frame is owned by the
   auto-scroll loop (`createDragAutoScroller`'s `onFrame`); don't start a second
   `requestAnimationFrame` for drag work — it competes with auto-scroll.
 - Tilt lives on the inner `.task-drag-overlay__card`, never the overlay element
   solid-dnd measures; rotating the measured box inflates its rect and walks the
   overlay upward during edge auto-scroll.
+- `perspective()` belongs on the overlay wrapper, not the card's transform.
+  Inside the card's own transform it scales the card by its distance from the
+  vanishing point, so the card changes size as it moves across the screen.
+- The card pivots near its top edge (`DRAG_HANG_TOP_RATIO`), not at the exact
+  grab point, so it hangs from the pointer rather than appearing to be pinned
+  through its middle.
 
 
 ## Cursor Cloud specific instructions

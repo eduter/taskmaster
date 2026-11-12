@@ -1,6 +1,6 @@
 import { useDragDropContext } from '@thisbeyond/solid-dnd';
 import { createMemo, Show, type JSX } from 'solid-js';
-import { DRAG_LEAN_Z_DEG, DRAG_PERSPECTIVE_PX, DRAG_TILT_X_DEG, DRAG_TILT_Y_DEG } from '../gestures/constants.ts';
+import { DRAG_PERSPECTIVE_PX } from '../gestures/constants.ts';
 import { useTouchDrag } from '../gestures/touchDragContext.tsx';
 import './TaskDragOverlay.css';
 
@@ -72,6 +72,10 @@ function TaskDragOverlay<T extends TaskDragOverlayItem>(props: TaskDragOverlayPr
             'max-width': `${draggable.layout.width}px`,
             'min-height': `${draggable.layout.height}px`,
             boxSizing: 'border-box' as const,
+            // Perspective lives on the wrapper, not the card: a `perspective()` in
+            // the card's own transform scales it by the distance from the vanishing
+            // point, so the card would change size as it moves across the screen.
+            perspective: `${DRAG_PERSPECTIVE_PX}px`,
             // Integer translate so solid-dnd's flooring layout math stays a fixed
             // point across the repeated recomputes that edge auto-scroll performs.
             transform: `translate3d(${Math.round(t.x)}px, ${Math.round(t.y)}px, 0)`,
@@ -82,19 +86,14 @@ function TaskDragOverlay<T extends TaskDragOverlayItem>(props: TaskDragOverlayPr
     // Rotating the element solid-dnd measures inflates its bounding rect, and the
     // repeated layout recomputes during edge auto-scroll then walk the overlay upward.
     //
-    // The card is a spring held by its grab point: gravity sags the base pose and
-    // air resistance (the wave) leans it against the pointer's direction of travel.
+    // The card is a sheet held by its grab point: it pivots there, hangs its far
+    // side under gravity, and swings against the pointer's travel (air resistance).
     const cardStyle = createMemo(() => {
         const grab = touchDrag.grabOffset();
         const wave = touchDrag.waveDeflection();
-        const pitch = DRAG_TILT_X_DEG + wave.pitch;
-        const yaw = DRAG_TILT_Y_DEG + wave.yaw;
-        const lean = DRAG_LEAN_Z_DEG + wave.lean;
         return {
-            transform:
-                `perspective(${DRAG_PERSPECTIVE_PX}px) ` +
-                `rotateX(${pitch.toFixed(2)}deg) rotateY(${yaw.toFixed(2)}deg) rotateZ(${lean.toFixed(2)}deg)`,
-            'transform-origin': `${grab.x}px ${grab.y}px`,
+            transform: `rotateX(${wave.pitch.toFixed(2)}deg) rotateY(${wave.yaw.toFixed(2)}deg) rotateZ(${wave.lean.toFixed(2)}deg)`,
+            'transform-origin': `${grab.x.toFixed(1)}px ${grab.y.toFixed(1)}px`,
         };
     });
 
