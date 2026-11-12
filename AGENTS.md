@@ -156,6 +156,17 @@ composite; **Save** = commit a draft or batch. Do not use **Update**.
 - `./docs/vision.md`: vision and roadmap
 - `./docs/backlog.md`: open tasks
 
+## Drag overlay physics
+
+- The dragged card's pose is a damped spring (`src/gestures/dragWave.ts`):
+  gravity sags the base pose, air resistance leans it against pointer speed.
+- The spring steps once per drag animation frame. That frame is owned by the
+  auto-scroll loop (`createDragAutoScroller`'s `onFrame`); don't start a second
+  `requestAnimationFrame` for drag work — it competes with auto-scroll.
+- Tilt lives on the inner `.task-drag-overlay__card`, never the overlay element
+  solid-dnd measures; rotating the measured box inflates its rect and walks the
+  overlay upward during edge auto-scroll.
+
 
 ## Cursor Cloud specific instructions
 
