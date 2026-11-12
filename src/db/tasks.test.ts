@@ -339,7 +339,7 @@ describe('toggleTaskCompleted ordering', () => {
         expect(await visibleIds()).toEqual(['a', 'c', 'b', 'd']);
     });
 
-    it('moves an uncompleted task to the top of the incomplete section', async () => {
+    it('leaves an uncompleted task in place', async () => {
         const today = getLogicalDay();
         await seedTask({
             id: 'a',
@@ -350,19 +350,27 @@ describe('toggleTaskCompleted ordering', () => {
             completedAt: Date.now(),
         });
         await seedTask({
-            id: 'c',
-            summary: 'C',
+            id: 'b',
+            summary: 'B',
             date: today,
             sortOrder: 1,
             completed: true,
             completedAt: Date.now(),
         });
-        await seedTask({ id: 'b', summary: 'B', date: today, sortOrder: 2 });
-        await seedTask({ id: 'd', summary: 'D', date: today, sortOrder: 3 });
+        await seedTask({
+            id: 'c',
+            summary: 'C',
+            date: today,
+            sortOrder: 2,
+            completed: true,
+            completedAt: Date.now(),
+        });
+        await seedTask({ id: 'x', summary: 'X', date: today, sortOrder: 3 });
+        await seedTask({ id: 'y', summary: 'Y', date: today, sortOrder: 4 });
 
-        await toggleTaskCompleted('c');
+        await toggleTaskCompleted('b');
 
-        expect(await visibleIds()).toEqual(['a', 'c', 'b', 'd']);
+        expect(await visibleIds()).toEqual(['a', 'b', 'c', 'x', 'y']);
     });
 });
 
