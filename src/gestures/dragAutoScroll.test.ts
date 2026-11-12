@@ -227,4 +227,40 @@ describe('createDragAutoScroller', () => {
         expect(scroller.scrollTop).toBe(100);
         expect(onScroll).not.toHaveBeenCalled();
     });
+
+    it('runs a per-frame callback with the clamped elapsed time', () => {
+        const frames = stubFrames();
+        const { surface } = makeScrollContainer();
+        const onFrame = vi.fn();
+        const autoScroller = createDragAutoScroller(CONFIG, () => {}, onFrame);
+
+        autoScroller.start(surface);
+        runFrame(frames, 1000);
+        runFrame(frames, 1016);
+        // A stalled frame is clamped so the spring can't jump.
+        runFrame(frames, 2016);
+
+        expect(onFrame).toHaveBeenCalledTimes(3);
+        expect(onFrame.mock.calls[0][0]).toEqual({ timestamp: 1000, elapsedMs: 0 });
+        expect(onFrame.mock.calls[1][0]).toEqual({ timestamp: 1016, elapsedMs: 16 });
+        expect(onFrame.mock.calls[2][0]).toEqual({ timestamp: 2016, elapsedMs: CONFIG.maxFrameMs });
+
+        autoScroller.stop();
+    });
+
+    it('stops running the frame callback after stop', () => {
+        const frames = stubFrames();
+        const { surface } = makeScrollContainer();
+        const onFrame = vi.fn();
+        const autoScroller = createDragAutoScroller(CONFIG, () => {}, onFrame);
+
+        autoScroller.start(surface);
+        runFrame(frames, 0);
+        expect(onFrame).toHaveBeenCalledTimes(1);
+
+        autoScroller.stop();
+        // Any frame already in flight bails out once the drag is released.
+        runFrame(frames, 16);
+        expect(onFrame).toHaveBeenCalledTimes(1);
+    });
 });
