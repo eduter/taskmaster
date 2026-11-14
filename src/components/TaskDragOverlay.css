@@ -7,10 +7,21 @@
     box-sizing: border-box;
 }
 
-/* The shadow rides on the rotating card; on the un-rotated wrapper it would
-   render axis-aligned and peek out from behind the tilted card's corners. */
 .task-drag-overlay__card {
-    box-shadow: var(--shadow-lg);
-    border-radius: var(--radius-md);
+    position: relative;
     width: 100%;
+}
+
+.task-drag-overlay__source {
+    visibility: hidden;
+}
+
+.task-drag-overlay__paper,
+.task-drag-overlay__shadow {
+    position: absolute;
+    inset: 0;
+}
+
+.task-drag-overlay__shadow {
+    border-radius: var(--radius-md);
 }

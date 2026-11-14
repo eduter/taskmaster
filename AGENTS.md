@@ -157,6 +157,21 @@ composite; **Save** = commit a draft or batch. Do not use **Update**.
 - `./docs/backlog.md`: open tasks
 
 
+## Drag overlay motion
+
+- `src/gestures/paperDrag.ts` owns the approved material values and the bounded,
+  frame-rate independent response. Downward pushes curl the sheet away; upward
+  pulls tension it and only add a small wave. Keep direct pointer translation.
+- `paperSurface.ts` snapshots the card into eight inert, overlapping sections.
+  Per-frame updates change transforms and two filled black SVG shadow silhouettes.
+  Hollow rectangle box shadows expose an unshadowed interior when the card curls.
+- Keep the outer solid-dnd measurement box axis-aligned and translate it by whole
+  pixels. Perspective and deformation belong inside it, centered on the real grip.
+- Active motion uses the auto-scroll loop's frame callback. On release, stop that
+  loop before animating the paper into its sortable slot; commit the reorder when
+  it lands. Reduced-motion users keep immediate drag/drop without deformation.
+
+
 ## Cursor Cloud specific instructions
 
 - **Frontend-only app.** TaskMaster is an offline-first Solid.js PWA with no
