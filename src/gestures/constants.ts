@@ -36,9 +36,6 @@ const CHECK_COMPLETE_RATIO = 0.3;
 /** After holding a row, lock page scroll this many ms before long-press drag fires. */
 const SCROLL_LOCK_DELAY_MS = 80;
 
-/** Drag overlay tilt (degrees), Trello-style. */
-const DRAG_ROTATE_DEG = 2.5;
-
 /**
  * Edge auto-scroll while dragging: how close to the container's top/bottom edge
  * the pointer must get before the list starts scrolling. Larger = kicks in earlier.
@@ -64,7 +61,6 @@ export {
     DRAG_AUTOSCROLL_MAX_FRAME_MS,
     DRAG_AUTOSCROLL_MAX_SPEED_PX_PER_SEC,
     DRAG_AUTOSCROLL_MIN_SPEED_PX_PER_SEC,
-    DRAG_ROTATE_DEG,
     LONG_PRESS_MS,
     REVEAL_OPEN_RATIO,
     REVEAL_WIDTH_PX,

@@ -1,6 +1,6 @@
 import { useDragDropContext } from '@thisbeyond/solid-dnd';
-import { createMemo, Show, type JSX } from 'solid-js';
-import { DRAG_ROTATE_DEG } from '../gestures/constants.ts';
+import { createEffect, createMemo, type JSX, onCleanup, onMount, Show } from 'solid-js';
+import { createPaperSurface } from '../gestures/paperSurface.ts';
 import { useTouchDrag } from '../gestures/touchDragContext.tsx';
 import './TaskDragOverlay.css';
 
@@ -13,7 +13,7 @@ interface TaskDragOverlayProps<T extends TaskDragOverlayItem> {
     renderCard: (item: T) => JSX.Element;
 }
 
-/** Rotated drag preview for task-like sortable rows. */
+/** Bent paper drag preview for task-like sortable rows. */
 function TaskDragOverlay<T extends TaskDragOverlayItem>(props: TaskDragOverlayProps<T>): JSX.Element {
     const dndContext = useDragDropContext();
     if (!dndContext) {
@@ -64,7 +64,7 @@ function TaskDragOverlay<T extends TaskDragOverlayItem>(props: TaskDragOverlayPr
         if (!overlay || !draggable) {
             return {};
         }
-        const t = overlay.transform;
+        const t = touchDrag.dropTranslation() ?? overlay.transform;
         return {
             top: `${overlay.layout.top}px`,
             left: `${overlay.layout.left}px`,
@@ -78,24 +78,35 @@ function TaskDragOverlay<T extends TaskDragOverlayItem>(props: TaskDragOverlayPr
         };
     });
 
-    // Tilt lives on the inner card so the measured overlay box stays axis-aligned.
-    // Rotating the element solid-dnd measures inflates its bounding rect, and the
-    // repeated layout recomputes during edge auto-scroll then walk the overlay upward.
-    const cardStyle = createMemo(() => {
-        const grab = touchDrag.grabOffset();
-        return {
-            transform: `rotate(${DRAG_ROTATE_DEG}deg)`,
-            'transform-origin': `${grab.x}px ${grab.y}px`,
-        };
-    });
+    function PaperCard(cardProps: { item: T }): JSX.Element {
+        let source!: HTMLDivElement;
+        let host!: HTMLDivElement;
+        let shadow!: HTMLDivElement;
+        onMount(() => {
+            const layout = dndState.active.draggable?.layout;
+            if (!layout) {
+                return;
+            }
+            const surface = createPaperSurface(host, source, layout.width, layout.height, shadow);
+            createEffect(() => surface.paint(touchDrag.paper(), touchDrag.grabOffset()));
+            onCleanup(surface.destroy);
+        });
+        return (
+            <div class="task-drag-overlay__card">
+                <div ref={source} class="task-drag-overlay__source">
+                    {props.renderCard(cardProps.item)}
+                </div>
+                <div ref={shadow} class="task-drag-overlay__shadow" />
+                <div ref={host} class="task-drag-overlay__paper" />
+            </div>
+        );
+    }
 
     return (
         <Show when={activeItem()}>
             {(item) => (
                 <div ref={overlayRef} class="task-drag-overlay" style={overlayStyle()}>
-                    <div class="task-drag-overlay__card" style={cardStyle()}>
-                        {props.renderCard(item())}
-                    </div>
+                    <PaperCard item={item()} />
                 </div>
             )}
         </Show>

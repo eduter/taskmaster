@@ -25,6 +25,14 @@ interface DragAutoScroller {
     stop(): void;
 }
 
+/** One animation frame of the drag loop: `elapsedMs` is the clamped time since the previous frame. */
+interface DragFrame {
+    timestamp: number;
+    elapsedMs: number;
+}
+
+type DragFrameHandler = (frame: DragFrame) => void;
+
 /**
  * Scroll velocity (px/second, positive = toward the end) for a pointer at
  * `clientY` inside `bounds`. Zero while in the safe middle zone.
@@ -92,8 +100,16 @@ function dragScrollContainerBounds(container: HTMLElement): DragScrollBounds {
 /**
  * Drives proportional edge auto-scroll for an active drag. The scroll container
  * is resolved from the dragged row once, when the drag starts.
+ *
+ * `onFrame` runs once per animation frame while the drag is live, so other
+ * per-frame work (the drag-wave spring) shares this one loop instead of
+ * competing for frames.
  */
-function createDragAutoScroller(config: DragAutoScrollConfig, onScroll: () => void): DragAutoScroller {
+function createDragAutoScroller(
+    config: DragAutoScrollConfig,
+    onScroll: () => void,
+    onFrame?: DragFrameHandler
+): DragAutoScroller {
     let container: HTMLElement | null = null;
     let frame: number | null = null;
     let pointerY = 0;
@@ -118,6 +134,8 @@ function createDragAutoScroller(config: DragAutoScrollConfig, onScroll: () => vo
 
         const elapsed = lastFrameMs === null ? 0 : Math.min(timestamp - lastFrameMs, config.maxFrameMs);
         lastFrameMs = timestamp;
+
+        onFrame?.({ timestamp, elapsedMs: elapsed });
 
         const velocity = autoScrollVelocity(pointerY, dragScrollContainerBounds(container), config);
         scrollBy((velocity * elapsed) / 1000);
@@ -157,7 +175,7 @@ function createDragAutoScroller(config: DragAutoScrollConfig, onScroll: () => vo
     return { start, moveTo, stop };
 }
 
-export type { DragAutoScroller, DragAutoScrollConfig, DragScrollBounds };
+export type { DragAutoScroller, DragAutoScrollConfig, DragFrame, DragFrameHandler, DragScrollBounds };
 export {
     autoScrollVelocity,
     createDragAutoScroller,

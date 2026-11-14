@@ -1,9 +1,10 @@
 /** @vitest-environment jsdom */
 import { render } from '@solidjs/testing-library';
 import type { JSX } from 'solid-js';
-import { afterEach, describe, expect, it, vi } from 'vitest';
+import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import type { Task } from '../db/types.ts';
 import { SCROLL_LOCK_DELAY_MS } from '../gestures/constants.ts';
+import { PAPER_BANDS, PAPER_PERSPECTIVE } from '../gestures/paperSurface.ts';
 import { GestureRow } from './GestureRow.tsx';
 import { TaskCard } from './TaskCard.tsx';
 import { TaskLikeSortableList } from './TaskLikeSortableList.tsx';
@@ -104,9 +105,18 @@ function SortableListHarness(props: HarnessProps): JSX.Element {
 }
 
 describe('TaskLikeSortableList drag reorder', () => {
+    beforeEach(() => {
+        vi.stubGlobal('matchMedia', () => ({
+            matches: false,
+            addEventListener: vi.fn(),
+            removeEventListener: vi.fn(),
+        }));
+    });
+
     afterEach(() => {
         vi.useRealTimers();
         vi.restoreAllMocks();
+        vi.unstubAllGlobals();
     });
 
     it('blocks native text selection while a touch long-press is pending', () => {
@@ -199,7 +209,7 @@ describe('TaskLikeSortableList drag reorder', () => {
         vi.unstubAllGlobals();
     });
 
-    it('keeps the measured overlay axis-aligned by tilting the inner card instead', () => {
+    it('keeps the measured overlay axis-aligned while bending an inert paper snapshot', () => {
         const { container } = render(() => (
             <SortableListHarness initial={[makeTask('a', 'Alpha', 0), makeTask('b', 'Beta', 1)]} onReorder={() => {}} />
         ));
@@ -225,8 +235,10 @@ describe('TaskLikeSortableList drag reorder', () => {
         // solid-dnd measures the overlay element itself; a rotated box inflates its
         // bounding rect and the repeated recomputes during auto-scroll drift it away.
         expect(overlay.style.transform).not.toContain('rotate');
-        expect(card.style.transform).toContain('rotate');
-        expect(card.style.transformOrigin).not.toBe('');
+        const paper = card.querySelector<HTMLElement>('.task-drag-overlay__paper');
+        expect(paper?.style.perspective).toBe(`${PAPER_PERSPECTIVE}px`);
+        expect(paper?.children).toHaveLength(PAPER_BANDS);
+        expect(card.style.transform).toBe('');
 
         const match = overlay.style.transform.match(/translate3d\((-?[\d.]+)px, (-?[\d.]+)px/);
         if (!match) {
@@ -236,6 +248,78 @@ describe('TaskLikeSortableList drag reorder', () => {
         expect(Number.isInteger(Number(match[2]))).toBe(true);
 
         dispatchPointer(document, 'pointerup', x, y + 20);
+    });
+
+    it('keeps a low grip attached while lifting the top ahead of the bottom', () => {
+        const frames: FrameRequestCallback[] = [];
+        vi.stubGlobal('requestAnimationFrame', (callback: FrameRequestCallback) => {
+            frames.push(callback);
+            return frames.length;
+        });
+        vi.stubGlobal('cancelAnimationFrame', () => {});
+        const { container } = render(() => (
+            <SortableListHarness initial={[makeTask('a', 'Alpha', 0), makeTask('b', 'Beta', 1)]} onReorder={() => {}} />
+        ));
+        stubStackedRowLayouts(container);
+        const surface = container.querySelector<HTMLElement>('.task-row__surface');
+        if (!surface) {
+            throw new Error('expected a task surface');
+        }
+        const rect = surface.getBoundingClientRect();
+        const x = rect.left + rect.width * 0.75;
+        const y = rect.bottom - 4;
+        dispatchPointer(surface, 'pointerdown', x, y);
+        dispatchPointer(document, 'pointermove', x, y + 20);
+        for (let i = 0; i < 7; i++) {
+            frames.shift()?.(1000 + i * 16);
+        }
+        const host = container.querySelector<HTMLElement>('.task-drag-overlay__paper');
+        expect(host?.style.perspectiveOrigin).toBe(`${x}px ${y + 20 - rect.top}px`);
+        const bands = [...(host?.children ?? [])] as HTMLElement[];
+        const matrix = (band: HTMLElement) => band.style.transform.slice(9, -1).split(',').map(Number);
+        expect(matrix(bands[0])[14]).toBeGreaterThan(matrix(bands[PAPER_BANDS - 1])[14]);
+        expect(host?.inert).toBe(true);
+        dispatchPointer(document, 'pointerup', x, y + 20);
+    });
+
+    it('keeps the paper visible while it settles, then commits the reorder', () => {
+        const frames: FrameRequestCallback[] = [];
+        vi.stubGlobal('requestAnimationFrame', (callback: FrameRequestCallback) => {
+            frames.push(callback);
+            return frames.length;
+        });
+        vi.stubGlobal('cancelAnimationFrame', () => {});
+        let clock = 1000;
+        vi.spyOn(performance, 'now').mockImplementation(() => clock);
+        const onReorder = vi.fn();
+        const { container } = render(() => (
+            <SortableListHarness
+                initial={[makeTask('a', 'Alpha', 0), makeTask('b', 'Beta', 1)]}
+                onReorder={onReorder}
+            />
+        ));
+        stubStackedRowLayouts(container);
+        const surface = container.querySelector<HTMLElement>('.task-row__surface');
+        if (!surface) {
+            throw new Error('expected a task surface');
+        }
+        dispatchPointer(surface, 'pointerdown', 160, 20);
+        dispatchPointer(document, 'pointermove', 160, 40);
+        dispatchPointer(document, 'pointermove', 160, 100);
+        for (let i = 0; i < 10; i++) {
+            clock += 16;
+            frames.shift()?.(clock);
+        }
+        dispatchPointer(document, 'pointerup', 160, 100);
+        expect(container.querySelector('.task-drag-overlay')).not.toBeNull();
+        expect(onReorder).not.toHaveBeenCalled();
+        expect(document.documentElement.classList.contains('task-gesture-scroll-lock')).toBe(false);
+        for (let i = 0; i < 22; i++) {
+            clock += 16;
+            frames.shift()?.(clock);
+        }
+        expect(container.querySelector('.task-drag-overlay')).toBeNull();
+        expect(onReorder).toHaveBeenCalledWith(['b', 'a']);
     });
 
     it('calls onReorder when a row is dragged onto another', async () => {
